@@ -27,6 +27,8 @@ DerivedData
 *.ipa
 *.xcuserstate
 project.xcworkspace
+example/ios/example.xcworkspace/xcshareddata/
+ios/ReactNativeWorklets.xcworkspace/xcshareddata/
 
 # Android/IntelliJ
 #

@@ -23,8 +23,13 @@ Pod::Spec.new do |s|
   s.source_files = "ios/**/*.{h,c,cc,cpp,m,mm,swift}"
   s.requires_arc = true
 
+  s.subspec 'Worklets' do |ss|
+    ss.header_mappings_dir = 'cpp'
+    ss.source_files = "cpp/**/*.{h,cpp}"
+  end
+
+  s.dependency "React-callinvoker"
   s.dependency "React"
-  # ...
-  # s.dependency "..."
+  s.dependency "React-Core"
 end
 

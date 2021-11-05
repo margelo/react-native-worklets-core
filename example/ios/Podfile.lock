@@ -274,6 +274,13 @@ PODS:
     - glog
   - react-native-worklets (1.0.0):
     - React
+    - React-callinvoker
+    - React-Core
+    - react-native-worklets/Worklets (= 1.0.0)
+  - react-native-worklets/Worklets (1.0.0):
+    - React
+    - React-callinvoker
+    - React-Core
   - React-perflogger (0.66.2)
   - React-RCTActionSheet (0.66.2):
     - React-Core/RCTActionSheetHeaders (= 0.66.2)
@@ -511,7 +518,7 @@ SPEC CHECKSUMS:
   React-jsiexecutor: 573adf0d6ce5e05c55872dfde5b1589acb88a96f
   React-jsinspector: b08b2d5e86cef9dc4bb69f0aa0bbe6d210fb7da5
   React-logger: faee236598b0f7e1a5e3b68577016ac451f1f993
-  react-native-worklets: 3211eac2a3ad56ec948f55d35f63f5b494f0b55a
+  react-native-worklets: 65204d57c490b512969fbe7820cea0b0e7badeab
   React-perflogger: 5ab487cacfe6ec19bfe3d3f8072bf71eb07d63da
   React-RCTActionSheet: 03f25695e095fb5aa003828620943c74cc281fec
   React-RCTAnimation: eaf82da39f0c36fb0ef2a28df797c5f73a2a98ea
