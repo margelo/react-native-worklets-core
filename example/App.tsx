@@ -27,6 +27,8 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
+import 'react-native-worklets';
+
 const Section: React.FC<{
   title: string;
 }> = ({children, title}) => {
