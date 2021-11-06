@@ -1,6 +1,7 @@
 #pragma once
 
 #include <jsi/jsi.h>
+#include <JsiWrapper.h>
 
 namespace RNWorklet {
 using namespace facebook;
@@ -84,6 +85,9 @@ public:
         if (onError != nullptr)
           onError(err.getMessage().c_str());
       } catch (const std::exception &err) {
+        if (onError != nullptr)
+          onError(err.what());
+      } catch (const std::runtime_error &err) {
         if (onError != nullptr)
           onError(err.what());
       } catch (...) {

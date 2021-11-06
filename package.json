@@ -44,5 +44,6 @@
     "clang-format": "^1.6.0",
     "react": "^16.9.0",
     "react-native": "^0.61.5"
-  }
+  },
+  "dependencies": {}
 }

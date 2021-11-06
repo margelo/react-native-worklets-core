@@ -4,7 +4,7 @@
 #include <memory>
 
 #if __has_include(<hermes/hermes.h>)
-  #define FOR_HERMES 1
+#define FOR_HERMES 1
 #endif
 
 #if FOR_HERMES
@@ -17,14 +17,14 @@
 
 namespace RNSkia {
 
-    using namespace facebook;
+using namespace facebook;
 
-    static std::unique_ptr<jsi::Runtime> makeJSIRuntime() {
+static std::unique_ptr<jsi::Runtime> makeJSIRuntime() {
 #if FOR_HERMES
-        return facebook::hermes::makeHermesRuntime();
+  return facebook::hermes::makeHermesRuntime();
 #else
-        return facebook::jsc::makeJSCRuntime();
+  return facebook::jsc::makeJSCRuntime();
 #endif
-    }
+}
 
 } // namespace RNSkia

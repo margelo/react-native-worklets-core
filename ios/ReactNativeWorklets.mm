@@ -9,6 +9,7 @@
 #import <React/RCTBridge.h>
 #import <React/RCTBridge+Private.h>
 #import <ReactCommon/RCTTurboModule.h>
+#import <React/RCTUtils.h>
 
 @implementation ReactNativeWorklets {
   std::unique_ptr<RNWorklet::JsiWorkletContext> _workletContext;
@@ -38,6 +39,7 @@ RCT_EXPORT_MODULE()
       
       // Create error handler
       auto errorHandler = std::make_shared<std::function<void(const std::exception &ex)>>([](const std::exception &err) {
+        RCTFatal(RCTErrorWithMessage([NSString stringWithUTF8String:err.what()]));
       });
       
       // Create the worklet context

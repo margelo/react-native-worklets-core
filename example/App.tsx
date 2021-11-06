@@ -8,8 +8,10 @@
  * @format
  */
 
-import React from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {
+  Alert,
+  Button,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -19,45 +21,77 @@ import {
   View,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import {Colors, Header} from 'react-native/Libraries/NewAppScreen';
 
 import 'react-native-worklets';
 
-const Section: React.FC<{
-  title: string;
-}> = ({children, title}) => {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
+interface ISharedValue<T> {
+  get value(): T;
+  set value(v: T);
+  addListener(listener: () => void): () => void;
+}
+
+type ContextType = {
+  [key: string]:
+    | number
+    | string
+    | boolean
+    | undefined
+    | null
+    | ISharedValue<any>
+    | ContextType;
 };
+interface IWorkletNativeApi {
+  installWorklet: <T extends (...args: any) => any>(
+    worklet: T,
+    contextName?: string,
+  ) => void;
+  createSharedValue: <T>(value: T) => ISharedValue<T>;
+  runWorklet: <T extends (...args: any) => any>(
+    worklet: T,
+    contextName?: string,
+  ) => (...args: Parameters<T>) => Promise<ReturnType<T>>;
+  callbackToJavascript: <T extends (...args: any) => any>(worklet: T) => T;
+  createWorklet: <C extends ContextType, T, A extends any[]>(
+    context: C,
+    worklet: (context: C, ...args: A) => T,
+  ) => (...args: A) => Promise<T>;
+}
+
+declare global {
+  var Worklets: IWorkletNativeApi;
+}
+
+const useWorklet = <D extends ContextType, T>(
+  worklet: (ctx: D, ...args: any) => any,
+  dependencies: D,
+) =>
+  useMemo(() => Worklets.createWorklet(dependencies, worklet), [dependencies]);
 
 const App = () => {
+  const factor = useMemo(() => 2.5, []);
+  const callCount = useMemo(() => Worklets.createSharedValue(0), []);
+
+  const calculateFactor = useWorklet(
+    (ctx, a: number) => {
+      ctx.callCount.value++;
+      return a * ctx.factor;
+    },
+    {factor, callCount},
+  );
+
+  const [value, setValue] = React.useState<number>(0);
+  const [isRunning, setIsRunning] = React.useState(false);
+  const startWorklet = useCallback(() => {
+    setIsRunning(true);
+    calculateFactor(100)
+      .then(b => {
+        setIsRunning(false);
+        setValue(b);
+      })
+      .catch(e => Alert.alert(e));
+  }, []);
+
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
@@ -75,20 +109,9 @@ const App = () => {
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
           }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+          <Text>Click here to run worklet:</Text>
+          <Button title="Run" onPress={startWorklet} disabled={isRunning} />
+          <Text>{`Result: ${value} (called ${callCount.value} times)`}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
