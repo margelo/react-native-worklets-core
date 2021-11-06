@@ -1,13 +1,3 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * Generated with the TypeScript template
- * https://github.com/react-native-community/react-native-template-typescript
- *
- * @format
- */
-
 import React, {useCallback, useMemo} from 'react';
 import {
   Alert,
@@ -15,7 +5,6 @@ import {
   SafeAreaView,
   ScrollView,
   StatusBar,
-  StyleSheet,
   Text,
   useColorScheme,
   View,
@@ -23,50 +12,17 @@ import {
 
 import {Colors, Header} from 'react-native/Libraries/NewAppScreen';
 
-import 'react-native-worklets';
-
-interface ISharedValue<T> {
-  get value(): T;
-  set value(v: T);
-  addListener(listener: () => void): () => void;
-}
-
-type ContextType = {
-  [key: string]:
-    | number
-    | string
-    | boolean
-    | undefined
-    | null
-    | ISharedValue<any>
-    | ContextType;
-};
-interface IWorkletNativeApi {
-  installWorklet: <T extends (...args: any) => any>(
-    worklet: T,
-    contextName?: string,
-  ) => void;
-  createSharedValue: <T>(value: T) => ISharedValue<T>;
-  runWorklet: <T extends (...args: any) => any>(
-    worklet: T,
-    contextName?: string,
-  ) => (...args: Parameters<T>) => Promise<ReturnType<T>>;
-  callbackToJavascript: <T extends (...args: any) => any>(worklet: T) => T;
-  createWorklet: <C extends ContextType, T, A extends any[]>(
-    context: C,
-    worklet: (context: C, ...args: A) => T,
-  ) => (...args: A) => Promise<T>;
-}
-
-declare global {
-  var Worklets: IWorkletNativeApi;
-}
+import {Worklets, ContextType} from 'react-native-worklets';
 
 const useWorklet = <D extends ContextType, T>(
   worklet: (ctx: D, ...args: any) => any,
   dependencies: D,
-) =>
-  useMemo(() => Worklets.createWorklet(dependencies, worklet), [dependencies]);
+) => {
+  return useMemo(
+    () => Worklets.createWorklet(dependencies, worklet),
+    [dependencies, worklet],
+  );
+};
 
 const App = () => {
   const factor = useMemo(() => 2.5, []);
@@ -90,7 +46,7 @@ const App = () => {
         setValue(b);
       })
       .catch(e => Alert.alert(e));
-  }, []);
+  }, [calculateFactor]);
 
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -117,24 +73,5 @@ const App = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
 
 export default App;

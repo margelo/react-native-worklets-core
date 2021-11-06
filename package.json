@@ -3,15 +3,14 @@
   "title": "React Native Worklets",
   "version": "1.0.0",
   "description": "TODO",
-  "main": "index.js",
+  "main": "index.ts",
   "files": [
     "README.md",
     "android",
-    "index.js",
+    "index.ts",
     "ios",
     "react-native-worklets.podspec"
   ],
-  "types": "react-native-worklets.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint-java": "node ./scripts/lint-java.js",
