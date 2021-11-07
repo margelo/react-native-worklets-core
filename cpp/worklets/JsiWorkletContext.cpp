@@ -143,18 +143,25 @@ jsi::HostFunctionType JsiWorkletContext::createWorklet(
   auto closure = JsiWrapper::wrap(runtime, context, nullptr, nullptr, "");
 
   // Return a caller function wrapper for the worklet
-  return [worklet, closure](jsi::Runtime &runtime, const jsi::Value &,
-                            const jsi::Value *arguments,
-                            size_t count) -> jsi::Value {
+  return [worklet = std::move(worklet),
+          closure](jsi::Runtime &runtime, const jsi::Value &,
+                   const jsi::Value *arguments, size_t count) -> jsi::Value {
     // Add the closure as the first parameter
     size_t size = count + 1;
     jsi::Value *args = new jsi::Value[size];
+
+    // Add context as first argument
     args[0] = JsiWrapper::unwrap(runtime, closure);
-    std::memmove(args + 1, arguments, sizeof(args) + sizeof(jsi::Value *));
+
+    // Shift array arguments one position to the right to make room for the
+    // context as the first argument
+    std::memmove(args + 1, arguments, sizeof(jsi::Value) * count);
 
     auto retVal =
         worklet->call(runtime, static_cast<const jsi::Value *>(args), size);
+
     delete[] args;
+
     return retVal;
   };
 }

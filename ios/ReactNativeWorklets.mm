@@ -12,7 +12,7 @@
 #import <React/RCTUtils.h>
 
 @implementation ReactNativeWorklets {
-  std::unique_ptr<RNWorklet::JsiWorkletContext> _workletContext;
+  RNWorklet::JsiWorkletContext* _workletContext;
 }
 
 @synthesize bridge = _bridge;
@@ -25,6 +25,7 @@ RCT_EXPORT_MODULE()
 
 - (void)invalidate
 {
+  delete _workletContext;
   _workletContext = nullptr;
 }
 
@@ -43,12 +44,10 @@ RCT_EXPORT_MODULE()
       });
       
       // Create the worklet context
-      _workletContext = std::make_unique<RNWorklet::JsiWorkletContext>(jsRuntime, callInvoker, errorHandler);
+      _workletContext = new RNWorklet::JsiWorkletContext(jsRuntime, callInvoker, std::move(errorHandler));
       
-      // Create the Worklet API
-      auto workletApi = std::make_shared<RNWorklet::JsiWorkletApi>(_workletContext.get());
-      jsRuntime->global().setProperty(*jsRuntime, "Worklets",
-            jsi::Object::createFromHostObject(*jsRuntime, std::move(workletApi)));
+      // Install the worklet API
+      RNWorklet::JsiWorkletApi::installApi(_workletContext);
     }
 }
 

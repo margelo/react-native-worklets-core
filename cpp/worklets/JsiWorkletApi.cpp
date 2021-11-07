@@ -4,8 +4,7 @@
 namespace RNWorklet {
 using namespace facebook;
 
-JsiWorkletApi::JsiWorkletApi(JsiWorkletContext* context)
-    : _context(context) {
+JsiWorkletApi::JsiWorkletApi(JsiWorkletContext *context) : _context(context) {
 
   installFunction(
       "createWorklet",
