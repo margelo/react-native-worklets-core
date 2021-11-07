@@ -5,14 +5,7 @@
 #include <map>
 #include <vector>
 
-#if __has_include(<ReactCommon/CallInvoker.h>)
 #include <ReactCommon/CallInvoker.h>
-#endif
-
-#if __has_include(<ReactCommon/JSCallInvoker.h>)
-#include <ReactCommon/JSCallInvoker.h>
-#define CallInvoker JSCallInvoker
-#endif
 
 #include <DispatchQueue.h>
 #include <JsRuntimeFactory.h>

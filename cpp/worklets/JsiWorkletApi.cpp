@@ -4,7 +4,7 @@
 namespace RNWorklet {
 using namespace facebook;
 
-JsiWorkletApi::JsiWorkletApi(std::shared_ptr<JsiWorkletContext> context)
+JsiWorkletApi::JsiWorkletApi(JsiWorkletContext* context)
     : _context(context) {
 
   installFunction(
@@ -287,7 +287,7 @@ JsiWorkletApi::JsiWorkletApi(std::shared_ptr<JsiWorkletContext> context)
 
         return jsi::Object::createFromHostObject(
             *context->getJsRuntime(),
-            std::make_shared<JsiSharedValue>(arguments[0], context.get()));
+            std::make_shared<JsiSharedValue>(arguments[0], context));
       });
 }
 } // namespace RNWorklet

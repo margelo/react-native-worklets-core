@@ -16,6 +16,7 @@ add_library(worklets
         cpp/worklets/JsiArrayWrapper.cpp
         cpp/worklets/JsiWorkletApi.cpp
         jni/jni-adapter.cpp
+        jni/JniReactNativeWorkletsModule.cpp
 )
 
 target_include_directories(
@@ -31,7 +32,6 @@ target_include_directories(
         ../node_modules/react-native/ReactAndroid/src/main/jni
         ../node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/turbomodule/core/jni
         ../node_modules/react-native/ReactCommon
-        ../node_modules/react-native/ReactCommon/jscallinvoker
         ../node_modules/react-native/ReactCommon/callinvoker
         ../node_modules/react-native/ReactCommon/jsi
         ../node_modules/react-native/ReactCommon/turbomodule/core

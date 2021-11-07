@@ -2,6 +2,8 @@
 
 package com.rnworklets;
 
+import com.facebook.jni.HybridData;
+import com.facebook.proguard.annotations.DoNotStrip;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.turbomodule.core.CallInvokerHolderImpl;
@@ -10,8 +12,13 @@ import androidx.annotation.NonNull;
 
 public class ReactNativeWorkletsModule extends ReactContextBaseJavaModule {
 
-    private static native void initialize(long jsiRuntimePtr, CallInvokerHolderImpl jsCallInvokerHolder);
-    private static native void destruct();
+    @DoNotStrip
+    private HybridData mHybridData;
+
+    private native HybridData initHybrid(
+            long jsContext,
+            CallInvokerHolderImpl jsCallInvokerHolder
+    );
 
     static {
         System.loadLibrary("worklets");
@@ -36,14 +43,11 @@ public class ReactNativeWorkletsModule extends ReactContextBaseJavaModule {
 
         CallInvokerHolderImpl holder = (CallInvokerHolderImpl)reactContext.getCatalystInstance().getJSCallInvokerHolder();
 
-        ReactNativeWorkletsModule.initialize(
-                this.getReactApplicationContext().getJavaScriptContextHolder().get(),
-                holder
-        );
+        mHybridData = initHybrid(reactContext.getJavaScriptContextHolder().get(), holder);
+
     }
 
-    @Override
-    public void onCatalystInstanceDestroy() {
-        ReactNativeWorkletsModule.destruct();
+    public void destroy() {
+        mHybridData.resetNative();
     }
 }
