@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ReactCommon/TurboModuleUtils.h>
 #include <jsi/jsi.h>
 
 #include <JsiDispatcher.h>
@@ -9,9 +8,33 @@
 #include <JsiWorklet.h>
 #include <JsiWorkletContext.h>
 
+using namespace facebook;
+
+namespace facebook {
+namespace react {
+
+struct Promise {
+  Promise(jsi::Runtime &rt, jsi::Function resolve, jsi::Function reject);
+
+  void resolve(const jsi::Value &result);
+
+  void reject(const std::string &error);
+
+  jsi::Runtime &runtime_;
+  jsi::Function resolve_;
+  jsi::Function reject_;
+};
+
+using PromiseSetupFunctionType =
+    std::function<void(jsi::Runtime &rt, std::shared_ptr<Promise>)>;
+
+jsi::Value createPromiseAsJSIValue(jsi::Runtime &rt,
+                                   const PromiseSetupFunctionType func);
+} // namespace react
+} // namespace facebook
+
 namespace RNWorklet {
 
-using namespace facebook;
 using namespace RNJsi;
 using namespace RNSkia;
 
@@ -22,10 +45,11 @@ public:
    * @param context Worklet context
    * make sure only the runOnJsThread method is available.
    */
-  JsiWorkletApi(JsiWorkletContext *context);
+  JsiWorkletApi(std::shared_ptr<JsiWorkletContext> context);
+  JsiWorkletApi(JsiWorkletContext *context) : JsiWorkletApi(std::make_shared<JsiWorkletContext>(context)) {}
 
 private:
-  JsiWorkletContext *getContext(const char *name) {
+    std::shared_ptr<JsiWorkletContext> getContext(const char *name) {
     // Let's see if we are launching this on the default context
     std::string contextName = "default";
     if (name != nullptr) {
@@ -39,10 +63,10 @@ private:
       // Create new context
       _contexts.emplace(contextName, _context);
     }
-    return &_contexts.at(contextName);
+    return _contexts.at(contextName);
   }
 
-  JsiWorkletContext *_context;
-  std::map<std::string, JsiWorkletContext> _contexts;
+  std::shared_ptr<JsiWorkletContext> _context;
+  std::map<std::string, std::shared_ptr<JsiWorkletContext>> _contexts;
 };
 } // namespace RNWorklet

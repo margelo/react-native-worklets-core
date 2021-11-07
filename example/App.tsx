@@ -40,12 +40,16 @@ const App = () => {
   const [isRunning, setIsRunning] = React.useState(false);
   const startWorklet = useCallback(() => {
     setIsRunning(true);
-    calculateFactor(100)
-      .then(b => {
-        setIsRunning(false);
-        setValue(b);
-      })
-      .catch(e => Alert.alert(e));
+    for (let i = 0; i < 100; i++) {
+      calculateFactor(i)
+        .then(b => {
+          if (i === 99) {
+            setIsRunning(false);
+          }
+          setValue(b);
+        })
+        .catch(e => Alert.alert(e));
+    }
   }, [calculateFactor]);
 
   const isDarkMode = useColorScheme() === 'dark';

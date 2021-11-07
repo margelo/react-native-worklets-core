@@ -1,3 +1,5 @@
+import java.nio.file.Paths
+
 // android/build.gradle
 
 // based on:
@@ -49,9 +51,30 @@ android {
         targetSdkVersion safeExtGet('targetSdkVersion', DEFAULT_TARGET_SDK_VERSION)
         versionCode 1
         versionName "1.0"
+        externalNativeBuild {
+            cmake {
+                cppFlags    "-fexceptions", "-frtti", "-std=c++1y", "-DONANDROID"
+                abiFilters  'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
+                arguments   '-DANDROID_STL=c++_shared',
+                            '-DFOR_HERMES=${FOR_HERMES}'
+            }
+        }
     }
     lintOptions {
         abortOnError false
+    }
+    packagingOptions {
+        excludes = ["**/libc++_shared.so"]
+    }
+    externalNativeBuild {
+        cmake {
+            path file('CMakeLists.txt')
+            version '3.10.2'
+        }
+    }
+    configurations {
+        extractJNI
+        extractHeaders
     }
 }
 
@@ -67,11 +90,201 @@ repositories {
         url "$rootDir/../node_modules/jsc-android/dist"
     }
     google()
+
+    def found = false
+    def defaultDir = null
+    def androidSourcesName = 'React Native sources'
+
+    if (rootProject.ext.has('reactNativeAndroidRoot')) {
+        defaultDir = rootProject.ext.get('reactNativeAndroidRoot')
+    } else {
+        defaultDir = new File(
+            projectDir,
+                '/../../../node_modules/react-native/android'
+        )
+    }
+
+    if (defaultDir.exists()) {
+        maven {
+        url defaultDir.toString()
+        name androidSourcesName
+    }
+
+    logger.info(":${project.name}:reactNativeAndroidRoot ${defaultDir.canonicalPath}")
+        found = true
+    } else {
+        def parentDir = rootProject.projectDir
+
+        1.upto(5, {
+          if (found) return true
+          parentDir = parentDir.parentFile
+
+          def androidSourcesDir = new File(
+                  parentDir,
+                  'node_modules/react-native'
+          )
+
+          def androidPrebuiltBinaryDir = new File(
+                  parentDir,
+                  'node_modules/react-native/android'
+          )
+
+          if (androidPrebuiltBinaryDir.exists()) {
+            maven {
+              url androidPrebuiltBinaryDir.toString()
+              name androidSourcesName
+            }
+
+            logger.info(":${project.name}:reactNativeAndroidRoot ${androidPrebuiltBinaryDir.canonicalPath}")
+            found = true
+          } else if (androidSourcesDir.exists()) {
+            maven {
+              url androidSourcesDir.toString()
+              name androidSourcesName
+            }
+
+            logger.info(":${project.name}:reactNativeAndroidRoot ${androidSourcesDir.canonicalPath}")
+            found = true
+          }
+        })
+    }
+
+    if (!found) {
+        throw new GradleException(
+            "${project.name}: unable to locate React Native android sources. " +
+                    "Ensure you have you installed React Native as a dependency in your project and try again."
+        )
+    }
 }
 
 dependencies {
     //noinspection GradleDynamicVersion
     implementation 'com.facebook.react:react-native:+'  // From node_modules
+
+    //noinspection GradleDynamicVersion
+    extractHeaders("com.facebook.fbjni:fbjni:+:headers")
+
+    //noinspection GradleDynamicVersion
+    extractJNI("com.facebook.fbjni:fbjni:+")
+
+    def rnAAR = fileTree("${rootDir}/../node_modules/react-native/android").matching({ it.include "**/**/*.aar" }).singleFile
+
+    extractJNI(files(rnAAR))
+}
+
+def reactNative = new File("$projectDir/../node_modules/react-native")
+
+def FOR_HERMES = System.getenv("FOR_HERMES") == "True";
+rootProject.getSubprojects().forEach({project ->
+    if (project.plugins.hasPlugin("com.android.application")) {
+        FOR_HERMES = project.ext.react.enableHermes;
+    }
+})
+
+def thirdPartyNdkDir = new File("$buildDir/third-party-ndk")
+task createNativeDepsDirectories {
+    thirdPartyNdkDir.mkdirs()
+}
+
+task extractAARHeaders {
+    doLast {
+        configurations.extractHeaders.files.each {
+            def file = it.absoluteFile
+            copy {
+                from zipTree(file)
+                into "$buildDir/$file.name"
+                include "**/*.h"
+            }
+        }
+    }
+}
+
+task extractJNIFiles {
+    doLast {
+        configurations.extractJNI.files.each {
+            def file = it.absoluteFile
+            def dest = "$buildDir/$file.name"
+            copy {
+                from zipTree(file)
+                into dest
+                include "jni/**/*"
+            }
+        }
+    }
+}
+
+static def findNodeModulePath(baseDir, packageName) {
+    def basePath = baseDir.toPath().normalize()
+    // Node's module resolution algorithm searches up to the root directory,
+    // after which the base path will be null
+    while (basePath) {
+        def candidatePath = Paths.get(basePath.toString(), "node_modules", packageName)
+        if (candidatePath.toFile().exists()) {
+            return candidatePath.toString()
+        }
+        basePath = basePath.getParent()
+    }
+    return null
+}
+
+task prepareHermes() {
+    def hermesPackagePath = findNodeModulePath(projectDir, "hermes-engine")
+    if (!hermesPackagePath) {
+        throw new GradleScriptException("Could not find the hermes-engine npm package", null)
+    }
+
+    def hermesAAR = file("$hermesPackagePath/android/hermes-debug.aar")
+    if (!hermesAAR.exists()) {
+        throw new GradleScriptException("The hermes-engine npm package is missing \"android/hermes-debug.aar\"", null)
+    }
+
+    def soFiles = zipTree(hermesAAR).matching({ it.include "**/*.so" })
+
+    copy {
+        from soFiles
+        from "$reactNative/ReactAndroid/src/main/jni/first-party/hermes/Android.mk"
+        into "$thirdPartyNdkDir/hermes"
+    }
+}
+
+task prepareJSC {
+    doLast {
+        def jscPackagePath = findNodeModulePath(projectDir, "jsc-android")
+        if (!jscPackagePath) {
+            throw new GradleScriptException("Could not find the jsc-android npm package", null)
+        }
+
+        def jscDist = file("$jscPackagePath/dist")
+        if (!jscDist.exists()) {
+            throw new GradleScriptException("The jsc-android npm package is missing its \"dist\" directory", null)
+        }
+
+        def jscAAR = fileTree(jscDist).matching({ it.include "**/android-jsc/**/*.aar" }).singleFile
+        def soFiles = zipTree(jscAAR).matching({ it.include "**/*.so" })
+
+        def headerFiles = fileTree(jscDist).matching({ it.include "**/include/*.h" })
+
+        copy {
+            from(soFiles)
+            from(headerFiles)
+            from("$reactNative/ReactAndroid/src/main/jni/third-party/jsc/Android.mk")
+
+            filesMatching("**/*.h", { it.path = "JavaScriptCore/${it.name}" })
+
+            includeEmptyDirs(false)
+            into("$thirdPartyNdkDir/jsc")
+        }
+    }
+}
+
+tasks.whenTaskAdded { task ->
+    if (task.name.contains('externalNativeBuild')) {
+        task.dependsOn(createNativeDepsDirectories)
+        task.dependsOn(prepareJSC)
+        task.dependsOn(prepareHermes)
+        task.dependsOn(extractAARHeaders)
+        task.dependsOn(extractJNIFiles)
+    }
 }
 
 def configureReactNativePom(def pom) {

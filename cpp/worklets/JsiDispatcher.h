@@ -1,7 +1,7 @@
 #pragma once
 
-#include <jsi/jsi.h>
 #include <JsiWrapper.h>
+#include <jsi/jsi.h>
 
 namespace RNWorklet {
 using namespace facebook;

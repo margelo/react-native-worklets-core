@@ -1,6 +1,6 @@
 // ReactNativeWorkletsPackage.java
 
-package com.reactlibrary;
+package com.rnworklets;
 
 import java.util.Arrays;
 import java.util.Collections;

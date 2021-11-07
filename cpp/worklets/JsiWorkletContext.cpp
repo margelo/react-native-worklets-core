@@ -1,10 +1,10 @@
 
+#include <JsiDescribe.h>
 #include <JsiSharedValue.h>
 #include <JsiVisitor.h>
 #include <JsiWorklet.h>
 #include <JsiWorkletApi.h>
 #include <JsiWorkletContext.h>
-#include <JsiDescribe.h>
 
 namespace RNWorklet {
 
@@ -21,13 +21,13 @@ JsiWorkletContext::JsiWorkletContext(
       _jsCallInvoker(jsCallInvoker), _errorHandler(errorHandler) {
 
   // Create the dispatch queue
-  _dispatchQueue = std::make_unique<JsiDispatchQueue>("skia-render-queue", 1);
+  _dispatchQueue = std::make_unique<JsiDispatchQueue>("worklet-queue", 1);
 
   // Decorate the runtime with the worklet flag so that checks using
   // this variable will work.
   _workletRuntime->global().setProperty(*_workletRuntime, "_WORKLET",
                                         jsi::Value(true));
-        
+
   // Install worklet API in the worklet runtime
   auto workletApi = std::make_shared<JsiWorkletApi>(this);
   _workletRuntime->global().setProperty(
@@ -117,54 +117,55 @@ jsi::Value JsiWorkletContext::getWorkletClosure(const jsi::Function &worklet) {
       .asObject(*jsRuntime);
 }
 
-jsi::HostFunctionType JsiWorkletContext::createWorklet(jsi::Runtime& runtime,
-                                      const jsi::Value& context,
-                                      const jsi::Value& value) {
-  if(!value.isObject()) {
+jsi::HostFunctionType JsiWorkletContext::createWorklet(
+    jsi::Runtime &runtime, const jsi::Value &context, const jsi::Value &value) {
+  if (!value.isObject()) {
     raiseError("createWorklet expects a function parameter.");
     return nullptr;
   }
-  
-  if(!value.asObject(runtime).isFunction(runtime)) {
+
+  if (!value.asObject(runtime).isFunction(runtime)) {
     raiseError("createWorklet expects a function parameter.");
     return nullptr;
   }
-  
+
   auto function = value.asObject(runtime).asFunction(runtime);
-  
+
   // Let us try to install the function in the worklet context
   auto code = function.getPropertyAsFunction(runtime, "toString")
-    .callWithThis(runtime, function, nullptr, 0)
-    .asString(runtime)
-    .utf8(runtime);
-  
+                  .callWithThis(runtime, function, nullptr, 0)
+                  .asString(runtime)
+                  .utf8(runtime);
+
   auto worklet = evalWorkletCode(code);
-  
+
   // Let's wrap the closure
   auto closure = JsiWrapper::wrap(runtime, context, nullptr, nullptr, "");
-  
+
   // Return a caller function wrapper for the worklet
-  return [worklet, closure](jsi::Runtime& runtime, const jsi::Value&,
-                   const jsi::Value *arguments, size_t count) -> jsi::Value {
-  
+  return [worklet, closure](jsi::Runtime &runtime, const jsi::Value &,
+                            const jsi::Value *arguments,
+                            size_t count) -> jsi::Value {
     // Add the closure as the first parameter
     size_t size = count + 1;
-    jsi::Value* args = new jsi::Value[size];
+    jsi::Value *args = new jsi::Value[size];
     args[0] = JsiWrapper::unwrap(runtime, closure);
-    std::memmove(args + 1, arguments, sizeof(args) + sizeof(jsi::Value*));
-    
-    auto retVal = worklet->call(runtime, static_cast<const jsi::Value*>(args), size);
-    delete [] args;
+    std::memmove(args + 1, arguments, sizeof(args) + sizeof(jsi::Value *));
+
+    auto retVal =
+        worklet->call(runtime, static_cast<const jsi::Value *>(args), size);
+    delete[] args;
     return retVal;
   };
 }
 
-std::shared_ptr<jsi::Function> JsiWorkletContext::evalWorkletCode(const std::string& code) {
-  
+std::shared_ptr<jsi::Function>
+JsiWorkletContext::evalWorkletCode(const std::string &code) {
+
   jsi::Runtime *workletRuntime = &getWorkletRuntime();
   auto eval = workletRuntime->global().getPropertyAsFunction(
       getWorkletRuntime(), "eval");
-  
+
   return std::make_shared<jsi::Function>(
       eval.call(*workletRuntime, ("(" + code + ")").c_str())
           .asObject(*workletRuntime)
@@ -209,7 +210,7 @@ JsiWorkletContext::getWorklet(const jsi::Function &worklet) {
         getWorkletRuntime(), "eval");
     _workletsCache.emplace(
         workletHash,
-        JsiWorkletInfo {
+        JsiWorkletInfo{
             std::make_shared<jsi::Function>(
                 eval.call(*workletRuntime, ("(" + code + ")").c_str())
                     .asObject(*workletRuntime)

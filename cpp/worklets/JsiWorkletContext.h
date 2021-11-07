@@ -5,12 +5,18 @@
 #include <map>
 #include <vector>
 
+#if __has_include(<ReactCommon/CallInvoker.h>)
 #include <ReactCommon/CallInvoker.h>
+#endif
+
+#if __has_include(<ReactCommon/JSCallInvoker.h>)
+#include <ReactCommon/JSCallInvoker.h>
+#define CallInvoker JSCallInvoker
+#endif
 
 #include <DispatchQueue.h>
 #include <JsRuntimeFactory.h>
 #include <JsiWrapper.h>
-#include <ReactCommon/TurboModuleUtils.h>
 
 namespace RNWorklet {
 
@@ -163,11 +169,13 @@ public:
    * @return List of shared values
    */
   std::vector<JsiSharedValue *> getSharedValues(const jsi::Function &function);
-  
-  std::shared_ptr<jsi::Function> evalWorkletCode(const std::string& code);
 
-  jsi::HostFunctionType createWorklet(jsi::Runtime& runtime, const jsi::Value& context, const jsi::Value& value);
-  
+  std::shared_ptr<jsi::Function> evalWorkletCode(const std::string &code);
+
+  jsi::HostFunctionType createWorklet(jsi::Runtime &runtime,
+                                      const jsi::Value &context,
+                                      const jsi::Value &value);
+
 private:
   /**
    * Copies from the main js context to the worklet context
