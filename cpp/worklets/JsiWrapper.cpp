@@ -28,23 +28,23 @@ std::shared_ptr<JsiWrapper> JsiWrapper::wrap(jsi::Runtime &runtime,
                                              const jsi::Value &value,
                                              JsiWrapper *parent) {
   std::shared_ptr<JsiWrapper> retVal = nullptr;
-  
+
   if (value.isUndefined() || value.isNull() || value.isBool() ||
       value.isNumber() || value.isString()) {
     retVal = std::make_shared<JsiWrapper>(runtime, value, parent);
   } else if (value.isObject()) {
     if (value.asObject(runtime).isArray(runtime)) {
-      retVal =  std::make_shared<JsiArrayWrapper>(runtime, value, parent);
+      retVal = std::make_shared<JsiArrayWrapper>(runtime, value, parent);
     } else {
       retVal = std::make_shared<JsiObjectWrapper>(runtime, value, parent);
-    } 
+    }
   }
-  
-  if(retVal == nullptr) {
+
+  if (retVal == nullptr) {
     jsi::detail::throwJSError(runtime, "Value type not supported.");
     return nullptr;
   }
-  
+
   retVal->setValue(runtime, value);
   return retVal;
 }

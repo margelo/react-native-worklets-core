@@ -59,9 +59,9 @@ jsi::HostFunctionType JsiWorkletContext::createWorklet(
   // TODO: Find all shared values in the worklet
 
   // Return a caller function wrapper for the worklet
-  return [worklet, closure](
-             jsi::Runtime &runtime, const jsi::Value &,
-             const jsi::Value *arguments, size_t count) -> jsi::Value {
+  return [worklet, closure](jsi::Runtime &runtime, const jsi::Value &,
+                            const jsi::Value *arguments,
+                            size_t count) -> jsi::Value {
     // Add the closure as the first parameter
     size_t size = count + 1;
     jsi::Value *args = new jsi::Value[size];
@@ -82,16 +82,15 @@ jsi::HostFunctionType JsiWorkletContext::createWorklet(
   };
 }
 
-jsi::Function
-JsiWorkletContext::evalWorkletCode(const std::string &code) {
+jsi::Function JsiWorkletContext::evalWorkletCode(const std::string &code) {
 
   jsi::Runtime *workletRuntime = &getWorkletRuntime();
   auto eval = workletRuntime->global().getPropertyAsFunction(
       getWorkletRuntime(), "eval");
 
   return eval.call(*workletRuntime, ("(" + code + ")").c_str())
-          .asObject(*workletRuntime)
-          .asFunction(*workletRuntime);
+      .asObject(*workletRuntime)
+      .asFunction(*workletRuntime);
 }
 
 } // namespace RNWorklet

@@ -37,8 +37,10 @@ public:
         });
 
     installFunction(
-        "toString",
-        JSI_FUNC_SIGNATURE { return jsi::String::createFromUtf8(runtime,  _valueWrapper->toString(runtime)); });
+        "toString", JSI_FUNC_SIGNATURE {
+          return jsi::String::createFromUtf8(runtime,
+                                             _valueWrapper->toString(runtime));
+        });
 
     installFunction(
         "addListener", JSI_FUNC_SIGNATURE {

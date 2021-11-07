@@ -28,8 +28,7 @@ using JsiErrorHandler = std::function<void(const std::exception &ex)>;
  */
 class JsiWorkletContext {
 public:
-
-  const char* WorkletRuntimeFlag = "__WORKLET_RUNTIME";
+  const char *WorkletRuntimeFlag = "__WORKLET_RUNTIME";
 
   /**
    * Constructs a new worklet context.
@@ -121,7 +120,8 @@ public:
   void runOnJavascriptThread(std::function<void()> fp);
 
   /**
-   * Creates a worklet - a function - that will run on the worklet runtime/thread
+   * Creates a worklet - a function - that will run on the worklet
+   * runtime/thread
    * @param runtime Calling runtime
    * @param context Calling context
    * @param value Function value
@@ -137,7 +137,7 @@ private:
    * @param code Code representing a function
    * @return Jsi Function
    */
-    jsi::Function evalWorkletCode(const std::string &code);
+  jsi::Function evalWorkletCode(const std::string &code);
 
   // The main JS JSI Runtime
   jsi::Runtime *_jsRuntime;

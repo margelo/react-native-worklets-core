@@ -6,10 +6,9 @@
 namespace RNWorklet {
 using namespace facebook;
 
-class JsiObjectWrapper :
-  public jsi::HostObject,
-  public std::enable_shared_from_this<JsiObjectWrapper>,
-  public JsiWrapper {
+class JsiObjectWrapper : public jsi::HostObject,
+                         public std::enable_shared_from_this<JsiObjectWrapper>,
+                         public JsiWrapper {
 public:
   /**
    * Constructor
@@ -20,7 +19,7 @@ public:
   JsiObjectWrapper(jsi::Runtime &runtime, const jsi::Value &value,
                    JsiWrapper *parent)
       : JsiWrapper(runtime, value, parent) {}
-  
+
   /**
    Destructor
    */
@@ -71,8 +70,7 @@ public:
           runtime, jsi::PropNameID::forUtf8(runtime, "fn"), 0,
           *_hostFunction.get());
     case JsiWrapperType::Object:
-      return jsi::Object::createFromHostObject(
-          runtime, shared_from_this());
+      return jsi::Object::createFromHostObject(runtime, shared_from_this());
     default:
       jsi::detail::throwJSError(runtime, "Value type not supported.");
       return jsi::Value::undefined();

@@ -8,10 +8,9 @@ namespace RNWorklet {
 using namespace facebook;
 class JsiWrapper;
 
-class JsiArrayWrapper :
-  public RNJsi::JsiHostObject,
-  public std::enable_shared_from_this<JsiArrayWrapper>,
-  public JsiWrapper {
+class JsiArrayWrapper : public RNJsi::JsiHostObject,
+                        public std::enable_shared_from_this<JsiArrayWrapper>,
+                        public JsiWrapper {
 public:
   /**
    * Constructs a new array wrapper
@@ -19,7 +18,8 @@ public:
    * @param value Value to wrap
    * @param parent Parent wrapper object
    */
-  JsiArrayWrapper(jsi::Runtime &runtime, const jsi::Value &value, JsiWrapper *parent)
+  JsiArrayWrapper(jsi::Runtime &runtime, const jsi::Value &value,
+                  JsiWrapper *parent)
       : JsiWrapper(runtime, value, parent) {
     // Install some functions and properties for arrays
     installReadonlyProperty("length", [this](jsi::Runtime &rt) -> jsi::Value {
@@ -128,13 +128,11 @@ public:
           return jsi::String::createFromUtf8(runtime, toString(runtime));
         });
   }
-  
+
   /**
    Destructor
    */
-  ~JsiArrayWrapper() {
-    _array.clear();
-  }
+  ~JsiArrayWrapper() { _array.clear(); }
 
   /**
    * Overridden getValue method
@@ -142,8 +140,7 @@ public:
    * @return jsi::Value representing this array
    */
   jsi::Value getValue(jsi::Runtime &runtime) override {
-    return jsi::Object::createFromHostObject(
-        runtime, shared_from_this());
+    return jsi::Object::createFromHostObject(runtime, shared_from_this());
   }
 
   /**
@@ -186,15 +183,15 @@ public:
    */
   jsi::Value get(jsi::Runtime &runtime, const jsi::PropNameID &name) override {
     auto nameStr = name.utf8(runtime);
-      if (!nameStr.empty() &&
-          std::all_of(nameStr.begin(), nameStr.end(), ::isdigit)) {
-          // Return property by index
-          auto index = std::stoi(nameStr.c_str());
-          auto prop = _array[index];
-          return JsiWrapper::unwrap(runtime, prop);
-      }
-      // Return super JsiHostObject's get
-      return JsiHostObject::get(runtime, name);
+    if (!nameStr.empty() &&
+        std::all_of(nameStr.begin(), nameStr.end(), ::isdigit)) {
+      // Return property by index
+      auto index = std::stoi(nameStr.c_str());
+      auto prop = _array[index];
+      return JsiWrapper::unwrap(runtime, prop);
+    }
+    // Return super JsiHostObject's get
+    return JsiHostObject::get(runtime, name);
   }
 
   /**

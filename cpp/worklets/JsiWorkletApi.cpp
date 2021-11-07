@@ -52,7 +52,8 @@ JsiWorkletApi::JsiWorkletApi(JsiWorkletContext *context) : _context(context) {
               auto workletRuntime = &activeContext->getWorkletRuntime();
 
               // Wrap the calling this as undefined - we don't care about it
-              auto thisWrapper = JsiWrapper::wrap(runtime, jsi::Value::undefined());
+              auto thisWrapper =
+                  JsiWrapper::wrap(runtime, jsi::Value::undefined());
 
               // Copy arguments into wrappers
               std::vector<std::shared_ptr<JsiWrapper>> argsWrapper;
@@ -91,7 +92,6 @@ JsiWorkletApi::JsiWorkletApi(JsiWorkletContext *context) : _context(context) {
                   });
             });
       });
-  
 
   installFunction(
       "createSharedValue", JSI_FUNC_SIGNATURE {
