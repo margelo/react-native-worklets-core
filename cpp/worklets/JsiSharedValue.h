@@ -20,8 +20,7 @@ public:
    a thread safe across two javascript runtimes.
    */
   JsiSharedValue(const jsi::Value &value, JsiWorkletContext *context)
-      : _valueWrapper(
-            std::make_shared<JsiWrapper>(*context->getJsRuntime(), value)) {
+      : _valueWrapper(JsiWrapper::wrap(*context->getJsRuntime(), value)) {
 
     installProperty(
         "value",
@@ -33,9 +32,13 @@ public:
         },
         [this](jsi::Runtime &rt, const jsi::Value &value) {
           // Update the internal value
-          _valueWrapper->setValue(rt, value);
+          _valueWrapper->updateValue(rt, value);
           return jsi::Value::undefined();
         });
+
+    installFunction(
+        "toString",
+        JSI_FUNC_SIGNATURE { return jsi::String::createFromUtf8(runtime,  _valueWrapper->toString(runtime)); });
 
     installFunction(
         "addListener", JSI_FUNC_SIGNATURE {
@@ -73,7 +76,7 @@ public:
 
           // Do not Wrap this Value
           auto thisValuePtr =
-              std::make_shared<JsiWrapper>(runtime, jsi::Value::undefined());
+              JsiWrapper::wrap(runtime, jsi::Value::undefined());
 
           auto dispatcher = JsiDispatcher::createDispatcher(
               runtime, thisValuePtr, functionPtr, nullptr,

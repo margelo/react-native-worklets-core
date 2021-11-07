@@ -19,12 +19,6 @@ using namespace RNSkia;
 class JsiSharedValue;
 class JsiWrapper;
 
-using JsiWorkletInfo = struct {
-  std::shared_ptr<jsi::Function> worklet;
-  std::shared_ptr<jsi::Function> original;
-};
-
-using JsiWorkletCache = std::map<long, JsiWorkletInfo>;
 using JsiErrorHandler = std::function<void(const std::exception &ex)>;
 
 /**
@@ -34,6 +28,9 @@ using JsiErrorHandler = std::function<void(const std::exception &ex)>;
  */
 class JsiWorkletContext {
 public:
+
+  const char* WorkletRuntimeFlag = "__WORKLET_RUNTIME";
+
   /**
    * Constructs a new worklet context.
    * @param jsRuntime Javascript Runtime
@@ -48,7 +45,6 @@ public:
     Destructor
   */
   ~JsiWorkletContext() {
-    _workletsCache.clear();
     _jsRuntime = nullptr;
     _workletRuntime = nullptr;
     _dispatchQueue = nullptr;
@@ -71,7 +67,7 @@ public:
    * @return True if the runtime is the worklet runtime
    */
   bool isWorkletRuntime(jsi::Runtime &runtime) {
-    auto isWorklet = runtime.global().getProperty(runtime, "_WORKLET");
+    auto isWorklet = runtime.global().getProperty(runtime, WorkletRuntimeFlag);
     return isWorklet.isBool() && isWorklet.getBool();
   }
 
@@ -112,37 +108,6 @@ public:
   jsi::Runtime *getJsRuntime() { return _jsRuntime; }
 
   /**
-   * Returns the worklet hash for the given worklet
-   * @param function Worklet to get hash for
-   * @param runtime Runtime to get hash from
-   * @return Worklet hash
-   */
-  double getWorkletHash(jsi::Runtime &runtime, const jsi::Function &function);
-
-  /**
-   * Returns the cache of worklets in this context
-   * @return Cache of worklets. Key is the worklet's hash and the destination
-   * runtime as a pointer
-   */
-  JsiWorkletCache &getWorkletsCache() { return _workletsCache; }
-
-  /**
-   * Install the worklet in the worklet runtime and returns a wrapper function
-   * for calling the worklet.
-   * @param function Worklet to install
-   * @return A jsi::Function that can be called
-   */
-  jsi::HostFunctionType getWorklet(const jsi::Value &function);
-
-  /**
-   * Install the worklet in the worklet runtime and returns a wrapper function
-   * for calling the worklet.
-   * @param worklet Worklet to install
-   * @return A jsi::Function that can be called
-   */
-  jsi::HostFunctionType getWorklet(const jsi::Function &worklet);
-
-  /**
    * Runs the function on the worklet thread. The function should only
    * contain code accessing the worklet runtime
    * @param fp Function to run
@@ -156,47 +121,26 @@ public:
   void runOnJavascriptThread(std::function<void()> fp);
 
   /**
-   * Returns a list of shared values that are dependencies in the worklet
-   * closure
-   * @param function Function to get dependant values from
-   * @return List of shared values
+   * Creates a worklet - a function - that will run on the worklet runtime/thread
+   * @param runtime Calling runtime
+   * @param context Calling context
+   * @param value Function value
+   * @return A function that can be run on the worklet thread/runtime
    */
-  std::vector<JsiSharedValue *> getSharedValues(const jsi::Function &function);
-
-  std::shared_ptr<jsi::Function> evalWorkletCode(const std::string &code);
-
   jsi::HostFunctionType createWorklet(jsi::Runtime &runtime,
                                       const jsi::Value &context,
                                       const jsi::Value &value);
 
 private:
   /**
-   * Copies from the main js context to the worklet context
-   * @param value Value to copy
-   * @return Returns a copy of the value on the worklet runtime
+   * Evaluates the javascript code and returns a function
+   * @param code Code representing a function
+   * @return Jsi Function
    */
-  std::shared_ptr<JsiWrapper> copyToWorkletRuntime(const jsi::Value &value);
-
-  /**
-   * Returns a worklet if the provided value is a worklet.
-   * @param value Function to get worklet from
-   * @return Returns a worklet function if the provided value is a worklet,
-   * otherwise the function will throw a Js error.
-   */
-  jsi::Function getWorkletOrThrow(const jsi::Value &value);
-
-  /**
-   * Returns the worklet's closure for the worklet.
-   * @param worklet Worklet to get closure for
-   * @return Closure or undefined
-   */
-  jsi::Value getWorkletClosure(const jsi::Function &worklet);
+    jsi::Function evalWorkletCode(const std::string &code);
 
   // The main JS JSI Runtime
   jsi::Runtime *_jsRuntime;
-
-  // Cached worklet wrappers
-  JsiWorkletCache _workletsCache;
 
   // This context's worklet JSI Runtime
   std::unique_ptr<jsi::Runtime> _workletRuntime;

@@ -26,14 +26,16 @@ const useWorklet = <D extends ContextType, T>(
 
 const App = () => {
   const factor = useMemo(() => 1.5, []);
+  const values = useMemo(() => [0, 1, 2, 3, 5], []);
   const callCount = useMemo(() => Worklets.createSharedValue(0), []);
 
   const calculateFactor = useWorklet(
     (ctx, a: number) => {
       ctx.callCount.value++;
+      ctx.values.forEach(p => {});
       return a * ctx.factor;
     },
-    {factor, callCount},
+    {factor, callCount, values},
   );
 
   const [value, setValue] = React.useState<number>(0);

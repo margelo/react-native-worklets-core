@@ -12,7 +12,11 @@ export type ContextType = {
     | undefined
     | null
     | ISharedValue<any>
-    | ContextType;
+    | ContextType
+    | ContextType[]
+    | number[]
+    | string[]
+    | boolean[];
 };
 
 export interface IWorkletNativeApi {

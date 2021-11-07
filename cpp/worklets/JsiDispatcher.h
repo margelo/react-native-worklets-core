@@ -78,7 +78,7 @@ public:
 
         // Wrap the result from calling the function
         if (onSuccess != nullptr) {
-          onSuccess(std::make_shared<JsiWrapper>(runtime, retVal));
+          onSuccess(JsiWrapper::wrap(runtime, retVal));
         }
 
       } catch (const jsi::JSError &err) {

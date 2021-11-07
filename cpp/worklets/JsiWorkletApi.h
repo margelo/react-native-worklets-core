@@ -5,7 +5,6 @@
 #include <JsiDispatcher.h>
 #include <JsiHostObject.h>
 #include <JsiSharedValue.h>
-#include <JsiWorklet.h>
 #include <JsiWorkletContext.h>
 #include <ReactCommon/TurboModuleUtils.h>
 

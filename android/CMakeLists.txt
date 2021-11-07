@@ -13,7 +13,6 @@ add_library(worklets
         cpp/worklets/JsiWorkletContext.cpp
         cpp/worklets/DispatchQueue.cpp
         cpp/worklets/JsiWrapper.cpp
-        cpp/worklets/JsiArrayWrapper.cpp
         cpp/worklets/JsiWorkletApi.cpp
         jni/jni-adapter.cpp
         jni/JniReactNativeWorkletsModule.cpp
