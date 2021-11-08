@@ -12,17 +12,7 @@ import {
 
 import {Colors, Header} from 'react-native/Libraries/NewAppScreen';
 
-import {Worklets, ContextType} from 'react-native-worklets';
-
-const useWorklet = <D extends ContextType, T>(
-  worklet: (ctx: D, ...args: any) => any,
-  dependencies: D,
-) => {
-  return useMemo(
-    () => Worklets.createWorklet(dependencies, worklet),
-    [dependencies, worklet],
-  );
-};
+import {Worklets, useWorklet} from 'react-native-worklets';
 
 const App = () => {
   const factor = useMemo(() => 1.5, []);

@@ -35,3 +35,11 @@ export interface IWorkletNativeApi {
     worklet: (context: C, ...args: A) => T
   ) => (...args: A) => Promise<T>;
 }
+
+declare global {
+  var Worklets: IWorkletNativeApi;
+}
+
+const { Worklets } = global;
+console.log("********", Worklets);
+export { Worklets };
