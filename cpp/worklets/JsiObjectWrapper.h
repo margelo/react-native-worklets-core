@@ -21,15 +21,6 @@ public:
       : JsiWrapper(runtime, value, parent) {}
 
   /**
-   Destructor
-   */
-  ~JsiObjectWrapper() {
-    _properties.clear();
-    _hostObject = nullptr;
-    _hostFunction = nullptr;
-  }
-
-  /**
    * Overridden setValue
    * @param runtime Value's runtime
    * @param value Value to set

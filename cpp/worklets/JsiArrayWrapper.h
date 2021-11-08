@@ -130,11 +130,6 @@ public:
   }
 
   /**
-   Destructor
-   */
-  ~JsiArrayWrapper() { _array.clear(); }
-
-  /**
    * Overridden getValue method
    * @param runtime Calling runtime
    * @return jsi::Value representing this array

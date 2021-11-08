@@ -57,14 +57,6 @@ public:
   }
 
   /**
-   * Destructor
-   */
-  ~JsiWrapper() {
-    delete _readWriteMutex;
-    _parent = nullptr;
-  }
-
-  /**
    * Updates the value from a JS value
    * @param runtime runtime for the value
    * @param value Value to set

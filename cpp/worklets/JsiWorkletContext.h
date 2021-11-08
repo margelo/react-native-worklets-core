@@ -40,16 +40,6 @@ public:
                     std::shared_ptr<facebook::react::CallInvoker> jsCallInvoker,
                     std::shared_ptr<JsiErrorHandler> errorHandler);
 
-  /**
-    Destructor
-  */
-  ~JsiWorkletContext() {
-    _jsRuntime = nullptr;
-    _workletRuntime = nullptr;
-    _dispatchQueue = nullptr;
-    _jsCallInvoker = nullptr;
-    _errorHandler = nullptr;
-  }
 
   /*
      Constructor that creates a new worklet context with separate

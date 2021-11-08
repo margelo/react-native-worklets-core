@@ -25,14 +25,6 @@ public:
   JsiWorkletApi(JsiWorkletContext *context);
 
   /**
-   Destructor
-   */
-  ~JsiWorkletApi() {
-    _context = nullptr;
-    _contexts.clear();
-  }
-
-  /**
    * Installs the worklet API into the provided runtime
    * @param context Worklet context to install API for
    */
