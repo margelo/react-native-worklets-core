@@ -57,12 +57,13 @@ private:
     // The default worklet context is also a separate context.
     if (_contexts.count(contextName) == 0) {
       // Create new context
-      _contexts.emplace(contextName, _context);
+      _contexts.emplace(contextName,
+                        std::make_shared<JsiWorkletContext>(_context));
     }
-    return _contexts.at(contextName);
+    return _contexts.at(contextName).get();
   }
 
   JsiWorkletContext *_context;
-  std::map<std::string, JsiWorkletContext *> _contexts;
+  std::map<std::string, std::shared_ptr<JsiWorkletContext>> _contexts;
 };
 } // namespace RNWorklet

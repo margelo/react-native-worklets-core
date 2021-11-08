@@ -62,7 +62,8 @@ public:
         }
 
         // Call with this or not?
-        if (thisValuePtr->getType() != JsiWrapperType::Null &&
+        if (thisValuePtr != nullptr &&
+            thisValuePtr->getType() != JsiWrapperType::Null &&
             thisValuePtr->getType() != JsiWrapperType::Undefined) {
           retVal = functionPtr(
               runtime,
