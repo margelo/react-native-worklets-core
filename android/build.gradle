@@ -23,6 +23,14 @@ def safeExtGet(prop, fallback) {
     rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
 }
 
+def FOR_HERMES = "";
+if(findProject(':app')) {
+    FOR_HERMES = project(':app').ext.react.enableHermes;
+}
+else {
+    FOR_HERMES = System.getenv("FOR_HERMES") == "True";
+}
+
 apply plugin: 'com.android.library'
 apply plugin: 'maven'
 
@@ -55,8 +63,8 @@ android {
             cmake {
                 cppFlags    "-fexceptions", "-frtti", "-std=c++1y", "-DONANDROID"
                 abiFilters  'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
-                arguments   '-DANDROID_STL=c++_shared',
-                            '-DFOR_HERMES=${FOR_HERMES}'
+                arguments   "-DANDROID_STL=c++_shared",
+                            "-DFOR_HERMES=${FOR_HERMES}"
             }
         }
     }
@@ -174,12 +182,7 @@ dependencies {
 
 def reactNative = new File("$projectDir/../node_modules/react-native")
 
-def FOR_HERMES = System.getenv("FOR_HERMES") == "True";
-rootProject.getSubprojects().forEach({project ->
-    if (project.plugins.hasPlugin("com.android.application")) {
-        FOR_HERMES = project.ext.react.enableHermes;
-    }
-})
+
 
 def thirdPartyNdkDir = new File("$buildDir/third-party-ndk")
 task createNativeDepsDirectories {

@@ -28,6 +28,12 @@ Pod::Spec.new do |s|
     ss.source_files = "cpp/**/*.{h,cpp}"
   end
 
+  s.xcconfig               = {
+    "CLANG_CXX_LANGUAGE_STANDARD" => "c++14",
+    "HEADER_SEARCH_PATHS" => "\"${PODS_ROOT}/Headers/Public/React-hermes\" \"${PODS_ROOT}/Headers/Public/hermes-engine\"",
+    "OTHER_CFLAGS" => "$(inherited)"
+  }
+
   s.dependency "React-callinvoker"
   s.dependency "React"
   s.dependency "React-Core"

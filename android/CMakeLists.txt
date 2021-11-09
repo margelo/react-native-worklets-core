@@ -38,6 +38,7 @@ target_include_directories(
         "${NODE_MODULES_DIR}/react-native/ReactCommon/jsi"
         "${NODE_MODULES_DIR}/react-native/ReactCommon/turbomodule/core"
         "${NODE_MODULES_DIR}/react-native/ReactCommon/react/nativemodule/core"
+        "${NODE_MODULES_DIR}/hermes-engine/android/include"
 )
 
 if(${FOR_HERMES})
@@ -100,6 +101,8 @@ find_library(
         PATHS ${LIBRN_DIR}
         NO_CMAKE_FIND_ROOT_PATH
 )
+
+message(WARNING "CMakeLists.txt FOR_HERMES=${FOR_HERMES}")
 
 target_link_libraries(
         worklets

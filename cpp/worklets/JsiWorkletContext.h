@@ -14,7 +14,6 @@
 namespace RNWorklet {
 
 using namespace facebook;
-using namespace RNSkia;
 
 class JsiSharedValue;
 class JsiWrapper;

@@ -11,7 +11,6 @@ namespace RNWorklet {
 
 using namespace facebook;
 using namespace RNJsi;
-using namespace RNSkia;
 
 class JsiWorkletApi : public JsiHostObject {
 public:
