@@ -4,6 +4,25 @@ export interface ISharedValue<T> {
   addListener(listener: () => void): () => void;
 }
 
+export interface IWorklet<A extends any[], T extends (...args: A) => any> {
+  /**
+   * Calls the worklet on the worklet thread
+   */
+  runOnWorkletThread: (...args: A) => Promise<ReturnType<T>>;
+  /**
+   * Calls the worklet on the main thread
+   */
+  runOnMainThread: (...args: A) => ReturnType<T>;
+  /**
+   * Returns true the current execution context is the main Javascript thread
+   */
+  isMainThread: boolean;
+  /**
+   * Returns true for worklets.
+   */
+  isWorklet: true;
+}
+
 export type ContextType = {
   [key: string]:
     | number
@@ -16,30 +35,40 @@ export type ContextType = {
     | ContextType[]
     | number[]
     | string[]
-    | boolean[];
+    | boolean[]
+    | IWorklet<any, any>;
 };
 
 export interface IWorkletNativeApi {
-  installWorklet: <T extends (...args: any) => any>(
-    worklet: T,
-    contextName?: string
-  ) => void;
+  /**
+   * Creates a new worklet context with the given name. The name identifies the
+   * name of the worklet runtime a worklet will be executed in when you call the
+   * worklet.runOnWorkletThread();
+   */
+  createWorkletContext: (name: string) => void;
+  /**
+   * Creates a value that can be shared between runtimes
+   */
   createSharedValue: <T>(value: T) => ISharedValue<T>;
-  runWorklet: <T extends (...args: any) => any>(
-    worklet: T,
-    contextName?: string
-  ) => (...args: Parameters<T>) => Promise<ReturnType<T>>;
-  callbackToJavascript: <T extends (...args: any) => any>(worklet: T) => T;
+  /**
+   * Creates a worklet that can be executed on either then main thread or on
+   * the worklet thread in the context given by the context name (or empty to run
+   * in the default context)
+   * @param closure Values that will be copied to the worklet closure
+   * @param worklet Function to use to create the worklet
+   * @param contextName Name of the worklet context to run the worklet in, or
+   * default to use the default context
+   * @param Returns an @see(IWorklet) object
+   */
   createWorklet: <C extends ContextType, T, A extends any[]>(
-    context: C,
-    worklet: (context: C, ...args: A) => T
-  ) => (...args: A) => Promise<T>;
+    closure: C,
+    worklet: (closure: C, ...args: A) => T,
+    contextName?: string
+  ) => IWorklet<A, (...args: A) => T>;
 }
-
 declare global {
   var Worklets: IWorkletNativeApi;
 }
 
 const { Worklets } = global;
-console.log("********", Worklets);
 export { Worklets };

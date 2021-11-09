@@ -1,4 +1,5 @@
 #include <JsiDescribe.h>
+#include <JsiWorklet.h>
 #include <JsiWorkletApi.h>
 
 namespace RNWorklet {
@@ -16,20 +17,9 @@ JsiWorkletApi::JsiWorkletApi(JsiWorkletContext *context) : _context(context) {
                                       "from the javascript runtime.");
         }
 
-        if (count == 0) {
-          return _context->raiseError("createWorklet expects 1-2 parameters.");
-        }
-
-        if (!arguments[0].isObject()) {
-          return _context->raiseError("1 parameter should be an object.");
-        }
-
-        if (!arguments[1].isObject()) {
-          return _context->raiseError("2 parameter should be a function.");
-        }
-
-        if (!arguments[1].asObject(runtime).isFunction(runtime)) {
-          return _context->raiseError("2 parameter should be a function.");
+        if (count != 2) {
+          return _context->raiseError("createWorklet expects 2 parameters: "
+                                      "Worklet function and worklet closure.");
         }
 
         // Get the active context
@@ -38,9 +28,14 @@ JsiWorkletApi::JsiWorkletApi(JsiWorkletContext *context) : _context(context) {
                 ? arguments[2].asString(runtime).utf8(runtime).c_str()
                 : nullptr);
 
-        // Install the worklet
-        auto worklet =
-            activeContext->createWorklet(runtime, arguments[0], arguments[1]);
+        // Install the worklet into the worklet runtime
+        return jsi::Object::createFromHostObject(
+            runtime, std::make_shared<JsiWorklet>(activeContext, runtime,
+                                                  arguments[1], arguments[0]));
+
+        /*       auto function =
+        arguments[1].asObject(runtime).asFunction(runtime); auto worklet =
+            activeContext->createWorklet(runtime, arguments[0], function);
 
         // Now we can create a caller function
         return jsi::Function::createFromHostFunction(
@@ -90,7 +85,32 @@ JsiWorkletApi::JsiWorkletApi(JsiWorkletContext *context) : _context(context) {
                     // Run on the Worklet thread
                     activeContext->runOnWorkletThread(dispatcher);
                   });
-            });
+            });*/
+      });
+
+  installFunction(
+      "createWorkletContext", JSI_FUNC_SIGNATURE {
+        if (count == 0) {
+          jsi::detail::throwJSError(
+              runtime,
+              "createWorkletContext expects the context name parameter.");
+        }
+
+        if (!arguments[0].isString()) {
+          jsi::detail::throwJSError(
+              runtime,
+              "createWorkletContext expects the context name parameter.");
+        }
+
+        auto nameStr = arguments[0].asString(runtime).utf8(runtime);
+        if (_contexts.count(nameStr) == 0) {
+          _contexts.emplace(nameStr,
+                            std::make_shared<JsiWorkletContext>(_context));
+        } else {
+          jsi::detail::throwJSError(runtime,
+                                    "A context with this name already exists.");
+        }
+        return jsi::Value::undefined();
       });
 
   installFunction(
@@ -105,4 +125,21 @@ JsiWorkletApi::JsiWorkletApi(JsiWorkletContext *context) : _context(context) {
             std::make_shared<JsiSharedValue>(arguments[0], context));
       });
 }
+
+JsiWorkletContext *JsiWorkletApi::getContext(const char *name) {
+  // Let's see if we are launching this on the default context
+  if (name == nullptr) {
+    return _context;
+  }
+
+  // Throw error if the context hasn't been created yet.
+  if (_contexts.count(name) == 0) {
+    _context->raiseError(
+        std::runtime_error("A context with this name does not exist. Use the "
+                           "createWorkletContext method to create it."));
+    return nullptr;
+  }
+  return _contexts.at(name).get();
+}
+
 } // namespace RNWorklet

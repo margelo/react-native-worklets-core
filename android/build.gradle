@@ -230,7 +230,7 @@ static def findNodeModulePath(baseDir, packageName) {
 task prepareHermes() {
     def hermesPackagePath = findNodeModulePath(projectDir, "hermes-engine")
     if (!hermesPackagePath) {
-        throw new GradleScriptException("Could not find the hermes-engine npm package", null)
+        return //throw new GradleScriptException("Could not find the hermes-engine npm package", null)
     }
 
     def hermesAAR = file("$hermesPackagePath/android/hermes-debug.aar")
@@ -251,7 +251,7 @@ task prepareJSC {
     doLast {
         def jscPackagePath = findNodeModulePath(projectDir, "jsc-android")
         if (!jscPackagePath) {
-            throw new GradleScriptException("Could not find the jsc-android npm package", null)
+            return //throw new GradleScriptException("Could not find the jsc-android npm package", null)
         }
 
         def jscDist = file("$jscPackagePath/dist")

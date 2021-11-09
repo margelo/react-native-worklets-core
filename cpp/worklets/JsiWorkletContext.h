@@ -40,7 +40,6 @@ public:
                     std::shared_ptr<facebook::react::CallInvoker> jsCallInvoker,
                     std::shared_ptr<JsiErrorHandler> errorHandler);
 
-
   /*
      Constructor that creates a new worklet context with separate
      runtime and thread from an existing context
@@ -110,25 +109,13 @@ public:
   void runOnJavascriptThread(std::function<void()> fp);
 
   /**
-   * Creates a worklet - a function - that will run on the worklet
-   * runtime/thread
-   * @param runtime Calling runtime
-   * @param context Calling context
-   * @param value Function value
-   * @return A function that can be run on the worklet thread/runtime
-   */
-  jsi::HostFunctionType createWorklet(jsi::Runtime &runtime,
-                                      const jsi::Value &context,
-                                      const jsi::Value &value);
-
-private:
-  /**
    * Evaluates the javascript code and returns a function
    * @param code Code representing a function
    * @return Jsi Function
    */
-  jsi::Function evalWorkletCode(const std::string &code);
+  jsi::Value evaluteJavascriptInWorkletRuntime(const std::string &code);
 
+private:
   // The main JS JSI Runtime
   jsi::Runtime *_jsRuntime;
 
