@@ -8,11 +8,11 @@ export interface IWorklet<A extends any[], T extends (...args: A) => any> {
   /**
    * Calls the worklet on the worklet thread
    */
-  runOnWorkletThread: (...args: A) => Promise<ReturnType<T>>;
+  runOnWorkletThread: OmitThisParameter<(...args: A) => Promise<ReturnType<T>>>;
   /**
    * Calls the worklet on the main thread
    */
-  runOnMainThread: (...args: A) => ReturnType<T>;
+  runOnMainThread: OmitThisParameter<(...args: A) => ReturnType<T>>;
   /**
    * Returns true the current execution context is the main Javascript thread
    */
@@ -62,7 +62,7 @@ export interface IWorkletNativeApi {
    */
   createWorklet: <C extends ContextType, T, A extends any[]>(
     closure: C,
-    worklet: (closure: C, ...args: A) => T,
+    worklet: OmitThisParameter<(closure: C, ...args: A) => T>,
     contextName?: string
   ) => IWorklet<A, (...args: A) => T>;
 }
@@ -71,4 +71,13 @@ declare global {
 }
 
 const { Worklets } = global;
+
+const setMessage = Worklets.createWorklet({}, (_, message: string) => {
+  console.log(message);
+});
+
+const doCall = Worklets.createWorklet({ setMessage }, (ctx) => {
+  ctx.setMessage.runOnMainThread("Hello from worklet");
+});
+
 export { Worklets };
