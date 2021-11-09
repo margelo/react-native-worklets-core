@@ -3,7 +3,7 @@
 #include <jsi/jsi.h>
 #include <memory>
 
-#if !FOR_HERMES && __has_include(<hermes/hermes.h>)
+#if !ANDROID && !defined(FOR_HERMES) && __has_include(<hermes/hermes.h>)
 #define FOR_HERMES 1
 #endif
 
