@@ -229,50 +229,48 @@ static def findNodeModulePath(baseDir, packageName) {
 
 task prepareHermes() {
     def hermesPackagePath = findNodeModulePath(projectDir, "hermes-engine")
-    if (!hermesPackagePath) {
-        return //throw new GradleScriptException("Could not find the hermes-engine npm package", null)
-    }
+    if (hermesPackagePath) {
 
-    def hermesAAR = file("$hermesPackagePath/android/hermes-debug.aar")
-    if (!hermesAAR.exists()) {
-        throw new GradleScriptException("The hermes-engine npm package is missing \"android/hermes-debug.aar\"", null)
-    }
+        def hermesAAR = file("$hermesPackagePath/android/hermes-debug.aar")
+        if (!hermesAAR.exists()) {
+            throw new GradleScriptException("The hermes-engine npm package is missing \"android/hermes-debug.aar\"", null)
+        }
 
-    def soFiles = zipTree(hermesAAR).matching({ it.include "**/*.so" })
+        def soFiles = zipTree(hermesAAR).matching({ it.include "**/*.so" })
 
-    copy {
-        from soFiles
-        from "$reactNative/ReactAndroid/src/main/jni/first-party/hermes/Android.mk"
-        into "$thirdPartyNdkDir/hermes"
+        copy {
+            from soFiles
+            from "$reactNative/ReactAndroid/src/main/jni/first-party/hermes/Android.mk"
+            into "$thirdPartyNdkDir/hermes"
+        }
     }
 }
 
 task prepareJSC {
     doLast {
         def jscPackagePath = findNodeModulePath(projectDir, "jsc-android")
-        if (!jscPackagePath) {
-            return //throw new GradleScriptException("Could not find the jsc-android npm package", null)
-        }
+        if (jscPackagePath) {
 
-        def jscDist = file("$jscPackagePath/dist")
-        if (!jscDist.exists()) {
-            throw new GradleScriptException("The jsc-android npm package is missing its \"dist\" directory", null)
-        }
+            def jscDist = file("$jscPackagePath/dist")
+            if (!jscDist.exists()) {
+                throw new GradleScriptException("The jsc-android npm package is missing its \"dist\" directory", null)
+            }
 
-        def jscAAR = fileTree(jscDist).matching({ it.include "**/android-jsc/**/*.aar" }).singleFile
-        def soFiles = zipTree(jscAAR).matching({ it.include "**/*.so" })
+            def jscAAR = fileTree(jscDist).matching({ it.include "**/android-jsc/**/*.aar" }).singleFile
+            def soFiles = zipTree(jscAAR).matching({ it.include "**/*.so" })
 
-        def headerFiles = fileTree(jscDist).matching({ it.include "**/include/*.h" })
+            def headerFiles = fileTree(jscDist).matching({ it.include "**/include/*.h" })
 
-        copy {
-            from(soFiles)
-            from(headerFiles)
-            from("$reactNative/ReactAndroid/src/main/jni/third-party/jsc/Android.mk")
+            copy {
+                from(soFiles)
+                from(headerFiles)
+                from("$reactNative/ReactAndroid/src/main/jni/third-party/jsc/Android.mk")
 
-            filesMatching("**/*.h", { it.path = "JavaScriptCore/${it.name}" })
+                filesMatching("**/*.h", { it.path = "JavaScriptCore/${it.name}" })
 
-            includeEmptyDirs(false)
-            into("$thirdPartyNdkDir/jsc")
+                includeEmptyDirs(false)
+                into("$thirdPartyNdkDir/jsc")
+            }
         }
     }
 }

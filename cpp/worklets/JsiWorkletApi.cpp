@@ -32,60 +32,6 @@ JsiWorkletApi::JsiWorkletApi(JsiWorkletContext *context) : _context(context) {
         return jsi::Object::createFromHostObject(
             runtime, std::make_shared<JsiWorklet>(activeContext, runtime,
                                                   arguments[1], arguments[0]));
-
-        /*       auto function =
-        arguments[1].asObject(runtime).asFunction(runtime); auto worklet =
-            activeContext->createWorklet(runtime, arguments[0], function);
-
-        // Now we can create a caller function
-        return jsi::Function::createFromHostFunction(
-            runtime, jsi::PropNameID::forUtf8(runtime, "fn"), 0,
-            [activeContext,
-             worklet](jsi::Runtime &runtime, const jsi::Value &thisValue,
-                      const jsi::Value *arguments, size_t count) -> jsi::Value {
-              // Get the worklet runtime
-              auto workletRuntime = &activeContext->getWorkletRuntime();
-
-              // Wrap the calling this as undefined - we don't care about it
-              auto thisWrapper =
-                  JsiWrapper::wrap(runtime, jsi::Value::undefined());
-
-              // Copy arguments into wrappers
-              std::vector<std::shared_ptr<JsiWrapper>> argsWrapper;
-              argsWrapper.reserve(count);
-
-              for (size_t i = 0; i < count; i++) {
-                argsWrapper.push_back(JsiWrapper::wrap(runtime, arguments[i]));
-              }
-
-              // Create promise
-              return react::createPromiseAsJSIValue(
-                  runtime,
-                  [activeContext, thisWrapper, worklet, workletRuntime,
-                   argsWrapper](jsi::Runtime &runtime,
-                                std::shared_ptr<react::Promise> promise) {
-                    // Create dispatcher
-                    auto dispatcher = JsiDispatcher::createDispatcher(
-                        *workletRuntime, thisWrapper, worklet, argsWrapper,
-                        [promise,
-                         activeContext](std::shared_ptr<JsiWrapper> wrapper) {
-                          // Resolve promise on the main js runtime / thread
-                          activeContext->runOnJavascriptThread(
-                              [promise, wrapper, activeContext]() {
-                                promise->resolve(JsiWrapper::unwrap(
-                                    *activeContext->getJsRuntime(), wrapper));
-                              });
-                        },
-                        [promise, activeContext](const char *err) {
-                          // Reject promise on the main js runtime / thread
-                          activeContext->runOnJavascriptThread(
-                              [promise, err]() { promise->reject(err); });
-                        });
-
-                    // Run on the Worklet thread
-                    activeContext->runOnWorkletThread(dispatcher);
-                  });
-            });*/
       });
 
   installFunction(

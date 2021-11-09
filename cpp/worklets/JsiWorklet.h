@@ -3,27 +3,26 @@
 //
 #pragma once
 
+#include <JsiDispatcher.h>
 #include <JsiHostObject.h>
 #include <JsiWorkletContext.h>
-#include <JsiDispatcher.h>
 
-#include <jsi/jsi.h>
 #include <ReactCommon/TurboModuleUtils.h>
+#include <jsi/jsi.h>
 
 namespace RNWorklet {
 
 using namespace facebook;
 using namespace RNJsi;
 
-using JsiWorkletDispatcher = std::function<jsi::Value(jsi::Runtime&,
-                                                      std::shared_ptr<JsiWrapper>,
-                                                      const std::vector<std::shared_ptr<JsiWrapper>>&)>;
+using JsiWorkletDispatcher =
+    std::function<jsi::Value(jsi::Runtime &, std::shared_ptr<JsiWrapper>,
+                             const std::vector<std::shared_ptr<JsiWrapper>> &)>;
 
 using JsiWorkletDispatchers = struct {
   JsiWorkletDispatcher callInWorkletRuntime;
   JsiWorkletDispatcher callInMainRuntime;
 };
-
 
 /**
  Encapsulates a runnable function. A runnable function is a function
@@ -56,10 +55,12 @@ public:
     }
 
     // Create the worklet call function
-    auto workletDispatchers = createWorkletFunction(context, runtime, function, closure);    
+    auto workletDispatchers =
+        createWorkletFunction(context, runtime, function, closure);
 
     // isMainThread
-    // Returns true if called from the main thread, false if called from the context's worklet thread.
+    // Returns true if called from the main thread, false if called from the
+    // context's worklet thread.
     installReadonlyProperty("isMainThread",
                             [context](jsi::Runtime &runtime) -> jsi::Value {
                               return (bool)!context->isWorkletRuntime(runtime);
@@ -81,20 +82,20 @@ public:
           for (size_t i = 0; i < count; i++) {
             argsWrapper.push_back(JsiWrapper::wrap(runtime, arguments[i]));
           }
-          
+
           // Is this called on the main thread?
           if (!context->isWorkletRuntime(runtime)) {
             // The we can just call it directly
-            return workletDispatchers.callInMainRuntime(runtime, thisWrapper, argsWrapper);
+            return workletDispatchers.callInMainRuntime(runtime, thisWrapper,
+                                                        argsWrapper);
           }
-          
+
           // Create simple dispatcher without promise since we don't support
           // promises on Android / Worklet runtime
-          context->runOnJavascriptThread([=](){
+          context->runOnJavascriptThread([=]() {
             // Call in main runtime
             workletDispatchers.callInMainRuntime(*context->getJsRuntime(),
-                                                 thisWrapper,
-                                                 argsWrapper);
+                                                 thisWrapper, argsWrapper);
           });
 
           return jsi::Value::undefined();
@@ -104,7 +105,7 @@ public:
         "runOnWorkletThread", JSI_FUNC_SIGNATURE {
           // Wrap the this object
           auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
-          
+
           // Wrap the arguments
           std::vector<std::shared_ptr<JsiWrapper>> argsWrapper;
           argsWrapper.reserve(count);
@@ -113,30 +114,28 @@ public:
           }
 
           // Create promise as return value when running on the worklet runtime
-          return react::createPromiseAsJSIValue(runtime,
-                                                [context, thisWrapper, argsWrapper, workletDispatchers, count]
-                                                (jsi::Runtime &runtime,
-                                                std::shared_ptr<react::Promise> promise) {
-                
-               // Is this called on the main thread?
+          return react::createPromiseAsJSIValue(
+              runtime, [context, thisWrapper, argsWrapper, workletDispatchers,
+                        count](jsi::Runtime &runtime,
+                               std::shared_ptr<react::Promise> promise) {
+                // Is this called on the main thread?
                 if (context->isWorkletRuntime(runtime)) {
                   // The we can just call it directly
                   jsi::Value *args = new jsi::Value[argsWrapper.size()];
                   for (int i = 0; i < argsWrapper.size(); ++i) {
                     args[i] = JsiWrapper::unwrap(runtime, argsWrapper[i]);
                   }
-                  
+
                   try {
-                    auto retVal = workletDispatchers.callInWorkletRuntime(runtime,
-                                                                          thisWrapper,
-                                                                          argsWrapper);
+                    auto retVal = workletDispatchers.callInWorkletRuntime(
+                        runtime, thisWrapper, argsWrapper);
                     promise->resolve(retVal);
-                    
-                  } catch(...) {
+
+                  } catch (...) {
                     promise->reject("Error");
                   }
                   delete[] args;
-                  
+
                 } else {
                   // Run on the Worklet thread
                   context->runOnWorkletThread([=]() {
@@ -144,16 +143,17 @@ public:
                     auto workletRuntime = &context->getWorkletRuntime();
                     // Prepare result
                     try {
-                      auto retVal = workletDispatchers.callInWorkletRuntime(*workletRuntime,
-                                                                            thisWrapper,
-                                                                            argsWrapper);
-                      
-                      auto retValWrapper = JsiWrapper::wrap(*workletRuntime, retVal);
-                      context->runOnJavascriptThread([=](){
-                        promise->resolve(JsiWrapper::unwrap(*context->getJsRuntime(), retValWrapper));
+                      auto retVal = workletDispatchers.callInWorkletRuntime(
+                          *workletRuntime, thisWrapper, argsWrapper);
+
+                      auto retValWrapper =
+                          JsiWrapper::wrap(*workletRuntime, retVal);
+                      context->runOnJavascriptThread([=]() {
+                        promise->resolve(JsiWrapper::unwrap(
+                            *context->getJsRuntime(), retValWrapper));
                       });
-                      
-                    } catch(...) {
+
+                    } catch (...) {
                       promise->reject("error");
                     }
                   });
@@ -164,19 +164,20 @@ public:
 
 private:
   /**
-   Creates the worklet call dispatchers that can be called on a separapte runtime
+   Creates the worklet call dispatchers that can be called on a separapte
+   runtime
    @param context Context to create dispatchers in
    @param runtime Calling runtime
    @param function Function to create dispatchers for
    @param closure Function's closure
    */
-  JsiWorkletDispatchers
-  createWorkletFunction(JsiWorkletContext *context, jsi::Runtime &runtime,
-                        const jsi::Value &function, const jsi::Value &closure) {
+  JsiWorkletDispatchers createWorkletFunction(JsiWorkletContext *context,
+                                              jsi::Runtime &runtime,
+                                              const jsi::Value &function,
+                                              const jsi::Value &closure) {
 
     if (!closure.isObject()) {
-      context->raiseError(
-          "Expected an object for the closure parameter.");
+      context->raiseError("Expected an object for the closure parameter.");
       return {};
     }
 
@@ -186,29 +187,30 @@ private:
           "Expected a function for the worklet function parameter.");
       return {};
     }
-    
-    auto funcPtr = std::make_shared<jsi::Function>(function.asObject(runtime).asFunction(runtime));
-    
-    // Let us try to install the function in the worklet context
-    auto code = funcPtr->
-      getPropertyAsFunction(runtime, "toString")
-      .callWithThis(runtime, (jsi::Function&)*funcPtr, nullptr, 0)
-      .asString(runtime)
-      .utf8(runtime);
-    
-    auto workletPtr = std::make_shared<jsi::Function>(context->evaluteJavascriptInWorkletRuntime(code)
-                                                       .asObject(runtime)
-                                                       .asFunction(runtime));
 
-    auto callInWorkletRuntime = createCallerWithClosure(context, runtime, workletPtr, closure);
-    auto callInMainRuntime = createCallerWithClosure(context, runtime, funcPtr, closure);
-    
-    return JsiWorkletDispatchers {
-      callInWorkletRuntime,
-      callInMainRuntime
-    };
+    auto funcPtr = std::make_shared<jsi::Function>(
+        function.asObject(runtime).asFunction(runtime));
+
+    // Let us try to install the function in the worklet context
+    auto code =
+        funcPtr->getPropertyAsFunction(runtime, "toString")
+            .callWithThis(runtime, (jsi::Function &)*funcPtr, nullptr, 0)
+            .asString(runtime)
+            .utf8(runtime);
+
+    auto workletPtr = std::make_shared<jsi::Function>(
+        context->evaluteJavascriptInWorkletRuntime(code)
+            .asObject(runtime)
+            .asFunction(runtime));
+
+    auto callInWorkletRuntime =
+        createCallerWithClosure(context, runtime, workletPtr, closure);
+    auto callInMainRuntime =
+        createCallerWithClosure(context, runtime, funcPtr, closure);
+
+    return JsiWorkletDispatchers{callInWorkletRuntime, callInMainRuntime};
   }
-  
+
   /**
    Creates dispatchers for the worklet function
    @param context Context to create dispatchers in
@@ -216,19 +218,18 @@ private:
    @param functionPtr Function to create dispatchers for
    @param closure Function's closure
    */
-  JsiWorkletDispatcher createCallerWithClosure(JsiWorkletContext *context,
-                                               jsi::Runtime &runtime,
-                                               std::shared_ptr<jsi::Function> functionPtr,
-                                               const jsi::Value &closure) {
+  JsiWorkletDispatcher
+  createCallerWithClosure(JsiWorkletContext *context, jsi::Runtime &runtime,
+                          std::shared_ptr<jsi::Function> functionPtr,
+                          const jsi::Value &closure) {
     // Wrap the closure
     auto closureWrapper = JsiWrapper::wrap(runtime, closure);
-    
+
     // Return a caller function wrapper for the worklet
-    return [context, functionPtr, closureWrapper]
-      (jsi::Runtime& runtime,
-       std::shared_ptr<JsiWrapper> thisWrapper,
-       const std::vector<std::shared_ptr<JsiWrapper>>& arguments) -> jsi::Value {
-      
+    return [context, functionPtr, closureWrapper](
+               jsi::Runtime &runtime, std::shared_ptr<JsiWrapper> thisWrapper,
+               const std::vector<std::shared_ptr<JsiWrapper>> &arguments)
+               -> jsi::Value {
       // Add the closure as the first parameter to the calling argument
       size_t size = arguments.size() + 1;
       jsi::Value *args = new jsi::Value[size];
@@ -237,13 +238,14 @@ private:
       args[0] = JsiWrapper::unwrap(runtime, closureWrapper);
 
       // Add the rest of the arguments
-      for(size_t i=1; i<size; i++) {
-        args[i] = JsiWrapper::unwrap(runtime, arguments.at(i-1));
+      for (size_t i = 1; i < size; i++) {
+        args[i] = JsiWrapper::unwrap(runtime, arguments.at(i - 1));
       }
-        
+
       jsi::Value retVal;
       try {
-        retVal = functionPtr->call(runtime, static_cast<const jsi::Value *>(args), size);
+        retVal = functionPtr->call(runtime,
+                                   static_cast<const jsi::Value *>(args), size);
       } catch (const jsi::JSError &err) {
         context->raiseError(err.getMessage().c_str());
       } catch (const std::exception &err) {
@@ -251,7 +253,8 @@ private:
       } catch (const std::runtime_error &err) {
         context->raiseError(err.what());
       } catch (...) {
-        context->raiseError("An unknown error occurred when calling dispatch function.");
+        context->raiseError(
+            "An unknown error occurred when calling dispatch function.");
       }
 
       delete[] args;

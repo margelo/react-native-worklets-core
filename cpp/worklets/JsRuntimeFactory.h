@@ -7,7 +7,7 @@
 #define FOR_HERMES 1
 #endif
 
-#if FOR_HERMES
+#if __has_include(<hermes/hermes.h>)
 // Hermes
 #include <hermes/hermes.h>
 #else
@@ -20,7 +20,7 @@ namespace RNSkia {
 using namespace facebook;
 
 static std::unique_ptr<jsi::Runtime> makeJSIRuntime() {
-#if FOR_HERMES
+#if __has_include(<hermes/hermes.h>)
   return facebook::hermes::makeHermesRuntime();
 #else
   return facebook::jsc::makeJSCRuntime();

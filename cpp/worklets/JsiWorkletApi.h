@@ -7,10 +7,9 @@
 #include <JsiSharedValue.h>
 #include <JsiWorkletContext.h>
 
-using namespace facebook;
-
 namespace RNWorklet {
 
+using namespace facebook;
 using namespace RNJsi;
 using namespace RNSkia;
 

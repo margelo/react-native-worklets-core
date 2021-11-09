@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.4.1)
 
 set (CMAKE_VERBOSE_MAKEFILE ON)
 set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFOLLY_NO_CONFIG=1 -DFOLLY_HAVE_CLOCK_GETTIME=1 -DFOLLY_HAVE_MEMRCHR=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_MOBILE=1 -DON_ANDROID -DONANDROID -DFOR_HERMES=${FOR_HERMES}")
+
+set (NODE_MODULES_DIR "../node_modules")
 
 set (BUILD_DIR ${CMAKE_SOURCE_DIR}/build)
 file (GLOB LIBFBJNI_INCLUDE_DIR "${BUILD_DIR}/fbjni-*-headers.jar/")
@@ -26,15 +29,15 @@ target_include_directories(
         cpp/jsi
         jni
         "${LIBFBJNI_INCLUDE_DIR}"
-        ../node_modules/react-native/React
-        ../node_modules/react-native/React/Base
-        ../node_modules/react-native/ReactAndroid/src/main/jni
-        ../node_modules/react-native/ReactAndroid/src/main/java/com/facebook/react/turbomodule/core/jni
-        ../node_modules/react-native/ReactCommon
-        ../node_modules/react-native/ReactCommon/callinvoker
-        ../node_modules/react-native/ReactCommon/jsi
-        ../node_modules/react-native/ReactCommon/turbomodule/core
-        ../node_modules/react-native/ReactCommon/react/nativemodule/core
+        "${NODE_MODULES_DIR}/react-native/React"
+        "${NODE_MODULES_DIR}/react-native/React/Base"
+        "${NODE_MODULES_DIR}/react-native/ReactAndroid/src/main/jni"
+        "${NODE_MODULES_DIR}/react-native/ReactAndroid/src/main/java/com/facebook/react/turbomodule/core/jni"
+        "${NODE_MODULES_DIR}/react-native/ReactCommon"
+        "${NODE_MODULES_DIR}/react-native/ReactCommon/callinvoker"
+        "${NODE_MODULES_DIR}/react-native/ReactCommon/jsi"
+        "${NODE_MODULES_DIR}/react-native/ReactCommon/turbomodule/core"
+        "${NODE_MODULES_DIR}/react-native/ReactCommon/react/nativemodule/core"
 )
 
 if(${FOR_HERMES})
@@ -58,6 +61,11 @@ else()
 endif()
 
 find_library(
+        LOG_LIB
+        log
+)
+
+find_library(
         REACT_LIB
         react_nativemodule_core
         PATHS ${LIBRN_DIR}
@@ -78,7 +86,6 @@ find_library(
         NO_CMAKE_FIND_ROOT_PATH
 )
 
-
 find_library(
         FBJNI_LIB
         fbjni
@@ -87,12 +94,21 @@ find_library(
 )
 
 
+find_library(
+        REACT_NATIVE_JNI_LIB
+        reactnativejni
+        PATHS ${LIBRN_DIR}
+        NO_CMAKE_FIND_ROOT_PATH
+)
+
 target_link_libraries(
-        worklets 
-        ${REACT_LIB}
-        ${JS_ENGINE_LIB}
+        worklets
+        ${LOG_LIB}
         ${JSI_LIB}
+        ${REACT_NATIVE_JNI_LIB}
         ${FBJNI_LIB}
+        ${REACT_LIB}
+        ${JS_ENGINE_LIB} # <-- Hermes or JSC
         ${TURBOMODULES_LIB}
         -landroid
 )
