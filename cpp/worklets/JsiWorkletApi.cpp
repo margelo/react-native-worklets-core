@@ -17,7 +17,7 @@ JsiWorkletApi::JsiWorkletApi(JsiWorkletContext *context) : _context(context) {
                                       "from the javascript runtime.");
         }
 
-        if (count != 2) {
+        if (count > 3) {
           return _context->raiseError("createWorklet expects 2 parameters: "
                                       "Worklet function and worklet closure.");
         }
