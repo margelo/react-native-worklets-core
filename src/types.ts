@@ -70,14 +70,4 @@ declare global {
   var Worklets: IWorkletNativeApi;
 }
 
-const { Worklets } = global;
-
-const setMessage = Worklets.createWorklet({}, (_, message: string) => {
-  console.log(message);
-});
-
-const doCall = Worklets.createWorklet({ setMessage }, (ctx) => {
-  ctx.setMessage.runOnMainThread("Hello from worklet");
-});
-
-export { Worklets };
+export const { Worklets } = global;
