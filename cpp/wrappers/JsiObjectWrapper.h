@@ -174,7 +174,7 @@ private:
 
   void setFunctionValue(jsi::Runtime &runtime, const jsi::Value &value) {
     jsi::detail::throwJSError(runtime,
-                              "Regular javascript functions not supported.");
+                              "Regular javascript functions can not be passed to worklets.");
   }
 
   std::map<std::string, std::shared_ptr<JsiWrapper>> _properties;

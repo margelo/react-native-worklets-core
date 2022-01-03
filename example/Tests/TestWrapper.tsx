@@ -1,14 +1,21 @@
 import React from 'react';
-import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export type TestState = 'notrun' | 'running' | 'success' | 'failure';
 
 type Props = {
   state: TestState;
   name: string;
+  onRerun: () => void;
 };
 
-export const TestWrapper: React.FC<Props> = ({state, name}) => {
+export const TestWrapper: React.FC<Props> = ({state, name, onRerun}) => {
   return (
     <View style={styles.container}>
       <View style={styles.symbolContainer}>
@@ -23,6 +30,11 @@ export const TestWrapper: React.FC<Props> = ({state, name}) => {
         )}
       </View>
       <Text style={styles.name}>{name}</Text>
+      {state === 'failure' ? (
+        <TouchableOpacity style={styles.button} onPress={onRerun}>
+          <Text style={styles.buttonText}>rerun</Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 };
@@ -31,7 +43,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
+    height: 30,
   },
   symbolContainer: {
     width: 38,
@@ -50,5 +62,11 @@ const styles = StyleSheet.create({
   },
   name: {
     flex: 1,
+  },
+  button: {
+    paddingHorizontal: 8,
+  },
+  buttonText: {
+    color: '#0000BB',
   },
 });

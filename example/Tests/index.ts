@@ -1,2 +1,1 @@
-export * from './RunInJsThread';
-export * from './RunInWorkletThread';
+export {tests} from './tests';

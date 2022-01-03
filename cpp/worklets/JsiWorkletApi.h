@@ -46,7 +46,8 @@ public:
     }
 
     // Get the active context
-    auto activeContext = count == 3 && arguments[2].isObject() ? arguments[2].asObject(runtime).getHostObject<JsiWorkletContext>(runtime) : _context;
+    auto activeContext = count == 3 && arguments[2].isObject() ?
+      arguments[2].asObject(runtime).getHostObject<JsiWorkletContext>(runtime) : _context;
     
     if(activeContext == nullptr) {
       return _context->raiseError("createWorklet called with invalid context.");

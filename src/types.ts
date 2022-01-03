@@ -6,11 +6,11 @@ export interface ISharedValue<T> {
 
 export interface IWorklet<A extends any[], T extends (...args: A) => any> {
   /**
-   * Calls the worklet on the worklet thread
+   * Calls the worklet on the worklet thread.
    */
   callAsync: OmitThisParameter<(...args: A) => Promise<ReturnType<T>>>;
   /**
-   * Calls the worklet on the main thread
+   * Calls the worklet on the same thread as the caller
    */
   call: OmitThisParameter<(...args: A) => ReturnType<T>>;
   /**
