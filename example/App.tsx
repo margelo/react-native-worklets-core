@@ -19,6 +19,7 @@ const App = () => {
   const runTest = useCallback(async (test: TestInfo) => {
     try {
       setOutput(p => addOutputStateLine(test.name + ' running...', p));
+      setTests(p => updateTestState(test, 'running', p));
       await test.run();
       setTests(p => updateTestState(test, 'success', p));
       setOutput(p => updateOutputStateLastLine(test.name + ' succeeded.', p));
@@ -42,6 +43,7 @@ const App = () => {
 
   const runTests = useCallback(async () => {
     setRunning(true);
+    setTests(p => p.map(t => ({...t, state: 'notrun'})));
     setOutput(['Starting...']);
     for (let i = 0; i < tests.length; i++) {
       await runTest(tests[i]);

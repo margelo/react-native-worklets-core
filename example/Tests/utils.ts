@@ -1,6 +1,6 @@
 export const Expect = <V, T>(
   value: V | Promise<V>,
-  expected: (v: V) => boolean,
+  expected: (v: V) => string | undefined,
 ) => {
   return new Promise<void>(async (resolve, reject) => {
     let resolvedValue: V;
@@ -13,8 +13,8 @@ export const Expect = <V, T>(
 
     const resolvedExpected = expected(resolvedValue);
 
-    if (!resolvedExpected) {
-      reject(new Error(`Got ${resolvedValue}. Expection returned false.`));
+    if (resolvedExpected) {
+      reject(new Error(`Expected ${resolvedExpected}.`));
     } else {
       resolve();
     }
@@ -51,14 +51,17 @@ export const ExpectException = <T>(
     try {
       const value = executor();
       if (value instanceof Promise) {
+        console.log('*****', 'is promise');
         await value;
         reject(new Error('Expected error but function succeeded.'));
       } else {
+        console.log('*****', 'not promise');
         reject(new Error('Expected error but function succeeded.'));
       }
     } catch (reason: any) {
       const resolvedReason =
         typeof reason === 'object' ? reason.message : reason;
+      console.log('*****', reason);
       if (resolvedReason === expectedReason) {
         resolve();
       } else {

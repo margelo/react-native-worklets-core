@@ -17,7 +17,12 @@ using JsiWorkletDispatcher =
     std::function<jsi::Value(jsi::Runtime&,
                              const std::vector<std::shared_ptr<JsiWrapper>> &)>;
 
-using JsiWorkletDispatchers = struct {
+using JsiWorkletDispatchers = struct JsiWorkletDispatchers {
+  JsiWorkletDispatchers(JsiWorkletDispatcher callInWorkletRuntime,
+                        JsiWorkletDispatcher callInJsRuntime):
+    callInWorkletRuntime(callInWorkletRuntime),
+    callInJsRuntime(callInJsRuntime) { }
+  
   JsiWorkletDispatcher callInWorkletRuntime;
   JsiWorkletDispatcher callInJsRuntime;
 };
@@ -43,17 +48,13 @@ public:
     _dispatchers = createWorkletDispatchers(context, runtime, function, closure);
   }
   
-  ~JsiWorklet() {
-    delete _dispatchers;
-  }
-
   // Returns true for worklets
   JSI_PROPERTY_GET(isWorklet) { return true; };
   
   // Returns the context of the worklet
   JSI_PROPERTY_GET(context) { return jsi::Object::createFromHostObject(runtime, _context); };
 
-  JSI_HOST_FUNCTION(call) {
+  JSI_HOST_FUNCTION(callInJSContext) {
     std::vector<std::shared_ptr<JsiWrapper>> argsWrapper;
     argsWrapper.reserve(count);
 
@@ -61,7 +62,7 @@ public:
       argsWrapper.push_back(JsiWrapper::wrap(runtime, arguments[i]));
     }
 
-    // Is this called on the main thread?
+    // Is this called on the javascript thread?
     if (!_context->isWorkletRuntime(runtime)) {
       // The we can just call it directly
       try {
@@ -80,16 +81,28 @@ public:
     }
 
     // Create simple dispatcher without promise since we don't support
-    // promises on Android / Worklet runtime
+    // promises on Android in the Javascript runtime
     _context->runOnJavascriptThread([=]() {
       // Call in main runtime
-      _dispatchers->callInJsRuntime(*_context->getJsRuntime(), argsWrapper);
+      auto runtime = _context->getJsRuntime();
+      try {
+        _dispatchers->callInJsRuntime(*runtime, argsWrapper);
+      } catch (const jsi::JSError &err) {
+        throw err;
+      } catch (const std::exception &err) {
+        jsi::detail::throwJSError(*runtime, err.what());
+      } catch (const std::runtime_error &err) {
+        jsi::detail::throwJSError(*runtime, err.what());
+      } catch (...) {
+        jsi::detail::throwJSError(*runtime,
+            "An unknown error occurred when calling the worklet.");
+      }
     });
 
     return jsi::Value::undefined();
   };
 
-  JSI_HOST_FUNCTION(callAsync) {
+  JSI_HOST_FUNCTION(callInWorkletContext) {
     // Wrap the arguments
     std::vector<std::shared_ptr<JsiWrapper>> argsWrapper;
     argsWrapper.reserve(count);
@@ -111,8 +124,7 @@ public:
           }
 
           try {
-            auto retVal = _dispatchers->callInWorkletRuntime(runtime, argsWrapper);
-            promise->resolve(retVal);
+            promise->resolve(_dispatchers->callInWorkletRuntime(runtime, argsWrapper));
 
           } catch (const jsi::JSError &err) {
             promise->reject(err.getMessage().c_str());
@@ -147,14 +159,25 @@ public:
               });
 
             } catch (const jsi::JSError &err) {
-              promise->reject(err.getMessage().c_str());
+              auto errorMessage = err.getMessage().c_str();
+              _context->runOnJavascriptThread([=]() {
+                promise->reject(errorMessage);
+              });
             } catch (const std::exception &err) {
-              promise->reject(err.what());
+              auto errorMessage = err.what();
+              _context->runOnJavascriptThread([=]() {
+                promise->reject(errorMessage);
+              });
             } catch (const std::runtime_error &err) {
-              promise->reject(err.what());
+              auto errorMessage = err.what();
+              _context->runOnJavascriptThread([=]() {
+                promise->reject(errorMessage);
+              });
             } catch (...) {
-              promise->reject(
-                  "An unknown error occurred when calling the worklet.");
+              _context->runOnJavascriptThread([=]() {
+                promise->reject(
+                    "An unknown error occurred when calling the worklet.");
+              });
             }
 
           });
@@ -162,8 +185,8 @@ public:
       });
   };
   
-  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorklet, call),
-                       JSI_EXPORT_FUNC(JsiWorklet, callAsync))
+  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorklet, callInJSContext),
+                       JSI_EXPORT_FUNC(JsiWorklet, callInWorkletContext))
   
   JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorklet, context),
                               JSI_EXPORT_PROP_GET(JsiWorklet, isWorklet))
@@ -177,10 +200,11 @@ private:
    @param function Function to create dispatchers for
    @param closure Function's closure
    */
-  JsiWorkletDispatchers* createWorkletDispatchers(std::shared_ptr<JsiWorkletContext> context,
-                                                  jsi::Runtime &runtime,
-                                                  const jsi::Value &function,
-                                                  const jsi::Value &closure) {
+  std::shared_ptr<JsiWorkletDispatchers>
+  createWorkletDispatchers(std::shared_ptr<JsiWorkletContext> context,
+                           jsi::Runtime &runtime,
+                           const jsi::Value &function,
+                           const jsi::Value &closure) {
 
     if (!closure.isUndefined() && !closure.isObject()) {
       context->raiseError("Expected an object for the closure parameter.");
@@ -215,7 +239,7 @@ private:
     auto callInMainRuntime =
         createCallerWithClosure(context, runtime, funcPtr, closure);
 
-    return new JsiWorkletDispatchers{callInWorkletRuntime, callInMainRuntime};
+    return std::make_shared<JsiWorkletDispatchers>(callInWorkletRuntime, callInMainRuntime);
   }
 
   /**
@@ -260,13 +284,13 @@ private:
                                            unwrappedClosure.asObject(runtime),
                                            static_cast<const jsi::Value *>(args.data()),
                                            size);
-      }      
+      }
 
       return retVal;
     };
   }
   
   std::shared_ptr<JsiWorkletContext> _context;
-  JsiWorkletDispatchers *_dispatchers;
+  std::shared_ptr<JsiWorkletDispatchers> _dispatchers;
 };
 } // namespace RNWorklet
