@@ -21,36 +21,50 @@ const App = () => {
   const context = useMemo(() => Worklets.createWorkletContext('taste'), []);
   const logToConsole = useMemo(
     () =>
-      Worklets.createWorklet(
-        {},
-        (_, message: string) => {
-          setMessage(message);
-        },
-        context,
-      ),
-    [context],
+      Worklets.createWorklet((message: string) => {
+        setMessage(message);
+      }),
+    [],
   );
 
   const calculateFactor = useMemo(
     () =>
       Worklets.createWorklet(
-        {factor, callCount, values, logToConsole},
-        (ctx, a: number) => {
-          ctx.callCount.value++;
-          ctx.values.forEach(p => {
+        function (a: number) {
+          this.callCount.value++;
+          this.values.forEach(p => {
             a *= p;
           });
-          return a * ctx.factor;
+          return a * this.factor;
         },
+        {factor, callCount, values, logToConsole},
+        context,
       ),
-    [callCount, factor, logToConsole, values],
+    [callCount, context, factor, logToConsole, values],
   );
+
+  /**
+   * createWorklet(
+        function (a: number) {
+          this.callCount.value++;
+          this.values.forEach(p => {
+            a *= p;
+          });
+          return a * this.factor;
+        },
+        {factor, callCount, values, logToConsole},
+        context,
+      ),
+   */
 
   const callBackToJS = useMemo(
     () =>
-      Worklets.createWorklet({logToConsole}, ctx => {
-        ctx.logToConsole.call('Hello from the worklet');
-      }),
+      Worklets.createWorklet(
+        function () {
+          this.logToConsole.call('Hello from the worklet');
+        },
+        {logToConsole},
+      ),
     [logToConsole],
   );
 

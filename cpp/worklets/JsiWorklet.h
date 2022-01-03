@@ -5,7 +5,6 @@
 
 #include <JsiHostObject.h>
 #include <JsiWorkletContext.h>
-
 #include <ReactCommon/TurboModuleUtils.h>
 #include <jsi/jsi.h>
 
@@ -84,7 +83,7 @@ public:
   JSI_HOST_FUNCTION(callAsync) {
     // Wrap the this object
     auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
-
+    
     // Wrap the arguments
     std::vector<std::shared_ptr<JsiWrapper>> argsWrapper;
     argsWrapper.reserve(count);
@@ -121,13 +120,16 @@ public:
           _context->runOnWorkletThread([=]() {
             // Dispatch and resolve / reject promise
             auto workletRuntime = &_context->getWorkletRuntime();
+            
             // Prepare result
             try {
+              
               auto retVal = _dispatchers->callInWorkletRuntime(
                   *workletRuntime, thisWrapper, argsWrapper);
 
               auto retValWrapper =
                   JsiWrapper::wrap(*workletRuntime, retVal);
+              
               _context->runOnJavascriptThread([=]() {
                 promise->resolve(JsiWrapper::unwrap(
                     *_context->getJsRuntime(), retValWrapper));
@@ -161,7 +163,7 @@ private:
                                                const jsi::Value &function,
                                                const jsi::Value &closure) {
 
-    if (!closure.isObject()) {
+    if (!closure.isUndefined() && !closure.isObject()) {
       context->raiseError("Expected an object for the closure parameter.");
       return {};
     }
@@ -187,7 +189,7 @@ private:
         context->evaluteJavascriptInWorkletRuntime(code)
             .asObject(runtime)
             .asFunction(runtime));
-
+    
     auto callInWorkletRuntime =
         createCallerWithClosure(context, runtime, workletPtr, closure);
     auto callInMainRuntime =
@@ -216,22 +218,32 @@ private:
                jsi::Runtime &runtime, std::shared_ptr<JsiWrapper> thisWrapper,
                const std::vector<std::shared_ptr<JsiWrapper>> &arguments)
                -> jsi::Value {
-      // Add the closure as the first parameter to the calling argument
-      size_t size = arguments.size() + 1;
+      
+      // Create arguments
+      size_t size = arguments.size();
       jsi::Value *args = new jsi::Value[size];
 
-      // Add context as first argument
-      args[0] = JsiWrapper::unwrap(runtime, closureWrapper);
-
       // Add the rest of the arguments
-      for (size_t i = 1; i < size; i++) {
-        args[i] = JsiWrapper::unwrap(runtime, arguments.at(i - 1));
+      for (size_t i = 0; i < size; i++) {
+        args[i] = JsiWrapper::unwrap(runtime, arguments.at(i));
       }
 
+      auto unwrappedClosure = JsiWrapper::unwrap(runtime, closureWrapper);
+              
       jsi::Value retVal;
       try {
-        retVal = functionPtr->call(runtime,
-                                   static_cast<const jsi::Value *>(args), size);
+        
+        if(unwrappedClosure.isUndefined()) {
+          retVal = functionPtr->call(runtime,
+                                     static_cast<const jsi::Value *>(args),
+                                     size);
+        } else {
+          retVal = functionPtr->callWithThis(runtime,
+                                             unwrappedClosure.asObject(runtime),
+                                             static_cast<const jsi::Value *>(args),
+                                             size);
+        }
+        
       } catch (const jsi::JSError &err) {
         context->raiseError(err.getMessage().c_str());
       } catch (const std::exception &err) {

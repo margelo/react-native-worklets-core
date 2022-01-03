@@ -55,7 +55,7 @@ public:
     // Install the worklet into the worklet runtime
     return jsi::Object::createFromHostObject(
         runtime, std::make_shared<JsiWorklet>(activeContext, runtime,
-                                              arguments[1], arguments[0]));
+                                              arguments[0], arguments[1]));
   };
 
   JSI_HOST_FUNCTION(createWorkletContext) {
@@ -68,7 +68,7 @@ public:
     }
 
     auto nameStr = arguments[0].asString(runtime).utf8(runtime);
-    return jsi::Object::createFromHostObject(runtime, std::make_shared<JsiWorkletContext>(nameStr, _context));    
+    return jsi::Object::createFromHostObject(runtime, std::make_shared<JsiWorkletContext>(nameStr, _context));
   };
 
   JSI_HOST_FUNCTION(createSharedValue) {

@@ -17,7 +17,6 @@ add_library(worklets
         cpp/wrappers/JsiWrapper.cpp
         cpp/worklets/JsiWorkletContext.cpp
         cpp/worklets/DispatchQueue.cpp
-        cpp/worklets/JsiWorkletApi.cpp
         jni/jni-adapter.cpp
         jni/JniReactNativeWorkletsModule.cpp
 )

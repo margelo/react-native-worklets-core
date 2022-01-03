@@ -58,14 +58,14 @@ export interface IWorkletNativeApi {
    * Creates a worklet that can be executed on either then main thread or on
    * the worklet thread in the context given by the context name (or empty to run
    * in the default context)
-   * @param closure Values that will be copied to the worklet closure
    * @param worklet Function to use to create the worklet
+   * @param closure Values that will be copied to the worklet closure
    * @param context Worklet context to run the worklet in. Optional.
    * @param Returns an @see(IWorklet) object
    */
   createWorklet: <C extends ContextType, T, A extends any[]>(
-    closure: C,
-    worklet: OmitThisParameter<(closure: C, ...args: A) => T>,
+    worklet: (this: C, ...args: A) => T,
+    closure?: C,
     context?: IWorkletContext
   ) => IWorklet<A, (...args: A) => T>;
 }
