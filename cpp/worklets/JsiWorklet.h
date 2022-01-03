@@ -233,7 +233,7 @@ private:
       jsi::Value retVal;
       try {
         
-        if(unwrappedClosure.isUndefined()) {
+        if(!unwrappedClosure.isObject()) {
           retVal = functionPtr->call(runtime,
                                      static_cast<const jsi::Value *>(args),
                                      size);

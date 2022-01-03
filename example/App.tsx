@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo} from 'react';
 import {
   Alert,
   Button,
@@ -42,20 +42,6 @@ const App = () => {
       ),
     [callCount, context, factor, logToConsole, values],
   );
-
-  /**
-   * createWorklet(
-        function (a: number) {
-          this.callCount.value++;
-          this.values.forEach(p => {
-            a *= p;
-          });
-          return a * this.factor;
-        },
-        {factor, callCount, values, logToConsole},
-        context,
-      ),
-   */
 
   const callBackToJS = useMemo(
     () =>

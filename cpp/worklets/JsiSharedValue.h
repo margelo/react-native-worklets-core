@@ -65,13 +65,13 @@ public:
     // can just use values directly.
     auto functionToCall = std::make_shared<jsi::Function>(
         arguments[0].asObject(runtime).asFunction(runtime));
+    
     auto functionPtr = [functionToCall](jsi::Runtime &rt,
                                         const jsi::Value &thisVal,
                                         const jsi::Value *args,
                                         size_t count) -> jsi::Value {
       if (thisVal.isObject()) {
-        return functionToCall->callWithThis(rt, thisVal.asObject(rt),
-                                            args, count);
+        return functionToCall->callWithThis(rt, thisVal.asObject(rt), args, count);
       } else {
         return functionToCall->call(rt, args, count);
       }
@@ -107,7 +107,9 @@ public:
         });
   }
   
-  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiSharedValue, toString))
+  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiSharedValue, toString),
+                       JSI_EXPORT_FUNC(JsiSharedValue, addListener))
+  
   JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiSharedValue, value))
   JSI_EXPORT_PROPERTY_SETTERS(JSI_EXPORT_PROP_SET(JsiSharedValue, value))
 
