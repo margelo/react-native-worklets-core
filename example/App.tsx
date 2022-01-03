@@ -1,140 +1,85 @@
-import React, {useCallback, useEffect, useMemo} from 'react';
-import {
-  Alert,
-  Button,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+import React, {useCallback, useMemo, useState} from 'react';
+import {Button, ScrollView, StyleSheet, Text, View} from 'react-native';
 
-import {Colors} from 'react-native/Libraries/NewAppScreen';
-
-import {Worklets} from 'react-native-worklets';
+import * as Tests from './Tests';
+import {TestState, TestWrapper} from './Tests/TestWrapper';
 
 const App = () => {
-  const factor = useMemo(() => 1.5, []);
-  const values = useMemo(() => [1, 2, 3, 5], []);
-  const callCount = useMemo(() => Worklets.createSharedValue(0), []);
-  const context = useMemo(() => Worklets.createWorkletContext('taste'), []);
-  const logToConsole = useMemo(
-    () =>
-      Worklets.createWorklet((message: string) => {
-        setMessage(message);
-      }),
-    [],
-  );
-
-  const calculateFactor = useMemo(
-    () =>
-      Worklets.createWorklet(
-        function (a: number) {
-          this.callCount.value++;
-          this.values.forEach(p => {
-            a *= p;
-          });
-          return a * this.factor;
-        },
-        {factor, callCount, values, logToConsole},
-        context,
-      ),
-    [callCount, context, factor, logToConsole, values],
-  );
-
-  const callBackToJS = useMemo(
-    () =>
-      Worklets.createWorklet(
-        function () {
-          this.logToConsole.call('Hello from the worklet');
-        },
-        {logToConsole},
-      ),
-    [logToConsole],
-  );
-
-  const [calculationResult, setCalculationResult] = React.useState<number>(0);
-  const [message, setMessage] = React.useState<string>('');
-  const [isRunning, setIsRunning] = React.useState(false);
-
-  const reset = useCallback(() => {
-    setCalculationResult(0);
-    setMessage('');
+  const [output, setOutput] = useState<string[]>([]);
+  const tests = useMemo((): {
+    run: () => Promise<void>;
+    name: string;
+    state: TestState;
+  }[] => {
+    return Object.keys(Tests).map(t => ({
+      // @ts-ignore
+      run: Tests[t],
+      name: t,
+      state: 'notrun',
+    }));
   }, []);
 
-  const runWorkletInWorkletRuntime = useCallback(() => {
-    setIsRunning(true);
-    reset();
-    for (let i = 0; i < 100; i++) {
-      calculateFactor
-        .callAsync(i)
-        .then(b => {
-          if (i === 99) {
-            setIsRunning(false);
-          }
-          setCalculationResult(b);
-        })
-        .catch(e => Alert.alert(e));
+  const [running, setRunning] = useState(false);
+  const runTests = useCallback(async () => {
+    setRunning(true);
+    setOutput(['Starting...']);
+    for (let i = 0; i < tests.length; i++) {
+      try {
+        setOutput(p => p.concat(tests[i].name + ' running...'));
+        await tests[i].run();
+        tests[i].state = 'success';
+        setOutput(p => [
+          ...p.slice(0, p.length - 1),
+          tests[i].name + ' succeeded.',
+        ]);
+      } catch (err: any) {
+        tests[i].state = 'failure';
+        setOutput(p => [
+          ...p.slice(0, p.length - 1),
+          tests[i].name + ' failed.',
+        ]);
+        setOutput(p => p.concat('    ' + err.message));
+      }
     }
-  }, [calculateFactor, reset]);
-
-  const runWorkletInMainRuntime = useCallback(() => {
-    reset();
-    setIsRunning(true);
-    let b = 0;
-    for (let i = 0; i < 100; i++) {
-      b = calculateFactor.call(i);
-    }
-    setIsRunning(false);
-    setCalculationResult(b);
-  }, [calculateFactor, reset]);
-
-  const runWorkletInWorkletRuntimeWithCallbackOnJsRuntime = useCallback(() => {
-    reset();
-    callBackToJS.callAsync();
-  }, [callBackToJS, reset]);
-
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+    setRunning(false);
+    setOutput(p => p.concat('Done'));
+  }, [tests]);
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+    <View style={styles.container}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <View>
-          <Text>{`Result: ${calculationResult} (called ${callCount.value} times)`}</Text>
-          <Text>{`Message: ${message}`}</Text>
-        </View>
-        <View>
-          <Button
-            title="Run worklet in Worklet runtime"
-            onPress={runWorkletInWorkletRuntime}
-            disabled={isRunning}
-          />
-        </View>
-        <View>
-          <Button
-            title="Run worklet in main runtime"
-            onPress={runWorkletInMainRuntime}
-            disabled={isRunning}
-          />
-        </View>
-        <View>
-          <Button
-            title="Run worklet in worklet runtime with callback on Js runtime"
-            onPress={runWorkletInWorkletRuntimeWithCallbackOnJsRuntime}
-            disabled={isRunning}
-          />
-        </View>
+        contentContainerStyle={styles.testsContainer}>
+        {tests.map(t => (
+          <TestWrapper key={t.name} name={t.name} state={t.state} />
+        ))}
       </ScrollView>
-    </SafeAreaView>
+      <ScrollView contentContainerStyle={styles.output}>
+        <Text style={styles.outputText}>{output.join('\n')}</Text>
+      </ScrollView>
+      <View style={styles.buttons}>
+        <Button title="Run" disabled={running} onPress={runTests} />
+      </View>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  testsContainer: {flex: 5},
+  output: {
+    flex: 1,
+    padding: 8,
+    backgroundColor: '#EFEFEF',
+  },
+  outputText: {flex: 1},
+  buttons: {
+    backgroundColor: '#CCC',
+    paddingBottom: 36,
+    paddingTop: 14,
+  },
+});
 
 export default App;

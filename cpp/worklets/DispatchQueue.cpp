@@ -3,8 +3,6 @@
 namespace RNWorklet {
 
 JsiDispatchQueue::~JsiDispatchQueue() {
-  printf("Destructor: Destroying dispatch threads...\n");
-
   // Signal to dispatch threads that it's time to wrap up
   std::unique_lock<std::mutex> lock(lock_);
   quit_ = true;
@@ -14,7 +12,6 @@ JsiDispatchQueue::~JsiDispatchQueue() {
   // Wait for threads to finish before we exit
   for (size_t i = 0; i < threads_.size(); i++) {
     if (threads_[i].joinable()) {
-      printf("Destructor: Joining thread %zu until completion\n", i);
       threads_[i].join();
     }
   }
@@ -22,9 +19,6 @@ JsiDispatchQueue::~JsiDispatchQueue() {
 
 JsiDispatchQueue::JsiDispatchQueue(std::string name, size_t thread_cnt)
     : name_{std::move(name)}, threads_(thread_cnt) {
-  printf("Creating dispatch queue: %s\n", name_.c_str());
-  printf("Dispatch threads: %zu\n", thread_cnt);
-
   for (size_t i = 0; i < threads_.size(); i++) {
     threads_[i] = std::thread(&JsiDispatchQueue::dispatch_thread_handler, this);
   }

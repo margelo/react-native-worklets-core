@@ -110,9 +110,17 @@ public:
             
             promise->resolve(retVal);
 
+          } catch (const jsi::JSError &err) {
+            promise->reject(err.getMessage().c_str());
+          } catch (const std::exception &err) {
+            promise->reject(err.what());
+          } catch (const std::runtime_error &err) {
+            promise->reject(err.what());
           } catch (...) {
-            promise->reject("Error");
+            promise->reject(
+                "An unknown error occurred when calling the worklet.");
           }
+
           delete[] args;
 
         } else {
@@ -135,9 +143,17 @@ public:
                     *_context->getJsRuntime(), retValWrapper));
               });
 
+            } catch (const jsi::JSError &err) {
+              promise->reject(err.getMessage().c_str());
+            } catch (const std::exception &err) {
+              promise->reject(err.what());
+            } catch (const std::runtime_error &err) {
+              promise->reject(err.what());
             } catch (...) {
-              promise->reject("error");
+              promise->reject(
+                  "An unknown error occurred when calling the worklet.");
             }
+
           });
         }
       });
@@ -231,30 +247,19 @@ private:
       auto unwrappedClosure = JsiWrapper::unwrap(runtime, closureWrapper);
               
       jsi::Value retVal;
-      try {
-        
-        if(!unwrappedClosure.isObject()) {
-          retVal = functionPtr->call(runtime,
-                                     static_cast<const jsi::Value *>(args),
-                                     size);
-        } else {
-          retVal = functionPtr->callWithThis(runtime,
-                                             unwrappedClosure.asObject(runtime),
-                                             static_cast<const jsi::Value *>(args),
-                                             size);
-        }
-        
-      } catch (const jsi::JSError &err) {
-        context->raiseError(err.getMessage().c_str());
-      } catch (const std::exception &err) {
-        context->raiseError(err.what());
-      } catch (const std::runtime_error &err) {
-        context->raiseError(err.what());
-      } catch (...) {
-        context->raiseError(
-            "An unknown error occurred when calling dispatch function.");
+      
+      if(!unwrappedClosure.isObject()) {
+        retVal = functionPtr->call(runtime,
+                                   static_cast<const jsi::Value *>(args),
+                                   size);
+      } else {
+        retVal = functionPtr->callWithThis(runtime,
+                                           unwrappedClosure.asObject(runtime),
+                                           static_cast<const jsi::Value *>(args),
+                                           size);
       }
-
+      
+      
       delete[] args;
 
       return retVal;
