@@ -11,9 +11,7 @@
 #import <ReactCommon/RCTTurboModule.h>
 #import <React/RCTUtils.h>
 
-@implementation ReactNativeWorklets {
-  RNWorklet::JsiWorkletContext* _workletContext;
-}
+@implementation ReactNativeWorklets {}
 
 @synthesize bridge = _bridge;
 
@@ -25,8 +23,7 @@ RCT_EXPORT_MODULE()
 
 - (void)invalidate
 {
-  delete _workletContext;
-  _workletContext = nullptr;
+  _bridge = nullptr;
 }
 
 - (void)setBridge:(RCTBridge *)bridge
@@ -44,10 +41,10 @@ RCT_EXPORT_MODULE()
       });
       
       // Create the worklet context
-      _workletContext = new RNWorklet::JsiWorkletContext(jsRuntime, callInvoker, std::move(errorHandler));
+      auto workletContext = std::make_shared<RNWorklet::JsiWorkletContext>(jsRuntime, callInvoker, std::move(errorHandler));
       
       // Install the worklet API
-      RNWorklet::JsiWorkletApi::installApi(_workletContext);
+      RNWorklet::JsiWorkletApi::installApi(workletContext);
     }
 }
 

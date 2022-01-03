@@ -45,7 +45,7 @@ const App = () => {
   const callBackToJS = useMemo(
     () =>
       Worklets.createWorklet({logToConsole}, ctx => {
-        ctx.logToConsole.runOnMainThread('Hello from the worklet');
+        ctx.logToConsole.runOnJsThread('Hello from the worklet');
       }),
     [logToConsole],
   );
@@ -80,7 +80,7 @@ const App = () => {
     setIsRunning(true);
     let b = 0;
     for (let i = 0; i < 100; i++) {
-      b = calculateFactor.runOnMainThread(i);
+      b = calculateFactor.runOnJsThread(i);
     }
     setIsRunning(false);
     setCalculationResult(b);

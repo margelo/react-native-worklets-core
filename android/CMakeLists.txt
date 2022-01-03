@@ -27,6 +27,8 @@ target_include_directories(
         PRIVATE
         cpp
         cpp/worklets
+        cpp/utils
+        cpp/wrappers
         cpp/jsi
         jni
         "${LIBFBJNI_INCLUDE_DIR}"

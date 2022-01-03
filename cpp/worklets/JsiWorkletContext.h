@@ -44,7 +44,7 @@ public:
      runtime and thread from an existing context
      @param context Context to create a new worklet context from
   */
-  JsiWorkletContext(JsiWorkletContext *context)
+  JsiWorkletContext(std::shared_ptr<JsiWorkletContext> context)
       : JsiWorkletContext(context->_jsRuntime, context->_jsCallInvoker,
                           context->_errorHandler) {}
 

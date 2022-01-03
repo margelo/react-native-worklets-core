@@ -19,7 +19,7 @@ public:
    Constructs a shared value - which is a wrapped value that can be accessed in
    a thread safe across two javascript runtimes.
    */
-  JsiSharedValue(const jsi::Value &value, JsiWorkletContext *context)
+  JsiSharedValue(const jsi::Value &value, std::shared_ptr<JsiWorkletContext> context)
   : _valueWrapper(JsiWrapper::wrap(*context->getJsRuntime(), value)),
   _context(context) {}
   
@@ -130,6 +130,6 @@ public:
 
 private:
   std::shared_ptr<JsiWrapper> _valueWrapper;
-  JsiWorkletContext* _context;
+  std::shared_ptr<JsiWorkletContext> _context;
 };
 } // namespace RNWorklet

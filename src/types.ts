@@ -12,7 +12,7 @@ export interface IWorklet<A extends any[], T extends (...args: A) => any> {
   /**
    * Calls the worklet on the main thread
    */
-  runOnMainThread: OmitThisParameter<(...args: A) => ReturnType<T>>;
+  runOnJsThread: OmitThisParameter<(...args: A) => ReturnType<T>>;
   /**
    * Returns true the current execution context is the main Javascript thread
    */

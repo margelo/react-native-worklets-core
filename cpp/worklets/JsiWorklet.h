@@ -28,23 +28,10 @@ using JsiWorkletDispatchers = struct {
  that exists in both the main JS runtime and as an installed function
  in the worklet runtime. The worklet object exposes some methods and props
  for handling this. The worklet exists in a given worklet context.
-
- The signature for a worklet is as follows:
-
- worklet: {
-  // Returns true for worklets
-  isWorklet: boolean;
-  // Returns true if we are currently on the main thread
-  isMainThread: boolean;
-  // Runs the worklet on the main thread and in the main js runtime
-  runOnMainThread: (...args) => any;
-  // Runs the worklet on the worklet thread and on the worklet runtime
-  runOnWorkletThread: (...args) => Promise<any>;
- }
  */
 class JsiWorklet : public JsiHostObject {
 public:
-  JsiWorklet(JsiWorkletContext *context, jsi::Runtime &runtime,
+  JsiWorklet(std::shared_ptr<JsiWorkletContext> context, jsi::Runtime &runtime,
              const jsi::Value &function, const jsi::Value &closure): _context(context) {
     // Make sure we call this from the main runtime
     if (context->isWorkletRuntime(runtime)) {
@@ -72,7 +59,7 @@ public:
   // Returns true for worklets
   JSI_PROPERTY_GET(isWorklet) { return true; };
 
-  JSI_HOST_FUNCTION(runOnMainThread) {
+  JSI_HOST_FUNCTION(runOnJsThread) {
     // Otherwise we need to call the worklet edition of the function from
     // within the worklet thread
     auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
@@ -114,50 +101,51 @@ public:
     return react::createPromiseAsJSIValue(
         runtime, [this, thisWrapper, argsWrapper, count](jsi::Runtime &runtime,
                          std::shared_ptr<react::Promise> promise) {
-          // Is this called on the main thread?
-          if (_context->isWorkletRuntime(runtime)) {
-            // The we can just call it directly
-            jsi::Value *args = new jsi::Value[argsWrapper.size()];
-            for (int i = 0; i < argsWrapper.size(); ++i) {
-              args[i] = JsiWrapper::unwrap(runtime, argsWrapper[i]);
-            }
+        // Is this called from the worklet thread?
+        if (_context->isWorkletRuntime(runtime)) {
+          // The we can just call it directly
+          jsi::Value *args = new jsi::Value[argsWrapper.size()];
+          for (int i = 0; i < argsWrapper.size(); ++i) {
+            args[i] = JsiWrapper::unwrap(runtime, argsWrapper[i]);
+          }
 
+          try {
+            auto retVal = _dispatchers->callInWorkletRuntime(
+                runtime, thisWrapper, argsWrapper);
+            
+            promise->resolve(retVal);
+
+          } catch (...) {
+            promise->reject("Error");
+          }
+          delete[] args;
+
+        } else {
+          // Run on the Worklet thread
+          _context->runOnWorkletThread([=]() {
+            // Dispatch and resolve / reject promise
+            auto workletRuntime = &_context->getWorkletRuntime();
+            // Prepare result
             try {
               auto retVal = _dispatchers->callInWorkletRuntime(
-                  runtime, thisWrapper, argsWrapper);
-              promise->resolve(retVal);
+                  *workletRuntime, thisWrapper, argsWrapper);
+
+              auto retValWrapper =
+                  JsiWrapper::wrap(*workletRuntime, retVal);
+              _context->runOnJavascriptThread([=]() {
+                promise->resolve(JsiWrapper::unwrap(
+                    *_context->getJsRuntime(), retValWrapper));
+              });
 
             } catch (...) {
-              promise->reject("Error");
+              promise->reject("error");
             }
-            delete[] args;
-
-          } else {
-            // Run on the Worklet thread
-            _context->runOnWorkletThread([=]() {
-              // Dispatch and resolve / reject promise
-              auto workletRuntime = &_context->getWorkletRuntime();
-              // Prepare result
-              try {
-                auto retVal = _dispatchers->callInWorkletRuntime(
-                    *workletRuntime, thisWrapper, argsWrapper);
-
-                auto retValWrapper =
-                    JsiWrapper::wrap(*workletRuntime, retVal);
-                _context->runOnJavascriptThread([=]() {
-                  promise->resolve(JsiWrapper::unwrap(
-                      *_context->getJsRuntime(), retValWrapper));
-                });
-
-              } catch (...) {
-                promise->reject("error");
-              }
-            });
-          }
-        });
+          });
+        }
+      });
   };
   
-  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorklet, runOnMainThread),
+  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorklet, runOnJsThread),
                        JSI_EXPORT_FUNC(JsiWorklet, runOnWorkletThread))
   
   JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorklet, isMainThread),
@@ -172,7 +160,7 @@ private:
    @param function Function to create dispatchers for
    @param closure Function's closure
    */
-  JsiWorkletDispatchers* createWorkletFunction(JsiWorkletContext *context,
+  JsiWorkletDispatchers* createWorkletFunction(std::shared_ptr<JsiWorkletContext> context,
                                                jsi::Runtime &runtime,
                                                const jsi::Value &function,
                                                const jsi::Value &closure) {
@@ -220,7 +208,8 @@ private:
    @param closure Function's closure
    */
   JsiWorkletDispatcher
-  createCallerWithClosure(JsiWorkletContext *context, jsi::Runtime &runtime,
+  createCallerWithClosure(std::shared_ptr<JsiWorkletContext> context,
+                          jsi::Runtime &runtime,
                           std::shared_ptr<jsi::Function> functionPtr,
                           const jsi::Value &closure) {
     // Wrap the closure
@@ -264,7 +253,7 @@ private:
     };
   }
   
-  JsiWorkletContext *_context;
+  std::shared_ptr<JsiWorkletContext> _context;
   JsiWorkletDispatchers *_dispatchers;
 };
 } // namespace RNWorklet

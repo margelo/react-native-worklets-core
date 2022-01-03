@@ -19,13 +19,13 @@ public:
    * @param context Worklet context
    * make sure only the runOnJsThread method is available.
    */
-  JsiWorkletApi(JsiWorkletContext *context) : _context(context) {};
+  JsiWorkletApi(std::shared_ptr<JsiWorkletContext> context) : _context(context) {};
 
   /**
    * Installs the worklet API into the provided runtime
    * @param context Worklet context to install API for
    */
-  static void installApi(JsiWorkletContext *context) {
+  static void installApi(std::shared_ptr<JsiWorkletContext> context) {
     auto workletApi = std::make_shared<JsiWorkletApi>(context);
     context->getJsRuntime()->global().setProperty(
         *context->getJsRuntime(), "Worklets",
@@ -97,9 +97,9 @@ public:
                        JSI_EXPORT_FUNC(JsiWorkletApi, createWorkletContext))
 
 private:
-  JsiWorkletContext *getContext(const char *name);
+  std::shared_ptr<JsiWorkletContext> getContext(const char *name);
 
-  JsiWorkletContext *_context;
+  std::shared_ptr<JsiWorkletContext> _context;
   std::map<std::string, std::shared_ptr<JsiWorkletContext>> _contexts;
 };
 } // namespace RNWorklet

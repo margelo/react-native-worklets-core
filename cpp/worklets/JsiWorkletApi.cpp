@@ -4,7 +4,7 @@
 namespace RNWorklet {
 using namespace facebook;
 
-JsiWorkletContext *JsiWorkletApi::getContext(const char *name) {
+std::shared_ptr<JsiWorkletContext> JsiWorkletApi::getContext(const char *name) {
   // Let's see if we are launching this on the default context
   if (name == nullptr) {
     return _context;
@@ -17,7 +17,7 @@ JsiWorkletContext *JsiWorkletApi::getContext(const char *name) {
                            "createWorkletContext method to create it."));
     return nullptr;
   }
-  return _contexts.at(name).get();
+  return _contexts.at(name);
 }
 
 } // namespace RNWorklet
