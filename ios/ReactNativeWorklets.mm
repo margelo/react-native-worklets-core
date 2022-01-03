@@ -41,7 +41,7 @@ RCT_EXPORT_MODULE()
       });
       
       // Create the worklet context
-      auto workletContext = std::make_shared<RNWorklet::JsiWorkletContext>(jsRuntime, callInvoker, std::move(errorHandler));
+      auto workletContext = std::make_shared<RNWorklet::JsiWorkletContext>("default", jsRuntime, callInvoker, std::move(errorHandler));
       
       // Install the worklet API
       RNWorklet::JsiWorkletApi::installApi(workletContext);

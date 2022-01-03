@@ -41,15 +41,12 @@ public:
     }
 
     if (count > 3) {
-      return _context->raiseError("createWorklet expects 2 parameters: "
+      return _context->raiseError("createWorklet expects 2-3 parameters: "
                                   "Worklet function and worklet closure, and additionally a worklet context");
     }
 
     // Get the active context
-    auto activeContext = getContext(
-        count == 3 && arguments[2].isString()
-            ? arguments[2].asString(runtime).utf8(runtime).c_str()
-            : nullptr);
+    auto activeContext = count == 3 && arguments[2].isObject() ? arguments[2].asObject(runtime).getHostObject<JsiWorkletContext>(runtime) : _context;
     
     if(activeContext == nullptr) {
       return _context->raiseError("createWorklet called with invalid context.");
@@ -71,13 +68,7 @@ public:
     }
 
     auto nameStr = arguments[0].asString(runtime).utf8(runtime);
-    if (_contexts.count(nameStr) == 0) {
-      _contexts.emplace(nameStr,
-                        std::make_shared<JsiWorkletContext>(_context));
-    } else {
-      _context->raiseError("A context with this name already exists.");
-    }
-    return jsi::Value::undefined();
+    return jsi::Object::createFromHostObject(runtime, std::make_shared<JsiWorkletContext>(nameStr, _context));    
   };
 
   JSI_HOST_FUNCTION(createSharedValue) {
@@ -96,9 +87,6 @@ public:
                        JSI_EXPORT_FUNC(JsiWorkletApi, createWorkletContext))
 
 private:
-  std::shared_ptr<JsiWorkletContext> getContext(const char *name);
-
   std::shared_ptr<JsiWorkletContext> _context;
-  std::map<std::string, std::shared_ptr<JsiWorkletContext>> _contexts;
 };
 } // namespace RNWorklet

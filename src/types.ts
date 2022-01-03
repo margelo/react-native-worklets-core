@@ -8,19 +8,23 @@ export interface IWorklet<A extends any[], T extends (...args: A) => any> {
   /**
    * Calls the worklet on the worklet thread
    */
-  runOnWorkletThread: OmitThisParameter<(...args: A) => Promise<ReturnType<T>>>;
+  callAsync: OmitThisParameter<(...args: A) => Promise<ReturnType<T>>>;
   /**
    * Calls the worklet on the main thread
    */
-  runOnJsThread: OmitThisParameter<(...args: A) => ReturnType<T>>;
+  call: OmitThisParameter<(...args: A) => ReturnType<T>>;
   /**
-   * Returns true the current execution context is the main Javascript thread
+   * Returns the context of the worklet
    */
-  isMainThread: boolean;
+  readonly context: IWorkletContext;
   /**
    * Returns true for worklets.
    */
-  isWorklet: true;
+  readonly isWorklet: true;
+}
+
+export interface IWorkletContext {
+  readonly name: string;
 }
 
 export type ContextType = {
@@ -45,7 +49,7 @@ export interface IWorkletNativeApi {
    * name of the worklet runtime a worklet will be executed in when you call the
    * worklet.runOnWorkletThread();
    */
-  createWorkletContext: (name: string) => void;
+  createWorkletContext: (name: string) => IWorkletContext;
   /**
    * Creates a value that can be shared between runtimes
    */
@@ -56,14 +60,13 @@ export interface IWorkletNativeApi {
    * in the default context)
    * @param closure Values that will be copied to the worklet closure
    * @param worklet Function to use to create the worklet
-   * @param contextName Name of the worklet context to run the worklet in, or
-   * default to use the default context
+   * @param context Worklet context to run the worklet in. Optional.
    * @param Returns an @see(IWorklet) object
    */
   createWorklet: <C extends ContextType, T, A extends any[]>(
     closure: C,
     worklet: OmitThisParameter<(closure: C, ...args: A) => T>,
-    contextName?: string
+    context?: IWorkletContext
   ) => IWorklet<A, (...args: A) => T>;
 }
 declare global {

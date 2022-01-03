@@ -18,7 +18,7 @@ const App = () => {
   const factor = useMemo(() => 1.5, []);
   const values = useMemo(() => [1, 2, 3, 5], []);
   const callCount = useMemo(() => Worklets.createSharedValue(0), []);
-  useMemo(() => Worklets.createWorkletContext('taste'), []);
+  const context = useMemo(() => Worklets.createWorkletContext('taste'), []);
   const logToConsole = useMemo(
     () =>
       Worklets.createWorklet(
@@ -26,9 +26,9 @@ const App = () => {
         (_, message: string) => {
           setMessage(message);
         },
-        'taste',
+        context,
       ),
-    [],
+    [context],
   );
 
   const calculateFactor = useMemo(
@@ -49,7 +49,7 @@ const App = () => {
   const callBackToJS = useMemo(
     () =>
       Worklets.createWorklet({logToConsole}, ctx => {
-        ctx.logToConsole.runOnJsThread('Hello from the worklet');
+        ctx.logToConsole.call('Hello from the worklet');
       }),
     [logToConsole],
   );
@@ -68,7 +68,7 @@ const App = () => {
     reset();
     for (let i = 0; i < 100; i++) {
       calculateFactor
-        .runOnWorkletThread(i)
+        .callAsync(i)
         .then(b => {
           if (i === 99) {
             setIsRunning(false);
@@ -84,7 +84,7 @@ const App = () => {
     setIsRunning(true);
     let b = 0;
     for (let i = 0; i < 100; i++) {
-      b = calculateFactor.runOnJsThread(i);
+      b = calculateFactor.call(i);
     }
     setIsRunning(false);
     setCalculationResult(b);
@@ -92,7 +92,7 @@ const App = () => {
 
   const runWorkletInWorkletRuntimeWithCallbackOnJsRuntime = useCallback(() => {
     reset();
-    callBackToJS.runOnWorkletThread();
+    callBackToJS.callAsync();
   }, [callBackToJS, reset]);
 
   const isDarkMode = useColorScheme() === 'dark';

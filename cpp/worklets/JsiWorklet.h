@@ -48,18 +48,13 @@ public:
   ~JsiWorklet() {
     delete _dispatchers;
   }
-  
-  // isMainThread
-  // Returns true if called from the main thread, false if called from the
-  // context's worklet thread.
-  JSI_PROPERTY_GET(isMainThread) {
-    return (bool)!_context->isWorkletRuntime(runtime);
-  };
 
   // Returns true for worklets
   JSI_PROPERTY_GET(isWorklet) { return true; };
+  
+  JSI_PROPERTY_GET(context) { return jsi::Object::createFromHostObject(runtime, _context); };
 
-  JSI_HOST_FUNCTION(runOnJsThread) {
+  JSI_HOST_FUNCTION(call) {
     // Otherwise we need to call the worklet edition of the function from
     // within the worklet thread
     auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
@@ -86,7 +81,7 @@ public:
     return jsi::Value::undefined();
   };
 
-  JSI_HOST_FUNCTION(runOnWorkletThread) {
+  JSI_HOST_FUNCTION(callAsync) {
     // Wrap the this object
     auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
 
@@ -101,6 +96,7 @@ public:
     return react::createPromiseAsJSIValue(
         runtime, [this, thisWrapper, argsWrapper, count](jsi::Runtime &runtime,
                          std::shared_ptr<react::Promise> promise) {
+                           
         // Is this called from the worklet thread?
         if (_context->isWorkletRuntime(runtime)) {
           // The we can just call it directly
@@ -145,10 +141,10 @@ public:
       });
   };
   
-  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorklet, runOnJsThread),
-                       JSI_EXPORT_FUNC(JsiWorklet, runOnWorkletThread))
+  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorklet, call),
+                       JSI_EXPORT_FUNC(JsiWorklet, callAsync))
   
-  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorklet, isMainThread),
+  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorklet, context),
                               JSI_EXPORT_PROP_GET(JsiWorklet, isWorklet))
 
 private:
