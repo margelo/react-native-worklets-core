@@ -20,114 +20,113 @@ public:
    */
   JsiArrayWrapper(jsi::Runtime &runtime, const jsi::Value &value,
                   JsiWrapper *parent)
-      : JsiWrapper(runtime, value, parent) {
-    // Install some functions and properties for arrays
-    installReadonlyProperty("length", [this](jsi::Runtime &rt) -> jsi::Value {
-      return (double)_array.size();
-    });
+      : JsiWrapper(runtime, value, parent) {}
+                          
+  JSI_PROPERTY_GET(length) { return (double)_array.size(); }
+                          
+  JSI_HOST_FUNCTION(push) {
+    // Push all arguments to the array
+    auto lastIndex = _array.size();
+    for (size_t i = 0; i < count; i++) {
+      std::string indexString = std::to_string(lastIndex++);
+      _array.push_back(JsiWrapper::wrap(runtime, arguments[i], this));
+    }
+    notifyListeners();
+    return (double)_array.size();
+  };
 
-    installFunction(
-        "push", JSI_FUNC_SIGNATURE {
-          // Push all arguments to the array
-          auto lastIndex = _array.size();
-          for (size_t i = 0; i < count; i++) {
-            std::string indexString = std::to_string(lastIndex++);
-            _array.push_back(JsiWrapper::wrap(runtime, arguments[i], this));
-          }
-          notifyListeners();
-          return (double)_array.size();
-        });
+  JSI_HOST_FUNCTION(pop) {
+    // Pop last element from array
+    if (_array.empty()) {
+      return jsi::Value::undefined();
+    }
+    auto lastEl = _array.at(_array.size() - 1);
+    _array.pop_back();
+    notifyListeners();
+    return JsiWrapper::unwrap(runtime, lastEl);
+  };
 
-    installFunction(
-        "pop", JSI_FUNC_SIGNATURE {
-          // Pop last element from array
-          if (_array.empty()) {
-            return jsi::Value::undefined();
-          }
-          auto lastEl = _array.at(_array.size() - 1);
-          _array.pop_back();
-          notifyListeners();
-          return JsiWrapper::unwrap(runtime, lastEl);
-        });
+  JSI_HOST_FUNCTION(forEach) {
+    // Enumerate and call back
+    auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
+    jsi::Value thisArg = count > 1 ? arguments[1].asObject(runtime)
+                                   : jsi::Value::undefined();
+    for (size_t i = 0; i < _array.size(); i++) {
+      if (thisArg.isUndefined()) {
+        callbackFn.call(runtime,
+                        JsiWrapper::unwrap(runtime, _array.at(i)));
+      } else {
+        callbackFn.callWithThis(runtime, thisValue.asObject(runtime),
+                                JsiWrapper::unwrap(runtime, _array.at(i)),
+                                thisArg);
+      }
+    }
+    return jsi::Value::undefined();
+  };
 
-    installFunction(
-        "forEach", JSI_FUNC_SIGNATURE {
-          // Enumerate and call back
-          auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-          jsi::Value thisArg = count > 1 ? arguments[1].asObject(runtime)
-                                         : jsi::Value::undefined();
-          for (size_t i = 0; i < _array.size(); i++) {
-            if (thisArg.isUndefined()) {
-              callbackFn.call(runtime,
-                              JsiWrapper::unwrap(runtime, _array.at(i)));
-            } else {
-              callbackFn.callWithThis(runtime, thisValue.asObject(runtime),
-                                      JsiWrapper::unwrap(runtime, _array.at(i)),
-                                      thisArg);
-            }
-          }
-          return jsi::Value::undefined();
-        });
+  JSI_HOST_FUNCTION(map) {
+    // Enumerate and return
+    auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
+    jsi::Value thisArg = count > 1 ? arguments[1].asObject(runtime)
+                                   : jsi::Value::undefined();
 
-    installFunction(
-        "map", JSI_FUNC_SIGNATURE {
-          // Enumerate and return
-          auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-          jsi::Value thisArg = count > 1 ? arguments[1].asObject(runtime)
-                                         : jsi::Value::undefined();
+    auto result = jsi::Array(runtime, _array.size());
+    for (size_t i = 0; i < _array.size(); i++) {
+      jsi::Value retVal;
+      if (thisArg.isUndefined()) {
+        retVal = callbackFn.call(
+            runtime, JsiWrapper::unwrap(runtime, _array.at(i)));
+      } else {
+        retVal = callbackFn.callWithThis(
+            runtime, thisValue.asObject(runtime),
+            JsiWrapper::unwrap(runtime, _array.at(i)), thisArg);
+      }
+      result.setValueAtIndex(runtime, i, retVal);
+    }
+    return result;
+  };
 
-          auto result = jsi::Array(runtime, _array.size());
-          for (size_t i = 0; i < _array.size(); i++) {
-            jsi::Value retVal;
-            if (thisArg.isUndefined()) {
-              retVal = callbackFn.call(
-                  runtime, JsiWrapper::unwrap(runtime, _array.at(i)));
-            } else {
-              retVal = callbackFn.callWithThis(
-                  runtime, thisValue.asObject(runtime),
-                  JsiWrapper::unwrap(runtime, _array.at(i)), thisArg);
-            }
-            result.setValueAtIndex(runtime, i, retVal);
-          }
-          return result;
-        });
+  JSI_HOST_FUNCTION(filter)  {
+    // Filter array
+    auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
+    jsi::Value thisArg = count > 1 ? arguments[1].asObject(runtime)
+                                   : jsi::Value::undefined();
 
-    installFunction(
-        "filter", JSI_FUNC_SIGNATURE {
-          // Filter array
-          auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-          jsi::Value thisArg = count > 1 ? arguments[1].asObject(runtime)
-                                         : jsi::Value::undefined();
+    std::vector<std::shared_ptr<JsiWrapper>> result;
 
-          std::vector<std::shared_ptr<JsiWrapper>> result;
+    for (size_t i = 0; i < _array.size(); i++) {
+      jsi::Value retVal;
+      if (thisArg.isUndefined()) {
+        retVal = callbackFn.call(
+            runtime, JsiWrapper::unwrap(runtime, _array.at(i)));
+      } else {
+        retVal = callbackFn.callWithThis(
+            runtime, thisValue.asObject(runtime),
+            JsiWrapper::unwrap(runtime, _array.at(i)), thisArg);
+      }
+      if (retVal.getBool() == true) {
+        result.push_back(_array.at(i));
+      }
+    }
+    auto returnValue = jsi::Array(runtime, result.size());
+    for (size_t i = 0; i < result.size(); i++) {
+      returnValue.setValueAtIndex(
+          runtime, i, JsiWrapper::unwrap(runtime, result.at(i)));
+    }
+    return returnValue;
+  };
 
-          for (size_t i = 0; i < _array.size(); i++) {
-            jsi::Value retVal;
-            if (thisArg.isUndefined()) {
-              retVal = callbackFn.call(
-                  runtime, JsiWrapper::unwrap(runtime, _array.at(i)));
-            } else {
-              retVal = callbackFn.callWithThis(
-                  runtime, thisValue.asObject(runtime),
-                  JsiWrapper::unwrap(runtime, _array.at(i)), thisArg);
-            }
-            if (retVal.getBool() == true) {
-              result.push_back(_array.at(i));
-            }
-          }
-          auto returnValue = jsi::Array(runtime, result.size());
-          for (size_t i = 0; i < result.size(); i++) {
-            returnValue.setValueAtIndex(
-                runtime, i, JsiWrapper::unwrap(runtime, result.at(i)));
-          }
-          return returnValue;
-        });
-
-    installFunction(
-        "toString", JSI_FUNC_SIGNATURE {
-          return jsi::String::createFromUtf8(runtime, toString(runtime));
-        });
-  }
+  JSI_HOST_FUNCTION(toString) {
+    return jsi::String::createFromUtf8(runtime, toString(runtime));
+  };
+                          
+  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiArrayWrapper, length))
+  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiArrayWrapper, push),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, pop),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, forEach),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, map),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, filter),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, toString))
 
   /**
    * Overridden getValue method

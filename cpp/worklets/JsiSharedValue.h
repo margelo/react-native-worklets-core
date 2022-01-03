@@ -20,97 +20,96 @@ public:
    a thread safe across two javascript runtimes.
    */
   JsiSharedValue(const jsi::Value &value, JsiWorkletContext *context)
-      : _valueWrapper(JsiWrapper::wrap(*context->getJsRuntime(), value)) {
-
-    installProperty(
-        "value",
-        [this](jsi::Runtime &rt) -> jsi::Value {
-          // Arrays and objects are handled specifically to
-          // support settings values and getting notifications in
-          // child values
-          return JsiWrapper::unwrap(rt, _valueWrapper);
-        },
-        [this](jsi::Runtime &rt, const jsi::Value &value) {
-          // Update the internal value
-          _valueWrapper->updateValue(rt, value);
-          return jsi::Value::undefined();
-        });
-
-    installFunction(
-        "toString", JSI_FUNC_SIGNATURE {
-          return jsi::String::createFromUtf8(runtime,
-                                             _valueWrapper->toString(runtime));
-        });
-
-    installFunction(
-        "addListener", JSI_FUNC_SIGNATURE {
-          // This functionPtr should only be callable from the js runtime
-          if (context->isWorkletRuntime(runtime)) {
-            jsi::detail::throwJSError(runtime,
-                                      "addListener can only be called from the "
-                                      "main Javascript code.");
-          }
-
-          // Verify arguments
-          if (arguments[0].isUndefined() || arguments[0].isNull() ||
-              arguments[0].isObject() == false ||
-              arguments[0].asObject(runtime).isFunction(runtime) == false) {
-            jsi::detail::throwJSError(
-                runtime, "addListener expects a function as its parameter.");
-          }
-
-          // Wrap the callback into a dispatcher with error handling. This
-          // callback will always be called on the main js thread/runtime so we
-          // can just use values directly.
-          auto functionToCall = std::make_shared<jsi::Function>(
-              arguments[0].asObject(runtime).asFunction(runtime));
-          auto functionPtr = [functionToCall](jsi::Runtime &rt,
-                                              const jsi::Value &thisVal,
-                                              const jsi::Value *args,
-                                              size_t count) -> jsi::Value {
-            if (thisVal.isObject()) {
-              return functionToCall->callWithThis(rt, thisVal.asObject(rt),
-                                                  args, count);
-            } else {
-              return functionToCall->call(rt, args, count);
-            }
-          };
-
-          // Do not Wrap this Value
-          auto thisValuePtr =
-              JsiWrapper::wrap(runtime, jsi::Value::undefined());
-
-          auto dispatcher = JsiDispatcher::createDispatcher(
-              runtime, thisValuePtr, functionPtr, nullptr,
-              [&runtime, context](const char *err) {
-                context->runOnJavascriptThread([err, &runtime]() {
-                  jsi::detail::throwJSError(runtime, err);
-                });
-              });
-
-          // Set up the callback to run on the correct runtime thread.
-          auto callback =
-              std::make_shared<std::function<void()>>([context, dispatcher]() {
-                context->runOnJavascriptThread(dispatcher);
-              });
-
-          auto listenerId = _valueWrapper->addListener(callback);
-
-          // Return functionPtr for removing the observer
-          return jsi::Function::createFromHostFunction(
-              runtime, jsi::PropNameID::forUtf8(runtime, "unsubscribe"), 0,
-              [=](jsi::Runtime &runtime, const jsi::Value &thisValue,
-                  const jsi::Value *arguments, size_t count) -> jsi::Value {
-                _valueWrapper->removeListener(listenerId);
-                return jsi::Value::undefined();
-              });
-        });
-  }
-
+  : _valueWrapper(JsiWrapper::wrap(*context->getJsRuntime(), value)),
+  _context(context) {}
+  
   /**
     Destructor
    */
   ~JsiSharedValue() { _valueWrapper = nullptr; }
+  
+  JSI_HOST_FUNCTION(toString) {
+    return jsi::String::createFromUtf8(runtime,
+                                       _valueWrapper->toString(runtime));
+  }
+  
+  JSI_PROPERTY_GET(value) {
+    // Arrays and objects are handled specifically to
+    // support settings values and getting notifications in
+    // child values
+    return JsiWrapper::unwrap(runtime, _valueWrapper);
+  }
+  
+  JSI_PROPERTY_SET(value) {
+    _valueWrapper->updateValue(runtime, value);
+  }
+
+  JSI_HOST_FUNCTION(addListener) {
+    // This functionPtr should only be callable from the js runtime
+    if (_context->isWorkletRuntime(runtime)) {
+      jsi::detail::throwJSError(runtime,
+                                "addListener can only be called from the "
+                                "main Javascript code.");
+    }
+
+    // Verify arguments
+    if (arguments[0].isUndefined() || arguments[0].isNull() ||
+        arguments[0].isObject() == false ||
+        arguments[0].asObject(runtime).isFunction(runtime) == false) {
+      jsi::detail::throwJSError(
+          runtime, "addListener expects a function as its parameter.");
+    }
+
+    // Wrap the callback into a dispatcher with error handling. This
+    // callback will always be called on the main js thread/runtime so we
+    // can just use values directly.
+    auto functionToCall = std::make_shared<jsi::Function>(
+        arguments[0].asObject(runtime).asFunction(runtime));
+    auto functionPtr = [functionToCall](jsi::Runtime &rt,
+                                        const jsi::Value &thisVal,
+                                        const jsi::Value *args,
+                                        size_t count) -> jsi::Value {
+      if (thisVal.isObject()) {
+        return functionToCall->callWithThis(rt, thisVal.asObject(rt),
+                                            args, count);
+      } else {
+        return functionToCall->call(rt, args, count);
+      }
+    };
+
+    // Do not Wrap this Value
+    auto thisValuePtr =
+        JsiWrapper::wrap(runtime, jsi::Value::undefined());
+
+    auto dispatcher = JsiDispatcher::createDispatcher(
+        runtime, thisValuePtr, functionPtr, nullptr,
+        [&runtime, this](const char *err) {
+          _context->runOnJavascriptThread([err, &runtime]() {
+            jsi::detail::throwJSError(runtime, err);
+          });
+        });
+
+    // Set up the callback to run on the correct runtime thread.
+    auto callback =
+        std::make_shared<std::function<void()>>([this, dispatcher]() {
+          _context->runOnJavascriptThread(dispatcher);
+        });
+
+    auto listenerId = _valueWrapper->addListener(callback);
+
+    // Return functionPtr for removing the observer
+    return jsi::Function::createFromHostFunction(
+        runtime, jsi::PropNameID::forUtf8(runtime, "unsubscribe"), 0,
+        [=](jsi::Runtime &runtime, const jsi::Value &thisValue,
+            const jsi::Value *arguments, size_t count) -> jsi::Value {
+          _valueWrapper->removeListener(listenerId);
+          return jsi::Value::undefined();
+        });
+  }
+  
+  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiSharedValue, toString))
+  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiSharedValue, value))
+  JSI_EXPORT_PROPERTY_SETTERS(JSI_EXPORT_PROP_SET(JsiSharedValue, value))
 
   /**
    * Add listener
@@ -131,5 +130,6 @@ public:
 
 private:
   std::shared_ptr<JsiWrapper> _valueWrapper;
+  JsiWorkletContext* _context;
 };
 } // namespace RNWorklet
