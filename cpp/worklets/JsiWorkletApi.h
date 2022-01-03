@@ -42,7 +42,7 @@ public:
 
     if (count > 3) {
       return _context->raiseError("createWorklet expects 2 parameters: "
-                                  "Worklet function and worklet closure.");
+                                  "Worklet function and worklet closure, and additionally a worklet context");
     }
 
     // Get the active context
@@ -50,6 +50,10 @@ public:
         count == 3 && arguments[2].isString()
             ? arguments[2].asString(runtime).utf8(runtime).c_str()
             : nullptr);
+    
+    if(activeContext == nullptr) {
+      return _context->raiseError("createWorklet called with invalid context.");
+    }
 
     // Install the worklet into the worklet runtime
     return jsi::Object::createFromHostObject(
@@ -59,15 +63,11 @@ public:
 
   JSI_HOST_FUNCTION(createWorkletContext) {
     if (count == 0) {
-      jsi::detail::throwJSError(
-          runtime,
-          "createWorkletContext expects the context name parameter.");
+      _context->raiseError("createWorkletContext expects the context name parameter.");
     }
 
     if (!arguments[0].isString()) {
-      jsi::detail::throwJSError(
-          runtime,
-          "createWorkletContext expects the context name parameter.");
+      _context->raiseError("createWorkletContext expects the context name parameter as a string.");
     }
 
     auto nameStr = arguments[0].asString(runtime).utf8(runtime);
@@ -75,8 +75,7 @@ public:
       _contexts.emplace(nameStr,
                         std::make_shared<JsiWorkletContext>(_context));
     } else {
-      jsi::detail::throwJSError(runtime,
-                                "A context with this name already exists.");
+      _context->raiseError("A context with this name already exists.");
     }
     return jsi::Value::undefined();
   };

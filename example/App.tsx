@@ -18,12 +18,16 @@ const App = () => {
   const factor = useMemo(() => 1.5, []);
   const values = useMemo(() => [1, 2, 3, 5], []);
   const callCount = useMemo(() => Worklets.createSharedValue(0), []);
-
+  useMemo(() => Worklets.createWorkletContext('taste'), []);
   const logToConsole = useMemo(
     () =>
-      Worklets.createWorklet({}, (_, message: string) => {
-        setMessage(message);
-      }),
+      Worklets.createWorklet(
+        {},
+        (_, message: string) => {
+          setMessage(message);
+        },
+        'taste',
+      ),
     [],
   );
 

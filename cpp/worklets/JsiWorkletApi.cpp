@@ -13,7 +13,7 @@ std::shared_ptr<JsiWorkletContext> JsiWorkletApi::getContext(const char *name) {
   // Throw error if the context hasn't been created yet.
   if (_contexts.count(name) == 0) {
     _context->raiseError(
-        std::runtime_error("A context with this name does not exist. Use the "
+        std::runtime_error("A context with the name '" + std::string(name) + "' does not exist. Use the "
                            "createWorkletContext method to create it."));
     return nullptr;
   }
