@@ -39,10 +39,10 @@ public:
         });
 
         // Create worklet context
-        _workletContext = std::make_shared<RNWorklet::JsiWorkletContext>(runtime, jsCallInvoker, errorHandler);
+        _workletContext = std::make_shared<RNWorklet::JsiWorkletContext>("default", runtime, jsCallInvoker, errorHandler);
 
         // Create / install the worklet API
-        RNWorklet::JsiWorkletApi::installApi(_workletContext.get());
+        RNWorklet::JsiWorkletApi::installApi(_workletContext);
     }
 
 private:

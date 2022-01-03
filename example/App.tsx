@@ -1,7 +1,7 @@
 import React, {useCallback, useState} from 'react';
 import {Button, ScrollView, StyleSheet, Text, View} from 'react-native';
 
-import {tests as Tests} from './Tests';
+import {Tests} from './Tests';
 import {TestState, TestWrapper} from './Tests/TestWrapper';
 import {Test} from './Tests/types';
 

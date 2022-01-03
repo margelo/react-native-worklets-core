@@ -6,13 +6,16 @@ export interface ISharedValue<T> {
 
 export interface IWorklet<A extends any[], T extends (...args: A) => any> {
   /**
-   * Calls the worklet on the worklet thread.
+   * Calls the worklet on the worklet thread. This is an async operation
+   * and will return a promise with the same type as the return type of
+   * the original worklet function.
    */
-  callAsync: OmitThisParameter<(...args: A) => Promise<ReturnType<T>>>;
+  callAsync: (...args: A) => Promise<ReturnType<T>>;
   /**
-   * Calls the worklet on the same thread as the caller
+   * Calls the worklet on the JS thread. This is a sync operation and
+   * will return the same value as the original worklet function.
    */
-  call: OmitThisParameter<(...args: A) => ReturnType<T>>;
+  call: (...args: A) => ReturnType<T>;
   /**
    * Returns the context of the worklet
    */

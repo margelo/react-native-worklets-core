@@ -43,21 +43,21 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 30,
+    height: 24,
   },
   symbolContainer: {
     width: 38,
     alignItems: 'center',
   },
   checkmark: {
-    fontSize: 24,
+    fontSize: 22,
   },
   success: {
-    fontSize: 24,
+    fontSize: 22,
     color: 'green',
   },
   fail: {
-    fontSize: 24,
+    fontSize: 22,
     color: 'red',
   },
   name: {

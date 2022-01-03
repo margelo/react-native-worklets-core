@@ -1,4 +1,7 @@
-export const ExpectValue = <V>(value: V | Promise<V>, expected: V) => {
+export const Expect = <V, T>(
+  value: V | Promise<V>,
+  expected: (v: V) => boolean,
+) => {
   return new Promise<void>(async (resolve, reject) => {
     let resolvedValue: V;
 
@@ -8,7 +11,27 @@ export const ExpectValue = <V>(value: V | Promise<V>, expected: V) => {
       resolvedValue = value as any as V;
     }
 
-    if (resolvedValue !== expected) {
+    const resolvedExpected = expected(resolvedValue);
+
+    if (!resolvedExpected) {
+      reject(new Error(`Got ${resolvedValue}. Expection returned false.`));
+    } else {
+      resolve();
+    }
+  });
+};
+
+export const ExpectValue = <V, T>(value: V | Promise<V>, expected: T) => {
+  return new Promise<void>(async (resolve, reject) => {
+    let resolvedValue: V;
+
+    if (value instanceof Promise) {
+      resolvedValue = await value;
+    } else {
+      resolvedValue = value as any as V;
+    }
+
+    if (JSON.stringify(resolvedValue) !== JSON.stringify(expected)) {
       reject(
         new Error(
           `Expected ${expected}, got ${JSON.stringify(resolvedValue)}.`,
