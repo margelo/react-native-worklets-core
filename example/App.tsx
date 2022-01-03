@@ -36,9 +36,6 @@ const App = () => {
           ctx.values.forEach(p => {
             a *= p;
           });
-          // ctx.logToConsole.runOnMainThread(
-          //   'Output from worklet thread:' + a.toString(),
-          // );
           return a * ctx.factor;
         },
       ),

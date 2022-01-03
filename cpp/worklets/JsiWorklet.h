@@ -3,7 +3,6 @@
 //
 #pragma once
 
-#include <JsiDispatcher.h>
 #include <JsiHostObject.h>
 #include <JsiWorkletContext.h>
 

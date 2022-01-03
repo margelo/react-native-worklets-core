@@ -2,7 +2,6 @@
 
 #include <jsi/jsi.h>
 
-#include <JsiDispatcher.h>
 #include <JsiHostObject.h>
 #include <JsiSharedValue.h>
 #include <JsiWorkletContext.h>
