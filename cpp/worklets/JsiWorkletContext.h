@@ -9,8 +9,8 @@
 
 #include <DispatchQueue.h>
 #include <JsRuntimeFactory.h>
-#include <JsiWrapper.h>
 #include <JsiHostObject.h>
+#include <JsiWrapper.h>
 
 namespace RNWorklet {
 
@@ -26,7 +26,7 @@ using JsiErrorHandler = std::function<void(const std::exception &ex)>;
  * worklets for that runtime. It also contains methods for running the worklet
  * in the worklet thread.
  */
-class JsiWorkletContext: public JsiHostObject {
+class JsiWorkletContext : public JsiHostObject {
 public:
   const char *WorkletRuntimeFlag = "__WORKLET_RUNTIME_FLAG";
 
@@ -36,8 +36,7 @@ public:
    * @param jsCallInvoker Call invoker for js runtime
    * @param errorHandler Callback for handling errors
    */
-  JsiWorkletContext(const std::string& name,
-                    jsi::Runtime *jsRuntime,
+  JsiWorkletContext(const std::string &name, jsi::Runtime *jsRuntime,
                     std::shared_ptr<facebook::react::CallInvoker> jsCallInvoker,
                     std::shared_ptr<JsiErrorHandler> errorHandler);
 
@@ -46,11 +45,9 @@ public:
      runtime and thread from an existing context
      @param context Context to create a new worklet context from
   */
-  JsiWorkletContext(const std::string& name,
+  JsiWorkletContext(const std::string &name,
                     std::shared_ptr<JsiWorkletContext> context)
-      : JsiWorkletContext(name,
-                          context->_jsRuntime,
-                          context->_jsCallInvoker,
+      : JsiWorkletContext(name, context->_jsRuntime, context->_jsCallInvoker,
                           context->_errorHandler) {}
 
   /**
@@ -118,11 +115,9 @@ public:
    * @return Jsi Function
    */
   jsi::Value evaluteJavascriptInWorkletRuntime(const std::string &code);
-  
-  JSI_PROPERTY_GET(name) {
-    return jsi::String::createFromUtf8(runtime, _name);
-  }
-  
+
+  JSI_PROPERTY_GET(name) { return jsi::String::createFromUtf8(runtime, _name); }
+
   JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorkletContext, name))
 
 private:
@@ -140,7 +135,7 @@ private:
 
   // Error handler
   std::shared_ptr<JsiErrorHandler> _errorHandler;
-  
+
   // Name of the context
   std::string _name;
 };

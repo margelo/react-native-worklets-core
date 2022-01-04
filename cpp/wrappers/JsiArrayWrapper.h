@@ -21,9 +21,9 @@ public:
   JsiArrayWrapper(jsi::Runtime &runtime, const jsi::Value &value,
                   JsiWrapper *parent)
       : JsiWrapper(runtime, value, parent) {}
-                          
+
   JSI_PROPERTY_GET(length) { return (double)_array.size(); }
-                          
+
   JSI_HOST_FUNCTION(push) {
     // Push all arguments to the array
     auto lastIndex = _array.size();
@@ -49,12 +49,11 @@ public:
   JSI_HOST_FUNCTION(forEach) {
     // Enumerate and call back
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-    jsi::Value thisArg = count > 1 ? arguments[1].asObject(runtime)
-                                   : jsi::Value::undefined();
+    jsi::Value thisArg =
+        count > 1 ? arguments[1].asObject(runtime) : jsi::Value::undefined();
     for (size_t i = 0; i < _array.size(); i++) {
       if (thisArg.isUndefined()) {
-        callbackFn.call(runtime,
-                        JsiWrapper::unwrap(runtime, _array.at(i)));
+        callbackFn.call(runtime, JsiWrapper::unwrap(runtime, _array.at(i)));
       } else {
         callbackFn.callWithThis(runtime, thisValue.asObject(runtime),
                                 JsiWrapper::unwrap(runtime, _array.at(i)),
@@ -67,15 +66,15 @@ public:
   JSI_HOST_FUNCTION(map) {
     // Enumerate and return
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-    jsi::Value thisArg = count > 1 ? arguments[1].asObject(runtime)
-                                   : jsi::Value::undefined();
+    jsi::Value thisArg =
+        count > 1 ? arguments[1].asObject(runtime) : jsi::Value::undefined();
 
     auto result = jsi::Array(runtime, _array.size());
     for (size_t i = 0; i < _array.size(); i++) {
       jsi::Value retVal;
       if (thisArg.isUndefined()) {
-        retVal = callbackFn.call(
-            runtime, JsiWrapper::unwrap(runtime, _array.at(i)));
+        retVal =
+            callbackFn.call(runtime, JsiWrapper::unwrap(runtime, _array.at(i)));
       } else {
         retVal = callbackFn.callWithThis(
             runtime, thisValue.asObject(runtime),
@@ -86,19 +85,19 @@ public:
     return result;
   };
 
-  JSI_HOST_FUNCTION(filter)  {
+  JSI_HOST_FUNCTION(filter) {
     // Filter array
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-    jsi::Value thisArg = count > 1 ? arguments[1].asObject(runtime)
-                                   : jsi::Value::undefined();
+    jsi::Value thisArg =
+        count > 1 ? arguments[1].asObject(runtime) : jsi::Value::undefined();
 
     std::vector<std::shared_ptr<JsiWrapper>> result;
 
     for (size_t i = 0; i < _array.size(); i++) {
       jsi::Value retVal;
       if (thisArg.isUndefined()) {
-        retVal = callbackFn.call(
-            runtime, JsiWrapper::unwrap(runtime, _array.at(i)));
+        retVal =
+            callbackFn.call(runtime, JsiWrapper::unwrap(runtime, _array.at(i)));
       } else {
         retVal = callbackFn.callWithThis(
             runtime, thisValue.asObject(runtime),
@@ -110,8 +109,8 @@ public:
     }
     auto returnValue = jsi::Array(runtime, result.size());
     for (size_t i = 0; i < result.size(); i++) {
-      returnValue.setValueAtIndex(
-          runtime, i, JsiWrapper::unwrap(runtime, result.at(i)));
+      returnValue.setValueAtIndex(runtime, i,
+                                  JsiWrapper::unwrap(runtime, result.at(i)));
     }
     return returnValue;
   };
@@ -119,7 +118,7 @@ public:
   JSI_HOST_FUNCTION(toString) {
     return jsi::String::createFromUtf8(runtime, toString(runtime));
   };
-                          
+
   JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiArrayWrapper, length))
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiArrayWrapper, push),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, pop),

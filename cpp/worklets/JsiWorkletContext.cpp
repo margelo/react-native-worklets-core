@@ -8,8 +8,7 @@
 namespace RNWorklet {
 
 JsiWorkletContext::JsiWorkletContext(
-    const std::string& name,
-    jsi::Runtime *jsRuntime,
+    const std::string &name, jsi::Runtime *jsRuntime,
     std::shared_ptr<facebook::react::CallInvoker> jsCallInvoker,
     std::shared_ptr<std::function<void(const std::exception &ex)>> errorHandler)
     : _name(name), _jsRuntime(jsRuntime), _workletRuntime(makeJSIRuntime()),

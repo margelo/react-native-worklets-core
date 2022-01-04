@@ -27,4 +27,4 @@ static std::unique_ptr<jsi::Runtime> makeJSIRuntime() {
 #endif
 }
 
-}
+} // namespace RNWorklet

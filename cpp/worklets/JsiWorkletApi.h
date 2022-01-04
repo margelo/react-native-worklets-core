@@ -18,7 +18,8 @@ public:
    * @param context Worklet context
    * make sure only the runOnJsThread method is available.
    */
-  JsiWorkletApi(std::shared_ptr<JsiWorkletContext> context) : _context(context) {};
+  JsiWorkletApi(std::shared_ptr<JsiWorkletContext> context)
+      : _context(context){};
 
   /**
    * Installs the worklet API into the provided runtime
@@ -31,7 +32,7 @@ public:
         jsi::Object::createFromHostObject(*context->getJsRuntime(),
                                           std::move(workletApi)));
   }
-  
+
   JSI_HOST_FUNCTION(createWorklet) {
     // Make sure this one is only called from the js runtime
     if (_context->isWorkletRuntime(runtime)) {
@@ -41,14 +42,18 @@ public:
 
     if (count > 3) {
       return _context->raiseError("createWorklet expects 2-3 parameters: "
-                                  "Worklet function and worklet closure, and additionally a worklet context");
+                                  "Worklet function and worklet closure, and "
+                                  "additionally a worklet context");
     }
 
     // Get the active context
-    auto activeContext = count == 3 && arguments[2].isObject() ?
-      arguments[2].asObject(runtime).getHostObject<JsiWorkletContext>(runtime) : _context;
-    
-    if(activeContext == nullptr) {
+    auto activeContext =
+        count == 3 && arguments[2].isObject()
+            ? arguments[2].asObject(runtime).getHostObject<JsiWorkletContext>(
+                  runtime)
+            : _context;
+
+    if (activeContext == nullptr) {
       return _context->raiseError("createWorklet called with invalid context.");
     }
 
@@ -60,28 +65,31 @@ public:
 
   JSI_HOST_FUNCTION(createWorkletContext) {
     if (count == 0) {
-      _context->raiseError("createWorkletContext expects the context name parameter.");
+      _context->raiseError(
+          "createWorkletContext expects the context name parameter.");
     }
 
     if (!arguments[0].isString()) {
-      _context->raiseError("createWorkletContext expects the context name parameter as a string.");
+      _context->raiseError("createWorkletContext expects the context name "
+                           "parameter as a string.");
     }
 
     auto nameStr = arguments[0].asString(runtime).utf8(runtime);
-    return jsi::Object::createFromHostObject(runtime, std::make_shared<JsiWorkletContext>(nameStr, _context));
+    return jsi::Object::createFromHostObject(
+        runtime, std::make_shared<JsiWorkletContext>(nameStr, _context));
   };
 
   JSI_HOST_FUNCTION(createSharedValue) {
     if (_context->isWorkletRuntime(runtime)) {
       return _context->raiseError("createSharedValue should only be called "
-                                 "from the javascript runtime.");
+                                  "from the javascript runtime.");
     }
 
     return jsi::Object::createFromHostObject(
         *_context->getJsRuntime(),
         std::make_shared<JsiSharedValue>(arguments[0], _context));
   };
-  
+
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletApi, createWorklet),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createSharedValue),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createWorkletContext))
