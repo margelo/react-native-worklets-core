@@ -7,7 +7,7 @@
 
 #include <ReactCommon/CallInvoker.h>
 
-#include <DispatchQueue.h>
+#include <JsiDispatchQueue.h>
 #include <JsRuntimeFactory.h>
 #include <JsiHostObject.h>
 #include <JsiWrapper.h>
