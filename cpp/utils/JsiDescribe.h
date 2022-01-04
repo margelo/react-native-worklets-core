@@ -20,7 +20,7 @@ std::string string_format(const std::string &format, Args... args) {
                      buf.get() + size - 1); // We don't want the '\0' inside
 }
 
-namespace RNJsi {
+namespace RNWorklet {
 
 using namespace facebook;
 
@@ -226,4 +226,4 @@ private:
     return obj.getPropertyNames(runtime);
   }
 };
-} // namespace RNJsi
+} // namespace RNWorklet

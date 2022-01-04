@@ -8,7 +8,7 @@ namespace RNWorklet {
 using namespace facebook;
 class JsiWrapper;
 
-class JsiArrayWrapper : public RNJsi::JsiHostObject,
+class JsiArrayWrapper : public JsiHostObject,
                         public std::enable_shared_from_this<JsiArrayWrapper>,
                         public JsiWrapper {
 public:

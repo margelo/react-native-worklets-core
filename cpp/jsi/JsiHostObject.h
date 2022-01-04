@@ -112,7 +112,7 @@
     return map;                                                                \
   }
 
-namespace RNJsi {
+namespace RNWorklet {
 
 using namespace facebook;
 
@@ -259,4 +259,4 @@ private:
   std::unordered_map<std::string, JsPropertyType> _propMap;
   JsiRuntimeCache _cache;
 };
-} // namespace RNJsi
+} // namespace RNWorklet

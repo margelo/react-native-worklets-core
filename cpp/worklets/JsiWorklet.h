@@ -11,7 +11,6 @@
 namespace RNWorklet {
 
 using namespace facebook;
-using namespace RNJsi;
 
 /**
  Encapsulates a runnable function. A runnable function is a function

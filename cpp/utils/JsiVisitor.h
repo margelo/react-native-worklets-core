@@ -3,7 +3,7 @@
 
 #include <memory>
 
-namespace RNJsi {
+namespace RNWorklet {
 
 using namespace facebook;
 
@@ -103,4 +103,4 @@ private:
     return obj.getPropertyNames(runtime);
   }
 };
-} // namespace RNJsi
+} // namespace RNWorklet
