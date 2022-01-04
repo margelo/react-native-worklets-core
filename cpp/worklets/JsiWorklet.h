@@ -36,6 +36,8 @@ public:
   }
   
   ~JsiWorklet() {
+    // Reset function pointers to avoid calling constructors at a later stage
+    // where these objects have been GC'ed
     _jsFunction.reset();
     _workletFunction.reset();
   }
@@ -219,7 +221,7 @@ private:
   jsi::Value callInWorkletRuntime(
       const std::vector<std::shared_ptr<JsiWrapper>> &argsWrapper) {
     auto runtime = &_context->getWorkletRuntime();
-
+    
     // Unwrap closure
     auto unwrappedClosure = JsiWrapper::unwrap(*runtime, _closureWrapper);
 
