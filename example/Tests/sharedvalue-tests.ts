@@ -27,6 +27,18 @@ const get_set_object_value: Test = () => {
   return ExpectValue(sharedValue.value, {a: 50, b: 100});
 };
 
+const get_set_array_value: Test = () => {
+  const sharedValue = Worklets.createSharedValue([100, 50]);
+  return ExpectValue(sharedValue.value[0], 100).then(() =>
+    ExpectValue(sharedValue.value[1], 50),
+  );
+};
+
+const array_length: Test = () => {
+  const sharedValue = Worklets.createSharedValue([100, 50]);
+  return ExpectValue(sharedValue.value.length, 2);
+};
+
 const set_value_from_worklet: Test = () => {
   const sharedValue = Worklets.createSharedValue('hello world');
   const worklet = Worklets.createWorklet(
@@ -79,6 +91,8 @@ export const sharedvalue_tests: {[key: string]: Test} = {
   get_set_bool_value,
   get_set_string_value,
   get_set_object_value,
+  get_set_array_value,
+  array_length,
   set_value_from_worklet,
   set_function_with_error,
   add_listener,

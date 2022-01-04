@@ -1,4 +1,4 @@
-export const Expect = <V, T>(
+export const Expect = <V>(
   value: V | Promise<V>,
   expected: (v: V) => string | undefined,
 ) => {

@@ -34,6 +34,11 @@ public:
     // Install function in worklet runtime
     installInWorkletRuntime(context, runtime, function, closure);
   }
+  
+  ~JsiWorklet() {
+    _jsFunction.reset();
+    _workletFunction.reset();
+  }
 
   // Returns true for worklets
   JSI_PROPERTY_GET(isWorklet) { return true; };
