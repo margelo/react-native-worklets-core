@@ -51,17 +51,14 @@ export const ExpectException = <T>(
     try {
       const value = executor();
       if (value instanceof Promise) {
-        console.log('*****', 'is promise');
         await value;
         reject(new Error('Expected error but function succeeded.'));
       } else {
-        console.log('*****', 'not promise');
         reject(new Error('Expected error but function succeeded.'));
       }
     } catch (reason: any) {
       const resolvedReason =
         typeof reason === 'object' ? reason.message : reason;
-      console.log('*****', reason);
       if (resolvedReason === expectedReason) {
         resolve();
       } else {

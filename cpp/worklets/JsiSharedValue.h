@@ -48,8 +48,8 @@ public:
     // This functionPtr should only be callable from the js runtime
     if (_context->isWorkletRuntime(runtime)) {
       jsi::detail::throwJSError(runtime,
-                                "addListener can only be called from the "
-                                "main Javascript code.");
+                                "addListener can only be called from  "
+                                "Javascript code.");
     }
 
     // Verify arguments

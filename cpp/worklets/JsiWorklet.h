@@ -33,7 +33,7 @@ public:
     }
     
     // Install function in worklet runtime
-    installInWorkletRuntime(context, runtime, function, closure);    
+    installInWorkletRuntime(context, runtime, function, closure);
   }
   
   // Returns true for worklets
@@ -267,10 +267,12 @@ private:
     jsi::Value retVal;
     
     if(!unwrappedClosure.isObject()) {
+      // Call without this object
       retVal = _jsFunction->call(*runtime,
                                  static_cast<const jsi::Value *>(args.data()),
                                  argsWrapper.size());
     } else {
+      // Call with closure as this object
       retVal = _jsFunction->callWithThis(*runtime,
                                          unwrappedClosure.asObject(*runtime),
                                          static_cast<const jsi::Value *>(args.data()),
