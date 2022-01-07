@@ -74,10 +74,10 @@ const App = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.top}>
+      <View style={styles.tests}>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={styles.scrollview}>
+          contentContainerStyle={styles.testsScrollView}>
           {categories.map(category => (
             <React.Fragment key={category}>
               <Text style={styles.category}>{category}</Text>
@@ -96,12 +96,16 @@ const App = () => {
         </ScrollView>
       </View>
       <View style={styles.output}>
-        <ScrollView contentContainerStyle={styles.scrollview}>
+        <ScrollView>
           <Text style={styles.outputText}>{output.join('\n')}</Text>
         </ScrollView>
       </View>
       <View style={styles.buttons}>
-        <Button title="Run" disabled={running} onPress={runTests} />
+        <Button
+          title={running ? 'Running...' : 'Run All Tests'}
+          disabled={running}
+          onPress={runTests}
+        />
       </View>
     </View>
   );
@@ -111,18 +115,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  top: {paddingTop: 34},
-  scrollview: {},
-  testsContainer: {
+  tests: {
+    paddingTop: 34,
     flex: 1,
+  },
+  testsScrollView: {
+    paddingTop: 24,
+    paddingBottom: 40,
   },
   output: {
-    flex: 1,
-    padding: 8,
+    flex: 0.2,
     backgroundColor: '#EFEFEF',
   },
-  outputText: {flex: 1},
+  outputText: {
+    padding: 8,
+  },
   buttons: {
+    height: 100,
     backgroundColor: '#CCC',
     paddingBottom: 36,
     paddingTop: 14,

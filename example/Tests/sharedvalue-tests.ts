@@ -58,7 +58,7 @@ const set_value_from_worklet: Test = () => {
 const set_function_with_error: Test = () => {
   return ExpectException(() => {
     Worklets.createSharedValue(() => {});
-  }, 'Regular javascript functions can not be passed to worklets.');
+  }, 'Regular javascript functions cannot be shared.');
 };
 
 const add_listener: Test = () => {

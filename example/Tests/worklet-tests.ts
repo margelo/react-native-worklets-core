@@ -120,6 +120,19 @@ const call_async_to_and_from_worklet: Test = () => {
   });
 };
 
+const call_async_to_and_from_worklet_with_error: Test = () => {
+  const workletB = Worklets.createWorklet(() => {
+    throw Error('Test error');
+  });
+  const workletA = Worklets.createWorklet(
+    function () {
+      return this.callback.callInWorkletContext();
+    },
+    {callback: workletB},
+  );
+  return ExpectException(workletA.callInWorkletContext, 'Test error');
+};
+
 export const worklet_tests: {[key: string]: Test} = {
   call_sync_on_js_thread,
   call_sync_on_js_thread_with_error,
@@ -131,4 +144,5 @@ export const worklet_tests: {[key: string]: Test} = {
   call_sync_to_js_from_worklet_with_error,
   call_sync_to_js_from_worklet_with_retval,
   call_async_to_and_from_worklet,
+  call_async_to_and_from_worklet_with_error,
 };

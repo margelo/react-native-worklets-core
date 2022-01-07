@@ -147,10 +147,10 @@ public:
           if (_context->isWorkletRuntime(runtime)) {
             // The we can just call it directly
             try {
-              promise->resolve(callInWorkletRuntime(argsWrapper));
-
+              auto result = callInWorkletRuntime(argsWrapper);
+              promise->resolve(result);
             } catch (const jsi::JSError &err) {
-              promise->reject(err.getMessage().c_str());
+              promise->reject(err.getMessage());
             } catch (const std::exception &err) {
               promise->reject(err.what());
             } catch (const std::runtime_error &err) {
@@ -169,9 +169,13 @@ public:
               // Prepare result
               try {
                 auto retVal = callInWorkletRuntime(argsWrapper);
+                
+                // Since we are returning this on another context, we need
+                // to wrap/unwrap the value
                 auto retValWrapper = JsiWrapper::wrap(*workletRuntime, retVal);
 
                 _context->runOnJavascriptThread([=]() {
+                  // Return on Javascript thread/context
                   promise->resolve(JsiWrapper::unwrap(*_context->getJsRuntime(),
                                                       retValWrapper));
                 });

@@ -34,7 +34,9 @@ export const ExpectValue = <V, T>(value: V | Promise<V>, expected: T) => {
     if (JSON.stringify(resolvedValue) !== JSON.stringify(expected)) {
       reject(
         new Error(
-          `Expected ${expected}, got ${JSON.stringify(resolvedValue)}.`,
+          `Expected ${JSON.stringify(expected)}, got ${JSON.stringify(
+            resolvedValue,
+          )}.`,
         ),
       );
     } else {
@@ -52,7 +54,7 @@ export const ExpectException = <T>(
       const value = executor();
       if (value instanceof Promise) {
         await value;
-        reject(new Error('Expected error but function succeeded.'));
+        reject(new Error('Expected error but function succeeded (Promise).'));
       } else {
         reject(new Error('Expected error but function succeeded.'));
       }
