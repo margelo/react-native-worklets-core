@@ -66,6 +66,24 @@ const call_sync_to_js_from_worklet: Test = () => {
   });
 };
 
+const call_sync_to_js_from_worklet_with_retval: Test = () => {
+  const sharedValue = Worklets.createSharedValue(0);
+  const workletB = Worklets.createWorklet(
+    function (a: number) {
+      return a;
+    },
+    {sharedValue},
+  );
+
+  const workletA = Worklets.createWorklet(
+    function (a: number) {
+      return this.callback.callInJSContext(a);
+    },
+    {callback: workletB},
+  );
+  return ExpectValue(workletA.callInWorkletContext(200), 200);
+};
+
 const call_sync_to_js_from_worklet_with_error: Test = () => {
   const callback = Worklets.createWorklet(() => {
     throw new Error('Test error');
@@ -111,5 +129,6 @@ export const worklet_tests: {[key: string]: Test} = {
   call_async_to_worklet_thread_with_error_in_context,
   call_sync_to_js_from_worklet,
   call_sync_to_js_from_worklet_with_error,
+  call_sync_to_js_from_worklet_with_retval,
   call_async_to_and_from_worklet,
 };

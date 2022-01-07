@@ -12,6 +12,19 @@ namespace RNWorklet {
 
 using namespace facebook;
 
+/// Class for wrapping jsi::JSError
+class JsErrorWrapper : public std::exception {
+public:
+  JsErrorWrapper(std::string message, std::string stack):
+    _message(std::move(message)), _stack(std::move(stack)) {};
+  const std::string& getStack() const { return _stack; }
+  const std::string& getMessage() const { return _message; }
+  const char* what() const noexcept override { return _message.c_str();}
+private:
+  std::string _message;
+  std::string _stack;
+};
+
 /**
  Encapsulates a runnable function. A runnable function is a function
  that exists in both the main JS runtime and as an installed function
@@ -77,25 +90,51 @@ public:
     }
 
     // Create simple dispatcher without promise since we don't support
-    // promises on Android in the Javascript runtime
-    _context->runOnJavascriptThread([=]() {
-      // Call in main runtime
-      auto runtime = _context->getJsRuntime();
-      try {
-        callInJsRuntime(argsWrapper);
-      } catch (const jsi::JSError &err) {
-        throw err;
-      } catch (const std::exception &err) {
-        jsi::detail::throwJSError(*runtime, err.what());
-      } catch (const std::runtime_error &err) {
-        jsi::detail::throwJSError(*runtime, err.what());
-      } catch (...) {
-        jsi::detail::throwJSError(
-            *runtime, "An unknown error occurred when calling the worklet.");
-      }
-    });
+    // promises on Android in the Javascript runtime. This will then run
+    // blocking
+    std::mutex mu;
+    std::condition_variable cond;
+    std::exception_ptr ex;
+    std::shared_ptr<JsiWrapper> retVal;
+    bool isFinished = false;
+    std::unique_lock<std::mutex> lock(mu);
+    
+    _context->runOnJavascriptThread([&]() {
+      std::lock_guard<std::mutex> lock(mu);
 
-    return jsi::Value::undefined();
+      try {
+        auto result = callInJsRuntime(argsWrapper);
+        retVal = JsiWrapper::wrap(runtime, result);
+      } catch(const jsi::JSError& err) {
+        // When rethrowing we need to make sure that any jsi errors are transferred
+        // to the correct runtime.
+        try { throw JsErrorWrapper(err.getMessage(), err.getStack()); }
+        catch(...) {
+          ex = std::current_exception();
+        }
+      } catch (...) {
+        ex = std::current_exception();
+      }
+      
+      isFinished = true;
+      cond.notify_one();
+
+    });
+    
+    // Wait untill the blocking code as finished
+    cond.wait(lock, [&]() { return isFinished; });
+
+    // Check for errors
+    if(ex != nullptr) {
+      try { std::rethrow_exception(ex); }
+      catch(const JsErrorWrapper& jsError) {
+        // Create a new JSError - this time on the correct runtime.
+        throw jsi::JSError(runtime, jsError.getMessage(), jsError.getStack());
+      }
+      return jsi::Value::undefined();
+    } else {
+      return JsiWrapper::unwrap(runtime, retVal);
+    }
   };
 
   JSI_HOST_FUNCTION(callInWorkletContext) {
@@ -136,8 +175,8 @@ public:
 
               // Prepare result
               try {
-                auto retValWrapper = JsiWrapper::wrap(
-                    *workletRuntime, callInWorkletRuntime(argsWrapper));
+                auto retVal = callInWorkletRuntime(argsWrapper);
+                auto retValWrapper = JsiWrapper::wrap(*workletRuntime, retVal);
 
                 _context->runOnJavascriptThread([=]() {
                   promise->resolve(JsiWrapper::unwrap(*_context->getJsRuntime(),
