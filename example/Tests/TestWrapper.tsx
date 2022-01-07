@@ -35,6 +35,11 @@ export const TestWrapper: React.FC<Props> = ({state, name, onRerun}) => {
           <Text style={styles.buttonText}>rerun</Text>
         </TouchableOpacity>
       ) : null}
+      {state !== 'failure' ? (
+        <TouchableOpacity style={styles.button} onPress={onRerun}>
+          <Text style={styles.buttonText}>run</Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 };

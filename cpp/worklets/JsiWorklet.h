@@ -48,13 +48,6 @@ public:
     installInWorkletRuntime(context, runtime, function, closure);
   }
   
-  ~JsiWorklet() {
-    // Reset function pointers to avoid calling constructors at a later stage
-    // where these objects have been GC'ed
-    _jsFunction.reset();
-    _workletFunction.reset();
-  }
-
   // Returns true for worklets
   JSI_PROPERTY_GET(isWorklet) { return true; };
 
@@ -184,7 +177,7 @@ public:
                 });
 
               } catch (const jsi::JSError &err) {
-                auto errorMessage = err.getMessage().c_str();
+                auto errorMessage = err.getMessage();
                 _context->runOnJavascriptThread(
                     [=]() { promise->reject(errorMessage); });
               } catch (const std::exception &err) {
@@ -233,7 +226,7 @@ private:
     }
 
     // Save pointer to function
-    _jsFunction = std::make_shared<jsi::Function>(
+    _jsFunction = std::make_unique<jsi::Function>(
         function.asObject(runtime).asFunction(runtime));
 
     // Create closure wrapper so it will be accessible across runtimes
@@ -247,8 +240,8 @@ private:
                     .callWithThis(runtime, func, nullptr, 0)
                     .asString(runtime)
                     .utf8(runtime);
-
-    _workletFunction = std::make_shared<jsi::Function>(
+    
+    _workletFunction = std::make_unique<jsi::Function>(
         context->evaluteJavascriptInWorkletRuntime(code)
             .asObject(runtime)
             .asFunction(runtime));
@@ -326,8 +319,8 @@ private:
     return retVal;
   }
 
-  std::shared_ptr<jsi::Function> _jsFunction;
-  std::shared_ptr<jsi::Function> _workletFunction;
+  std::unique_ptr<jsi::Function> _jsFunction;
+  std::unique_ptr<jsi::Function> _workletFunction;
   std::shared_ptr<JsiWorkletContext> _context;
   std::shared_ptr<JsiWrapper> _closureWrapper;
 };

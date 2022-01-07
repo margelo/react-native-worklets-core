@@ -45,8 +45,7 @@ public:
   JSI_HOST_FUNCTION(addListener) {
     // This functionPtr should only be callable from the js runtime
     if (_context->isWorkletRuntime(runtime)) {
-      jsi::detail::throwJSError(runtime, "addListener can only be called from  "
-                                         "Javascript code.");
+      throw jsi::JSError(runtime, "addListener can only be called from the main Javascript context and not from a worklet.");
     }
 
     // Verify arguments
@@ -74,7 +73,7 @@ public:
       }
     };
 
-    // Do not Wrap this Value
+    // Do not Wrap this Value - replace with undefined
     auto thisValuePtr = JsiWrapper::wrap(runtime, jsi::Value::undefined());
 
     auto dispatcher = JsiDispatcher::createDispatcher(
@@ -85,8 +84,7 @@ public:
         });
 
     // Set up the callback to run on the correct runtime thread.
-    auto callback = std::make_shared<std::function<void()>>(
-        [this, dispatcher]() { _context->runOnJavascriptThread(dispatcher); });
+    auto callback = std::make_shared<std::function<void()>>(dispatcher);
 
     auto listenerId = _valueWrapper->addListener(callback);
 

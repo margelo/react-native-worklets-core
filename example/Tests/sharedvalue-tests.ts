@@ -64,15 +64,14 @@ const set_function_with_error: Test = () => {
 const add_listener: Test = () => {
   const sharedValue = Worklets.createSharedValue(100);
   const didChange = Worklets.createSharedValue(false);
-  const unsubscribe = sharedValue.addListener(() => {
-    didChange.value = true;
-  });
+  const unsubscribe = sharedValue.addListener(() => (didChange.value = true));
   sharedValue.value = 50;
   unsubscribe();
+  console.log(didChange.value);
   return ExpectValue(didChange.value, true);
 };
 
-const add_listener_from_worklet_with_error: Test = () => {
+const add_listener_from_worklet_should_fail: Test = () => {
   const sharedValue = Worklets.createSharedValue(100);
   const worklet = Worklets.createWorklet(
     function () {
@@ -82,7 +81,7 @@ const add_listener_from_worklet_with_error: Test = () => {
   );
   return ExpectException(
     worklet.callInWorkletContext,
-    'addListener can only be called from Javascript code.',
+    'addListener can only be called from the main Javascript context and not from a worklet.',
   );
 };
 
@@ -96,5 +95,5 @@ export const sharedvalue_tests: {[key: string]: Test} = {
   set_value_from_worklet,
   set_function_with_error,
   add_listener,
-  add_listener_from_worklet_with_error,
+  add_listener_from_worklet_should_fail,
 };
