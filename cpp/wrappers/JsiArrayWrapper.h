@@ -2,6 +2,7 @@
 
 #include <JsiHostObject.h>
 #include <JsiWrapper.h>
+#include <JsiDescribe.h>
 #include <jsi/jsi.h>
 
 namespace RNWorklet {
@@ -31,9 +32,30 @@ public:
       std::string indexString = std::to_string(lastIndex++);
       _array.push_back(JsiWrapper::wrap(runtime, arguments[i], this));
     }
-    notifyListeners();
+    notify();
     return (double)_array.size();
   };
+                          
+  JSI_HOST_FUNCTION(iterator) {
+    int index = 0;
+    auto iterator = jsi::Object(runtime);
+    auto next = [index, this](jsi::Runtime &runtime, const jsi::Value &thisValue,
+                                         const jsi::Value *arguments, size_t count) mutable {
+      auto retVal = jsi::Object(runtime);
+      if(index < _array.size()) {
+        retVal.setProperty(runtime, "value", JsiWrapper::unwrap(runtime, _array[index]));
+        retVal.setProperty(runtime, "done", false);
+        index++;
+      } else {
+        retVal.setProperty(runtime, "done", true);
+      }
+      return retVal;
+    };
+    
+    iterator.setProperty(runtime, "next", jsi::Function::createFromHostFunction(runtime, jsi::PropNameID::forUtf8(runtime, "next"), 0, next));
+    
+    return iterator;
+  }
 
   JSI_HOST_FUNCTION(pop) {
     // Pop last element from array
@@ -42,7 +64,7 @@ public:
     }
     auto lastEl = _array.at(_array.size() - 1);
     _array.pop_back();
-    notifyListeners();
+    notify();
     return JsiWrapper::unwrap(runtime, lastEl);
   };
 
@@ -125,7 +147,8 @@ public:
                        JSI_EXPORT_FUNC(JsiArrayWrapper, forEach),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, map),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, filter),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, toString))
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, toString),
+                       JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, iterator, Symbol.iterator))
 
   /**
    * Overridden getValue method
@@ -170,6 +193,7 @@ public:
       // Return property by index
       auto index = std::stoi(nameStr.c_str());
       _array[index] = JsiWrapper::wrap(runtime, value);
+      notify();
     } else {
       // This is an edge case where the array is used as a
       // hashtable to set a value outside the bounds of the

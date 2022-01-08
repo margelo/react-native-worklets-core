@@ -89,16 +89,7 @@ public:
    * @param listenerId id of listener to remove
    */
   void removeListener(size_t listenerId) { _listeners.erase(listenerId); }
-
-  /**
-   * Notify listeners that the value has changed
-   */
-  void notifyListeners() {
-    for (auto listener : _listeners) {
-      (*listener.second)();
-    }
-  }
-
+  
 protected:
   /**
    * Returns a wrapper for the value
@@ -113,9 +104,9 @@ protected:
   /**
    * Call to notify parent that something has changed
    */
-  void notifyParent() {
+  void notify() {
     if (_parent != nullptr) {
-      _parent->notifyParent();
+      _parent->notify();
     }
     notifyListeners();
   }
@@ -132,6 +123,15 @@ protected:
   JsiWrapper *getParent() { return _parent; }
 
 private:
+  /**
+   * Notify listeners that the value has changed
+   */
+  void notifyListeners() {
+    for (auto listener : _listeners) {
+      (*listener.second)();
+    }
+  }
+  
   /**
    * Base Constructor
    * @param parent Parent wrapper

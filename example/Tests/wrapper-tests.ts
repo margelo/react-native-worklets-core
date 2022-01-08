@@ -28,6 +28,15 @@ const array_set: Test = () => {
   return ExpectValue(array.value[0], 300);
 };
 
+const array_iterator: Test = () => {
+  const array = Worklets.createSharedValue([100, 200]);
+  let sum = 0;
+  for (const value of array.value) {
+    sum += value;
+  }
+  return ExpectValue(sum, 300);
+};
+
 export const wrapper_tests = {
   convert_undefined: convert(undefined),
   convert_null: convert(null),
@@ -47,6 +56,7 @@ export const wrapper_tests = {
   array_is_array,
   array_get,
   array_set,
+  array_iterator,
   convert_array: convert([123, 'abc']),
   convert_array_of_objects: convert([
     {x: 1, y: 2},

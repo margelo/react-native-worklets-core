@@ -72,7 +72,7 @@ void JsiWrapper::updateValue(jsi::Runtime &runtime, const jsi::Value &value) {
   std::unique_lock<std::mutex> lock(*_readWriteMutex);
   setValue(runtime, value);
   // Notify changes
-  notifyParent();
+  notify();
 }
 
 std::string JsiWrapper::toString(jsi::Runtime &runtime) {
