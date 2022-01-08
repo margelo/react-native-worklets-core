@@ -15,6 +15,19 @@ const convert_function_throws_exception: Test = () => {
   }, 'Regular javascript functions cannot be shared.');
 };
 
+const array_is_array: Test = () => {
+  return ExpectValue(Array.isArray(Worklets.createSharedValue([])), true);
+};
+
+const array_get: Test = () =>
+  ExpectValue(Worklets.createSharedValue([100]).value[0], 100);
+
+const array_set: Test = () => {
+  const array = Worklets.createSharedValue([100, 200]);
+  array.value[0] = 300;
+  return ExpectValue(array.value[0], 300);
+};
+
 export const wrapper_tests = {
   convert_undefined: convert(undefined),
   convert_null: convert(null),
@@ -25,8 +38,15 @@ export const wrapper_tests = {
   convert_object_with_children: convert({
     a: 123,
     b: 'abc',
-    children: [1, 2, 3, 4, 5],
+    children: [
+      {x: 5, y: 23},
+      {x: 5, y: 23},
+      {x: 5, y: 23},
+    ],
   }),
+  array_is_array,
+  array_get,
+  array_set,
   convert_array: convert([123, 'abc']),
   convert_array_of_objects: convert([
     {x: 1, y: 2},

@@ -23,7 +23,7 @@ public:
       : JsiWrapper(runtime, value, parent) {}
 
   JSI_PROPERTY_GET(length) { return (double)_array.size(); }
-
+                          
   JSI_HOST_FUNCTION(push) {
     // Push all arguments to the array
     auto lastIndex = _array.size();
@@ -158,13 +158,24 @@ public:
 
   /**
    * Overridden jsi::HostObject set property method
-   * @param rt Runtime
+   * @param runtime Runtime
    * @param name Name of value to set
    * @param value Value to set
    */
-  void set(jsi::Runtime &rt, const jsi::PropNameID &name,
+  void set(jsi::Runtime &runtime, const jsi::PropNameID &name,
            const jsi::Value &value) override {
-    // Do nada - an array set method is never called
+    auto nameStr = name.utf8(runtime);
+    if (!nameStr.empty() &&
+        std::all_of(nameStr.begin(), nameStr.end(), ::isdigit)) {
+      // Return property by index
+      auto index = std::stoi(nameStr.c_str());
+      _array[index] = JsiWrapper::wrap(runtime, value);
+    } else {
+      // This is an edge case where the array is used as a
+      // hashtable to set a value outside the bounds of the
+      // array (ie. outside out the range of items being pushed)
+      jsi::detail::throwJSError(runtime, "Array out of bounds");
+    }
   }
 
   /**

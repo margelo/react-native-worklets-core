@@ -42,7 +42,18 @@
  */
 #define JSI_EXPORT_FUNC(CLASS, FUNCTION)                                       \
   {                                                                            \
-#FUNCTION, (jsi::Value(JsiHostObject::*)(                                  \
+#FUNCTION, (jsi::Value(JsiHostObject::*)(                                      \
+                   jsi::Runtime & runtime, const jsi::Value &thisValue,        \
+                   const jsi::Value *arguments, size_t)) &                     \
+                   CLASS::FUNCTION                                             \
+  }
+
+/**
+ * Creates a JSI export function declaration with a specific name
+ */
+#define JSI_EXPORT_FUNC_NAMED(CLASS, FUNCTION, NAME)                           \
+  {                                                                            \
+#NAME, (jsi::Value(JsiHostObject::*)(                                          \
                    jsi::Runtime & runtime, const jsi::Value &thisValue,        \
                    const jsi::Value *arguments, size_t)) &                     \
                    CLASS::FUNCTION                                             \
