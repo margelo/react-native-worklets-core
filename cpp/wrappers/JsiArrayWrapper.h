@@ -136,6 +136,19 @@ public:
     }
     return returnValue;
   };
+                          
+  JSI_HOST_FUNCTION(concat) {
+    auto nextArray = arguments[0].asObject(runtime).asArray(runtime);
+    auto results = jsi::Array(runtime, static_cast<size_t>(_array.size() + nextArray.size(runtime)));
+    for(size_t i=0; i<_array.size(); i++) {
+      results.setValueAtIndex(runtime, i, JsiWrapper::unwrap(runtime, _array[i]));
+    }
+    auto startIndex = std::max<size_t>(0, _array.size()-1);
+    for(size_t i=0; i<nextArray.size(runtime); i++) {
+      results.setValueAtIndex(runtime, i + startIndex, nextArray.getValueAtIndex(runtime, i));
+    }
+    return results;
+  }
 
   JSI_HOST_FUNCTION(toString) {
     return jsi::String::createFromUtf8(runtime, toString(runtime));
@@ -147,6 +160,7 @@ public:
                        JSI_EXPORT_FUNC(JsiArrayWrapper, forEach),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, map),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, filter),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, concat),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, toString),
                        JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, iterator, Symbol.iterator))
 

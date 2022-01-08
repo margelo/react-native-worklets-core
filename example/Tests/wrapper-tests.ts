@@ -61,6 +61,12 @@ const array_map: Test = () => {
   return ExpectValue(copy, [100, 200]);
 };
 
+const array_concat: Test = () => {
+  const array = Worklets.createSharedValue([100, 200]);
+  const next = [300, 400];
+  return ExpectValue(array.value.concat(next).length, 4);
+};
+
 const array_iterator: Test = () => {
   const array = Worklets.createSharedValue([100, 200]);
   let sum = 0;
@@ -94,6 +100,7 @@ export const wrapper_tests = {
   array_forEach,
   array_filter,
   array_map,
+  array_concat,
   array_iterator,
   convert_array: convert([123, 'abc']),
   convert_array_of_objects: convert([
