@@ -25,17 +25,6 @@ public:
 
   JSI_PROPERTY_GET(length) { return (double)_array.size(); }
                           
-  JSI_HOST_FUNCTION(push) {
-    // Push all arguments to the array
-    auto lastIndex = _array.size();
-    for (size_t i = 0; i < count; i++) {
-      std::string indexString = std::to_string(lastIndex++);
-      _array.push_back(JsiWrapper::wrap(runtime, arguments[i], this));
-    }
-    notify();
-    return (double)_array.size();
-  };
-                          
   JSI_HOST_FUNCTION(iterator) {
     int index = 0;
     auto iterator = jsi::Object(runtime);
@@ -56,6 +45,17 @@ public:
     
     return iterator;
   }
+                          
+  JSI_HOST_FUNCTION(push) {
+    // Push all arguments to the array
+    auto lastIndex = _array.size();
+    for (size_t i = 0; i < count; i++) {
+      std::string indexString = std::to_string(lastIndex++);
+      _array.push_back(JsiWrapper::wrap(runtime, arguments[i], this));
+    }
+    notify();
+    return (double)_array.size();
+  };
 
   JSI_HOST_FUNCTION(pop) {
     // Pop last element from array

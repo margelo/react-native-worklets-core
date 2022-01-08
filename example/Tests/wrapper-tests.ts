@@ -28,6 +28,39 @@ const array_set: Test = () => {
   return ExpectValue(array.value[0], 300);
 };
 
+const array_push: Test = () => {
+  const array = Worklets.createSharedValue([100, 200]);
+  array.value.push(300);
+  return ExpectValue(array.value[2], 300);
+};
+
+const array_pop: Test = () => {
+  const array = Worklets.createSharedValue([100, 200]);
+  array.value.pop();
+  return ExpectValue(array.value.length, 1);
+};
+
+const array_forEach: Test = () => {
+  const array = Worklets.createSharedValue([100, 200]);
+  let sum = 0;
+  array.value.forEach(value => {
+    sum += value;
+  });
+  return ExpectValue(sum, 300);
+};
+
+const array_filter: Test = () => {
+  const array = Worklets.createSharedValue([100, 200]);
+  const lessThan150 = array.value.filter(value => value < 150);
+  return ExpectValue(lessThan150.length, 1);
+};
+
+const array_map: Test = () => {
+  const array = Worklets.createSharedValue([100, 200]);
+  const copy = array.value.map(value => value);
+  return ExpectValue(copy, [100, 200]);
+};
+
 const array_iterator: Test = () => {
   const array = Worklets.createSharedValue([100, 200]);
   let sum = 0;
@@ -56,6 +89,11 @@ export const wrapper_tests = {
   array_is_array,
   array_get,
   array_set,
+  array_push,
+  array_pop,
+  array_forEach,
+  array_filter,
+  array_map,
   array_iterator,
   convert_array: convert([123, 'abc']),
   convert_array_of_objects: convert([
