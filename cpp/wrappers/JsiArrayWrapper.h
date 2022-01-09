@@ -144,6 +144,19 @@ public:
     }
     return -1;
   };
+                          
+  JSI_HOST_FUNCTION(indexOf) {
+    auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0]);
+    for (size_t i = 0; i < _array.size(); i++) {
+      // TODO: Add == operator to JsiWrapper!!!
+      if(wrappedArg->getType() == _array[i]->getType()) {
+        if(wrappedArg->toString(runtime) == _array[i]->toString(runtime)) {
+          return static_cast<int>(i);
+        }
+      }
+    }
+    return -1;
+  };
              
   const std::vector<std::shared_ptr<JsiWrapper>>
   flat_internal(int depth, std::vector<std::shared_ptr<JsiWrapper>>& arr) {
@@ -179,6 +192,7 @@ public:
   JSI_HOST_FUNCTION(includes) {
     auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0]);
     for (size_t i = 0; i < _array.size(); i++) {
+      // TODO: Add == operator to JsiWrapper!!!
       if(wrappedArg->getType() == _array[i]->getType()) {
         if(wrappedArg->toString(runtime) == _array[i]->toString(runtime)) {
           return true;
@@ -217,6 +231,7 @@ public:
                        JSI_EXPORT_FUNC(JsiArrayWrapper, findIndex),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, flat),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, includes),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, indexOf),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, toString),
                        JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, iterator, Symbol.iterator))
 

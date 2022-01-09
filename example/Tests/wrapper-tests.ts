@@ -150,6 +150,16 @@ export const wrapper_tests = {
     return ExpectValue(array.value.includes(900), false);
   },
 
+  array_indexOf: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    return ExpectValue(array.value.indexOf(200), 1);
+  },
+
+  array_indexOf_false: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    return ExpectValue(array.value.indexOf(900), -1);
+  },
+
   array_iterator: () => {
     const array = Worklets.createSharedValue([100, 200]);
     let sum = 0;
