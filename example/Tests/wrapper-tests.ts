@@ -87,6 +87,18 @@ export const wrapper_tests = {
     return ExpectValue(result, 100);
   },
 
+  array_every: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    const result = array.value.every(p => p > 50);
+    return ExpectValue(result, true);
+  },
+
+  array_every_false: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    const result = array.value.every(p => p > 100);
+    return ExpectValue(result, false);
+  },
+
   array_iterator: () => {
     const array = Worklets.createSharedValue([100, 200]);
     let sum = 0;
@@ -102,3 +114,9 @@ export const wrapper_tests = {
     {x: 5, y: 12},
   ]),
 };
+
+const arrayTest = [1, 2, 3, 4, 5];
+console.log(
+  'every',
+  arrayTest.every(p => p > 2),
+);

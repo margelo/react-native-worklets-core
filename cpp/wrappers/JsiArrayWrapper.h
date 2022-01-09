@@ -134,6 +134,22 @@ public:
     return jsi::Value::undefined();
   };
                           
+  JSI_HOST_FUNCTION(every) {
+    // Filter array
+    auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
+    jsi::Value thisArg =
+        count > 1 ? arguments[1].asObject(runtime) : jsi::Value::undefined();
+
+    for (size_t i = 0; i < _array.size(); i++) {
+      auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
+      auto retVal = callFunction(runtime, callbackFn, thisArg, &arg, 1);
+      if (retVal.getBool() == false) {
+        return false;
+      }
+    }
+    return true;
+  };
+                          
   JSI_HOST_FUNCTION(concat) {
     auto nextArray = arguments[0].asObject(runtime).asArray(runtime);
     auto results = jsi::Array(runtime, static_cast<size_t>(_array.size() + nextArray.size(runtime)));
@@ -159,6 +175,7 @@ public:
                        JSI_EXPORT_FUNC(JsiArrayWrapper, filter),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, concat),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, find),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, every),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, toString),
                        JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, iterator, Symbol.iterator))
 
