@@ -21,7 +21,7 @@ public:
    */
   JsiArrayWrapper(jsi::Runtime &runtime, const jsi::Value &value,
                   JsiWrapper *parent)
-      : JsiWrapper(runtime, value, parent) {}
+      : JsiWrapper(runtime, value, parent, JsiWrapperType::Array) {}
 
   JSI_PROPERTY_GET(length) { return (double)_array.size(); }
                           
@@ -71,11 +71,9 @@ public:
   JSI_HOST_FUNCTION(forEach) {
     // Enumerate and call back
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-    jsi::Value thisArg =
-        count > 1 ? arguments[1].asObject(runtime) : jsi::Value::undefined();
     for (size_t i = 0; i < _array.size(); i++) {
       auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
-      callFunction(runtime, callbackFn, thisArg, &arg, 1);
+      callFunction(runtime, callbackFn, thisValue, &arg, 1);
     }
     return jsi::Value::undefined();
   };
@@ -83,29 +81,22 @@ public:
   JSI_HOST_FUNCTION(map) {
     // Enumerate and return
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-    jsi::Value thisArg =
-        count > 1 ? arguments[1].asObject(runtime) : jsi::Value::undefined();
-
     auto result = jsi::Array(runtime, _array.size());
     for (size_t i = 0; i < _array.size(); i++) {
       auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
-      auto retVal = callFunction(runtime, callbackFn, thisArg, &arg, 1);
+      auto retVal = callFunction(runtime, callbackFn, thisValue, &arg, 1);
       result.setValueAtIndex(runtime, i, retVal);
     }
     return result;
   };
 
   JSI_HOST_FUNCTION(filter) {
-    // Filter array
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-    jsi::Value thisArg =
-        count > 1 ? arguments[1].asObject(runtime) : jsi::Value::undefined();
-
     std::vector<std::shared_ptr<JsiWrapper>> result;
 
     for (size_t i = 0; i < _array.size(); i++) {
       auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
-      auto retVal = callFunction(runtime, callbackFn, thisArg, &arg, 1);
+      auto retVal = callFunction(runtime, callbackFn, thisValue, &arg, 1);
       if (retVal.getBool() == true) {
         result.push_back(_array.at(i));
       }
@@ -119,14 +110,10 @@ public:
   };
                           
   JSI_HOST_FUNCTION(find) {
-    // Filter array
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-    jsi::Value thisArg =
-        count > 1 ? arguments[1].asObject(runtime) : jsi::Value::undefined();
-
     for (size_t i = 0; i < _array.size(); i++) {
       auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
-      auto retVal = callFunction(runtime, callbackFn, thisArg, &arg, 1);
+      auto retVal = callFunction(runtime, callbackFn, thisValue, &arg, 1);
       if (retVal.getBool() == true) {
         return arg;
       }
@@ -135,19 +122,58 @@ public:
   };
                           
   JSI_HOST_FUNCTION(every) {
-    // Filter array
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-    jsi::Value thisArg =
-        count > 1 ? arguments[1].asObject(runtime) : jsi::Value::undefined();
-
     for (size_t i = 0; i < _array.size(); i++) {
       auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
-      auto retVal = callFunction(runtime, callbackFn, thisArg, &arg, 1);
+      auto retVal = callFunction(runtime, callbackFn, thisValue, &arg, 1);
       if (retVal.getBool() == false) {
         return false;
       }
     }
     return true;
+  };
+                          
+  JSI_HOST_FUNCTION(findIndex) {
+    auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
+    for (size_t i = 0; i < _array.size(); i++) {
+      auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
+      auto retVal = callFunction(runtime, callbackFn, thisValue, &arg, 1);
+      if (retVal.getBool() == true) {
+        return static_cast<int>(i);
+      }
+    }
+    return -1;
+  };
+             
+  const std::vector<std::shared_ptr<JsiWrapper>>
+  flat_internal(int depth, std::vector<std::shared_ptr<JsiWrapper>>& arr) {
+    std::vector<std::shared_ptr<JsiWrapper>> result;
+    for (auto it: arr) {
+      if(it->getType() == JsiWrapperType::Array) {
+        // Recursively call flat untill depth equals 0
+        if(depth <= -1 || depth > 0) {
+          auto childArray = ((JsiArrayWrapper*)it.get())->getArray();
+          auto flattened = flat_internal(depth-1, childArray);
+          for(auto child: flattened) {
+            result.push_back(child);
+          }
+        }
+      } else {
+        result.push_back(it);
+      }
+    }
+    return result;
+  }
+                          
+  JSI_HOST_FUNCTION(flat) {
+    auto depth = count > 0  ? arguments[0].asNumber() : -1;
+    std::vector<std::shared_ptr<JsiWrapper>> result = flat_internal(depth, _array);
+    auto returnValue = jsi::Array(runtime, result.size());
+    for (size_t i = 0; i < result.size(); i++) {
+      returnValue.setValueAtIndex(runtime, i,
+                                  JsiWrapper::unwrap(runtime, result.at(i)));
+    }
+    return returnValue;
   };
                           
   JSI_HOST_FUNCTION(concat) {
@@ -176,6 +202,8 @@ public:
                        JSI_EXPORT_FUNC(JsiArrayWrapper, concat),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, find),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, every),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, findIndex),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, flat),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, toString),
                        JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, iterator, Symbol.iterator))
 
@@ -265,7 +293,9 @@ public:
     }
     return retVal;
   }
-
+                          
+  const std::vector<std::shared_ptr<JsiWrapper>>& getArray() { return _array; }
+                          
 private:
   std::vector<std::shared_ptr<JsiWrapper>> _array;
 };

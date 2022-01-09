@@ -30,6 +30,18 @@ public:
    * @param runtime Calling runtime
    * @param value Value to wrap
    * @param parent Optional parent wrapper
+   * @paran type Type of wrapper
+   */
+  JsiWrapper(jsi::Runtime &runtime, const jsi::Value &value, JsiWrapper *parent, JsiWrapperType type)
+      : JsiWrapper(parent) {
+    _type = type;
+  }
+  
+  /**
+   * Constructor - called from static members
+   * @param runtime Calling runtime
+   * @param value Value to wrap
+   * @param parent Optional parent wrapper
    */
   JsiWrapper(jsi::Runtime &runtime, const jsi::Value &value, JsiWrapper *parent)
       : JsiWrapper(parent) {}

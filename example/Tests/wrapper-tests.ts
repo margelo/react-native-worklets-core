@@ -99,6 +99,48 @@ export const wrapper_tests = {
     return ExpectValue(result, false);
   },
 
+  array_findIndex: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    const result = array.value.findIndex(p => p === 200);
+    return ExpectValue(result, 1);
+  },
+
+  array_findIndex_false: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    const result = array.value.findIndex(p => p === 300);
+    return ExpectValue(result, -1);
+  },
+
+  array_flat_length: () => {
+    const array = Worklets.createSharedValue([
+      100,
+      200,
+      [300, 400, [500, 600]],
+    ]);
+    const flattened = array.value.flat();
+    return ExpectValue(flattened.length, 6);
+  },
+
+  array_flat_values: () => {
+    const array = Worklets.createSharedValue([
+      100,
+      200,
+      [300, 400, [500, 600]],
+    ]);
+    const flattened = array.value.flat();
+    return ExpectValue(flattened[5], 600);
+  },
+
+  array_flat_with_depth: () => {
+    const array = Worklets.createSharedValue([
+      100,
+      200,
+      [300, 400, [500, 600]],
+    ]);
+    const flattened = array.value.flat(1);
+    return ExpectValue(flattened.length, 4);
+  },
+
   array_iterator: () => {
     const array = Worklets.createSharedValue([100, 200]);
     let sum = 0;
@@ -115,8 +157,5 @@ export const wrapper_tests = {
   ]),
 };
 
-const arrayTest = [1, 2, 3, 4, 5];
-console.log(
-  'every',
-  arrayTest.every(p => p > 2),
-);
+const arrayTest = [1, 2, 3, 4, 5, [6, 7]];
+console.log('every', arrayTest.flat());

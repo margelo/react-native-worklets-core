@@ -34,7 +34,7 @@ std::shared_ptr<JsiWrapper> JsiWrapper::wrap(jsi::Runtime &runtime,
     retVal = std::make_shared<JsiWrapper>(runtime, value, parent);
   } else if (value.isObject()) {
     if (value.asObject(runtime).isArray(runtime)) {
-      retVal = std::make_shared<JsiArrayWrapper>(runtime, value, parent);
+      retVal = std::make_shared<JsiArrayWrapper>(runtime, value, parent);      
     } else {
       retVal = std::make_shared<JsiObjectWrapper>(runtime, value, parent);
     }
