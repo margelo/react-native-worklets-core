@@ -1,3 +1,5 @@
+import deepEqual from 'deep-equal';
+
 export const Expect = <V>(
   value: V | Promise<V>,
   expected: (v: V) => string | undefined,
@@ -31,7 +33,7 @@ export const ExpectValue = <V, T>(value: V | Promise<V>, expected: T) => {
       resolvedValue = value as any as V;
     }
 
-    if (JSON.stringify(resolvedValue) !== JSON.stringify(expected)) {
+    if (!deepEqual(resolvedValue, expected, {strict: true})) {
       reject(
         new Error(
           `Expected ${JSON.stringify(expected)}, got ${JSON.stringify(

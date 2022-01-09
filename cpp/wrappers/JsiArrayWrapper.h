@@ -176,6 +176,18 @@ public:
     return returnValue;
   };
                           
+  JSI_HOST_FUNCTION(includes) {
+    auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0]);
+    for (size_t i = 0; i < _array.size(); i++) {
+      if(wrappedArg->getType() == _array[i]->getType()) {
+        if(wrappedArg->toString(runtime) == _array[i]->toString(runtime)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+                          
   JSI_HOST_FUNCTION(concat) {
     auto nextArray = arguments[0].asObject(runtime).asArray(runtime);
     auto results = jsi::Array(runtime, static_cast<size_t>(_array.size() + nextArray.size(runtime)));
@@ -204,6 +216,7 @@ public:
                        JSI_EXPORT_FUNC(JsiArrayWrapper, every),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, findIndex),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, flat),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, includes),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, toString),
                        JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, iterator, Symbol.iterator))
 

@@ -4,10 +4,9 @@ import {ExpectException, ExpectValue} from './utils';
 
 const convert =
   <T>(value: T): Test =>
-  () => {
-    const valueToTest = Worklets.createSharedValue(value);
-    return ExpectValue(valueToTest.value, value);
-  };
+  () =>
+    ExpectValue(Worklets.createSharedValue(value).value, value);
+
 export const wrapper_tests = {
   convert_undefined: convert(undefined),
   convert_null: convert(null),
@@ -141,6 +140,16 @@ export const wrapper_tests = {
     return ExpectValue(flattened.length, 4);
   },
 
+  array_includes: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    return ExpectValue(array.value.includes(200), true);
+  },
+
+  array_includes_false: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    return ExpectValue(array.value.includes(900), false);
+  },
+
   array_iterator: () => {
     const array = Worklets.createSharedValue([100, 200]);
     let sum = 0;
@@ -156,6 +165,3 @@ export const wrapper_tests = {
     {x: 5, y: 12},
   ]),
 };
-
-const arrayTest = [1, 2, 3, 4, 5, [6, 7]];
-console.log('every', arrayTest.flat());

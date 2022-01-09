@@ -101,7 +101,7 @@ public:
    * @param listenerId id of listener to remove
    */
   void removeListener(size_t listenerId) { _listeners.erase(listenerId); }
-  
+    
 protected:
   /**
    * Returns a wrapper for the value
