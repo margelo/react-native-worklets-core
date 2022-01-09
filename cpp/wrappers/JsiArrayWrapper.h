@@ -69,7 +69,6 @@ public:
   };
 
   JSI_HOST_FUNCTION(forEach) {
-    // Enumerate and call back
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     for (size_t i = 0; i < _array.size(); i++) {
       auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
@@ -79,7 +78,6 @@ public:
   };
 
   JSI_HOST_FUNCTION(map) {
-    // Enumerate and return
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     auto result = jsi::Array(runtime, _array.size());
     for (size_t i = 0; i < _array.size(); i++) {
@@ -214,6 +212,20 @@ public:
     }
     return results;
   }
+                          
+  JSI_HOST_FUNCTION(join) {
+    auto separator = count > 0 ? arguments[0].asString(runtime).utf8(runtime) : ",";
+    auto result = std::string("");
+    for (size_t i = 0; i < _array.size(); i++) {
+      auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
+      result += arg.toString(runtime).utf8(runtime);
+      if(i < _array.size()-1) {
+        result += separator;
+      }
+    }
+    return jsi::String::createFromUtf8(runtime, result);
+  
+  }
 
   JSI_HOST_FUNCTION(toString) {
     return jsi::String::createFromUtf8(runtime, toString(runtime));
@@ -232,6 +244,7 @@ public:
                        JSI_EXPORT_FUNC(JsiArrayWrapper, flat),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, includes),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, indexOf),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, join),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, toString),
                        JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, iterator, Symbol.iterator))
 
