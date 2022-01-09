@@ -74,13 +74,8 @@ public:
     jsi::Value thisArg =
         count > 1 ? arguments[1].asObject(runtime) : jsi::Value::undefined();
     for (size_t i = 0; i < _array.size(); i++) {
-      if (thisArg.isUndefined()) {
-        callbackFn.call(runtime, JsiWrapper::unwrap(runtime, _array.at(i)));
-      } else {
-        callbackFn.callWithThis(runtime, thisValue.asObject(runtime),
-                                JsiWrapper::unwrap(runtime, _array.at(i)),
-                                thisArg);
-      }
+      auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
+      callFunction(runtime, callbackFn, thisArg, &arg, 1);
     }
     return jsi::Value::undefined();
   };
@@ -93,15 +88,8 @@ public:
 
     auto result = jsi::Array(runtime, _array.size());
     for (size_t i = 0; i < _array.size(); i++) {
-      jsi::Value retVal;
-      if (thisArg.isUndefined()) {
-        retVal =
-            callbackFn.call(runtime, JsiWrapper::unwrap(runtime, _array.at(i)));
-      } else {
-        retVal = callbackFn.callWithThis(
-            runtime, thisValue.asObject(runtime),
-            JsiWrapper::unwrap(runtime, _array.at(i)), thisArg);
-      }
+      auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
+      auto retVal = callFunction(runtime, callbackFn, thisArg, &arg, 1);
       result.setValueAtIndex(runtime, i, retVal);
     }
     return result;
@@ -116,15 +104,8 @@ public:
     std::vector<std::shared_ptr<JsiWrapper>> result;
 
     for (size_t i = 0; i < _array.size(); i++) {
-      jsi::Value retVal;
-      if (thisArg.isUndefined()) {
-        retVal =
-            callbackFn.call(runtime, JsiWrapper::unwrap(runtime, _array.at(i)));
-      } else {
-        retVal = callbackFn.callWithThis(
-            runtime, thisValue.asObject(runtime),
-            JsiWrapper::unwrap(runtime, _array.at(i)), thisArg);
-      }
+      auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
+      auto retVal = callFunction(runtime, callbackFn, thisArg, &arg, 1);
       if (retVal.getBool() == true) {
         result.push_back(_array.at(i));
       }
@@ -135,6 +116,22 @@ public:
                                   JsiWrapper::unwrap(runtime, result.at(i)));
     }
     return returnValue;
+  };
+                          
+  JSI_HOST_FUNCTION(find) {
+    // Filter array
+    auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
+    jsi::Value thisArg =
+        count > 1 ? arguments[1].asObject(runtime) : jsi::Value::undefined();
+
+    for (size_t i = 0; i < _array.size(); i++) {
+      auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
+      auto retVal = callFunction(runtime, callbackFn, thisArg, &arg, 1);
+      if (retVal.getBool() == true) {
+        return arg;
+      }
+    }
+    return jsi::Value::undefined();
   };
                           
   JSI_HOST_FUNCTION(concat) {
@@ -161,6 +158,7 @@ public:
                        JSI_EXPORT_FUNC(JsiArrayWrapper, map),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, filter),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, concat),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, find),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, toString),
                        JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, iterator, Symbol.iterator))
 

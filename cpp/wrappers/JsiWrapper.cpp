@@ -92,4 +92,16 @@ std::string JsiWrapper::toString(jsi::Runtime &runtime) {
     return "[Unknown]";
   }
 }
+
+jsi::Value JsiWrapper::callFunction(jsi::Runtime & runtime,
+                                    const jsi::Function &func,
+                                    const jsi::Value &thisValue,
+                                    const jsi::Value *arguments, size_t count) {
+  if (thisValue.isUndefined()) {
+    return func.call(runtime, arguments, count);
+  } else {
+    return func.callWithThis(runtime, thisValue.asObject(runtime), arguments, count);
+  }
+}
+
 } // namespace RNWorklet

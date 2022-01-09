@@ -121,6 +121,15 @@ protected:
    * @return The parent object
    */
   JsiWrapper *getParent() { return _parent; }
+  
+  /**
+   Calls the Function and returns its value. This function will call the
+   correct overload based on the this value
+   */
+  jsi::Value callFunction(jsi::Runtime & runtime,
+                          const jsi::Function &func,
+                          const jsi::Value &thisValue,
+                          const jsi::Value *arguments, size_t count);
 
 private:
   /**
