@@ -40,7 +40,13 @@ public:
     return JsiWrapper::unwrap(runtime, _valueWrapper);
   }
 
-  JSI_PROPERTY_SET(value) { _valueWrapper->updateValue(runtime, value); }
+  JSI_PROPERTY_SET(value) {
+    if(_valueWrapper->canUpdateValue(runtime, value)) {
+      _valueWrapper->updateValue(runtime, value);
+    } else {
+      _valueWrapper = JsiWrapper::wrap(runtime, value);
+    }
+  }
 
   JSI_HOST_FUNCTION(addListener) {
     // This functionPtr should only be callable from the js runtime

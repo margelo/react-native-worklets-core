@@ -74,6 +74,11 @@ public:
    * @param value Value to set
    */
   virtual void updateValue(jsi::Runtime &runtime, const jsi::Value &value);
+  
+  /**
+   Returns true if the value provided can be contained in the wrapped instance.
+   */
+  virtual bool canUpdateValue(jsi::Runtime &runtime, const jsi::Value &value);
 
   /**
    * @return The type of wrapper

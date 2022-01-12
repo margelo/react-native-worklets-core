@@ -8,6 +8,11 @@ export const sharedvalue_tests = {
     return ExpectValue(sharedValue.value, 50);
   },
 
+  get_set_decimal_value: () => {
+    const sharedValue = Worklets.createSharedValue(3.14159);
+    return ExpectValue(sharedValue.value, 3.14159);
+  },
+
   get_set_bool_value: () => {
     const sharedValue = Worklets.createSharedValue(true);
     sharedValue.value = false;
@@ -27,26 +32,53 @@ export const sharedvalue_tests = {
     return ExpectValue(sharedValue.value, {a: 50, b: 100});
   },
 
-  object_value_destructure: () => {
-    const sharedValue = Worklets.createSharedValue({a: 100, b: 200});
-    sharedValue.value = {...sharedValue.value};
-    return ExpectValue(sharedValue.value, {a: 50, b: 100});
-  },
-
-  object_value_spread: () => {
-    const sharedValue = Worklets.createSharedValue<Record<string, number>>({
-      a: 100,
-      b: 200,
-    });
-    sharedValue.value = {...sharedValue.value, c: 300};
-    return ExpectValue(sharedValue.value, {a: 50, b: 100, c: 300});
-  },
-
   get_set_array_value: () => {
     const sharedValue = Worklets.createSharedValue([100, 50]);
     return ExpectValue(sharedValue.value[0], 100).then(() =>
       ExpectValue(sharedValue.value[1], 50),
     );
+  },
+
+  box_number_to_string: () => {
+    const sharedValue = Worklets.createSharedValue(100);
+    // @ts-ignore
+    sharedValue.value = '100';
+    return ExpectValue(sharedValue.value, '100');
+  },
+
+  box_string_to_number: () => {
+    const sharedValue = Worklets.createSharedValue('100');
+    // @ts-ignore
+    sharedValue.value = 100;
+    return ExpectValue(sharedValue.value, 100);
+  },
+
+  box_string_to_array: () => {
+    const sharedValue = Worklets.createSharedValue('100');
+    // @ts-ignore
+    sharedValue.value = [100, 200];
+    return ExpectValue(sharedValue.value, [100, 200]);
+  },
+
+  box_string_to_object: () => {
+    const sharedValue = Worklets.createSharedValue('100');
+    // @ts-ignore
+    sharedValue.value = {a: 100, b: 200};
+    return ExpectValue(sharedValue.value, {a: 100, b: 200});
+  },
+
+  box_array_to_object: () => {
+    const sharedValue = Worklets.createSharedValue([100, 200]);
+    // @ts-ignore
+    sharedValue.value = {a: 100, b: 200};
+    return ExpectValue(sharedValue.value, {a: 100, b: 200});
+  },
+
+  box_object_to_array: () => {
+    const sharedValue = Worklets.createSharedValue({a: 100, b: 200});
+    // @ts-ignore
+    sharedValue.value = [100.34, 200];
+    return ExpectValue(sharedValue.value, [100.34, 200]);
   },
 
   array_destructure: () => {
@@ -64,6 +96,21 @@ export const sharedvalue_tests = {
   array_length: () => {
     const sharedValue = Worklets.createSharedValue([100, 50]);
     return ExpectValue(sharedValue.value.length, 2);
+  },
+
+  object_value_destructure: () => {
+    const sharedValue = Worklets.createSharedValue({a: 100, b: 200});
+    sharedValue.value = {...sharedValue.value};
+    return ExpectValue(sharedValue.value, {a: 50, b: 100});
+  },
+
+  object_value_spread: () => {
+    const sharedValue = Worklets.createSharedValue<Record<string, number>>({
+      a: 100,
+      b: 200,
+    });
+    sharedValue.value = {...sharedValue.value, c: 300};
+    return ExpectValue(sharedValue.value, {a: 50, b: 100, c: 300});
   },
 
   set_value_from_worklet: () => {

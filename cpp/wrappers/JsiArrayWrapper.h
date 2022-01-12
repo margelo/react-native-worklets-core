@@ -251,6 +251,10 @@ public:
   JSI_HOST_FUNCTION(toString) {
     return jsi::String::createFromUtf8(runtime, toString(runtime));
   };
+                          
+  JSI_HOST_FUNCTION(toJSON) {
+    return jsi::String::createFromUtf8(runtime, toString(runtime));
+  }
 
   JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiArrayWrapper, length))
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiArrayWrapper, push),
@@ -268,6 +272,7 @@ public:
                        JSI_EXPORT_FUNC(JsiArrayWrapper, join),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, reduce),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, toString),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, toJSON),
                        JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, iterator, Symbol.iterator))
 
   /**
@@ -277,6 +282,10 @@ public:
    */
   jsi::Value getValue(jsi::Runtime &runtime) override {
     return jsi::Object::createFromHostObject(runtime, shared_from_this());
+  }
+                          
+  bool canUpdateValue(jsi::Runtime &runtime, const jsi::Value &value) override {
+    return value.isObject() && value.asObject(runtime).isArray(runtime);
   }
 
   /**
@@ -352,9 +361,9 @@ public:
     // Return array contents
     for (size_t i = 0; i < _array.size(); i++) {
       auto str = _array.at(i)->toString(runtime);
-      retVal += (i > 0 ? ", " : "") + str;
+      retVal += (i > 0 ? "," : "") + str;
     }
-    return retVal;
+    return "[" + retVal + "]";
   }
                           
   const std::vector<std::shared_ptr<JsiWrapper>>& getArray() { return _array; }

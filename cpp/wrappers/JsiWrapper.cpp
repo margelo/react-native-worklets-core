@@ -75,6 +75,18 @@ void JsiWrapper::updateValue(jsi::Runtime &runtime, const jsi::Value &value) {
   notify();
 }
 
+bool JsiWrapper::canUpdateValue(jsi::Runtime &runtime, const jsi::Value &value) {
+  if (value.isUndefined() ||
+      value.isNull() ||
+      value.isBool() ||
+      value.isNumber() ||
+      value.isString()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 std::string JsiWrapper::toString(jsi::Runtime &runtime) {
   switch (_type) {
   case JsiWrapperType::Undefined:
@@ -83,8 +95,16 @@ std::string JsiWrapper::toString(jsi::Runtime &runtime) {
     return "NULL";
   case JsiWrapperType::Bool:
     return std::to_string(_boolValue);
-  case JsiWrapperType::Number:
-    return std::to_string((double)_numberValue);
+  case JsiWrapperType::Number: {
+    // check if fraction is empty
+    auto fraction = _numberValue-(long)_numberValue;
+    if(fraction == 0.0) {
+      return std::to_string(static_cast<long>(_numberValue));
+    }
+    std::string str = std::to_string (_numberValue);
+    str.erase ( str.find_last_not_of('0') + 1, std::string::npos );
+    return str;
+  }
   case JsiWrapperType::String:
     return _stringValue;
   default:

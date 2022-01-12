@@ -28,7 +28,12 @@ public:
    
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC_NAMED(JsiObjectWrapper, toStringImpl, toString),
                        JSI_EXPORT_FUNC_NAMED(JsiObjectWrapper, toStringImpl, Symbol.toStringTag))
-                              
+
+                           
+  bool canUpdateValue(jsi::Runtime &runtime, const jsi::Value &value) override {
+    return value.isObject() && !value.asObject(runtime).isArray(runtime);
+  }
+                           
   /**
    * Overridden setValue
    * @param runtime Value's runtime
