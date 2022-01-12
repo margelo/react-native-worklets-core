@@ -170,6 +170,27 @@ export const wrapper_tests = {
     return ExpectValue(array.value.join('+'), '100+200');
   },
 
+  array_reduce: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    return ExpectValue(
+      array.value.reduce((acc, cur, index) => {
+        const retVal = {...acc, [index]: cur};
+        console.log('t', JSON.stringify(acc), '->', JSON.stringify(retVal));
+        return retVal;
+      }, {}),
+      {0: 100, 1: 200},
+    );
+  },
+
+  array_reduce_without_initialvalue: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    return ExpectValue(
+      // @ts-ignore
+      array.value.reduce((acc, cur, index) => ({...acc, [index]: cur})),
+      {0: 100, 1: 200},
+    );
+  },
+
   array_iterator: () => {
     const array = Worklets.createSharedValue([100, 200]);
     let sum = 0;
@@ -185,3 +206,12 @@ export const wrapper_tests = {
     {x: 5, y: 12},
   ]),
 };
+
+const a = [100, 200];
+console.log(
+  a.reduce((acc, cur, index) => {
+    const retVal = {...acc, [index]: cur};
+    console.log('*', JSON.stringify(acc), '->', JSON.stringify(retVal));
+    return retVal;
+  }, {}),
+);

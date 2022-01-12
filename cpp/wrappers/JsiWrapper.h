@@ -84,7 +84,7 @@ public:
    * Returns the object as a string
    */
   virtual std::string toString(jsi::Runtime &runtime);
-
+  
   /**
    * Add listener
    * @param listener callback to notify

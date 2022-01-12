@@ -9,6 +9,7 @@ using namespace facebook;
 class JsiObjectWrapper : public jsi::HostObject,
                          public std::enable_shared_from_this<JsiObjectWrapper>,
                          public JsiWrapper {
+                                                      
 public:
   /**
    * Constructor
@@ -19,7 +20,7 @@ public:
   JsiObjectWrapper(jsi::Runtime &runtime, const jsi::Value &value,
                    JsiWrapper *parent)
       : JsiWrapper(runtime, value, parent) {}
-
+                              
   /**
    * Overridden setValue
    * @param runtime Value's runtime
@@ -92,7 +93,7 @@ public:
    */
   jsi::Value get(jsi::Runtime &runtime, const jsi::PropNameID &name) override {
     auto nameStr = name.utf8(runtime);
-    if (nameStr == "toString") {
+    if (nameStr == "toString" || nameStr == "Symbol.toStringTag") {
       return jsi::Function::createFromHostFunction(
           runtime, jsi::PropNameID::forUtf8(runtime, "toString"), 0,
           [this](jsi::Runtime &runtime, const jsi::Value &thisValue,

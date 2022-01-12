@@ -224,7 +224,28 @@ public:
       }
     }
     return jsi::String::createFromUtf8(runtime, result);
-  
+  }
+                          
+  JSI_HOST_FUNCTION(reduce) {
+    auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
+    std::shared_ptr<JsiWrapper> acc = JsiWrapper::wrap(runtime, jsi::Value::undefined());
+    if(count > 1) {
+      acc = JsiWrapper::wrap(runtime, arguments[1]);
+    }
+    for (size_t i = 0; i < _array.size(); i++) {
+      std::vector<jsi::Value> args(3);
+      args[0] = JsiWrapper::unwrap(runtime, acc);
+      args[1] = JsiWrapper::unwrap(runtime, _array.at(i));
+      args[2] = jsi::Value(static_cast<int>(i));
+      acc = JsiWrapper::wrap(runtime,
+                             callFunction(runtime,
+                                          callbackFn,
+                                          thisValue,
+                                          static_cast<const jsi::Value *>(args.data()),
+                                          3)
+                              );
+    }
+    return JsiWrapper::unwrap(runtime, acc);
   }
 
   JSI_HOST_FUNCTION(toString) {
@@ -245,6 +266,7 @@ public:
                        JSI_EXPORT_FUNC(JsiArrayWrapper, includes),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, indexOf),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, join),
+                       JSI_EXPORT_FUNC(JsiArrayWrapper, reduce),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, toString),
                        JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, iterator, Symbol.iterator))
 
