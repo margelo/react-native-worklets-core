@@ -1,12 +1,13 @@
 #pragma once
 
 #include <JsiWrapper.h>
+#include <JsiHostObject.h>
 #include <jsi/jsi.h>
 
 namespace RNWorklet {
 using namespace facebook;
 
-class JsiObjectWrapper : public jsi::HostObject,
+class JsiObjectWrapper : public JsiHostObject,
                          public std::enable_shared_from_this<JsiObjectWrapper>,
                          public JsiWrapper {
                                                       
@@ -20,6 +21,13 @@ public:
   JsiObjectWrapper(jsi::Runtime &runtime, const jsi::Value &value,
                    JsiWrapper *parent)
       : JsiWrapper(runtime, value, parent) {}
+                           
+  JSI_HOST_FUNCTION(toStringImpl) {
+     return jsi::String::createFromUtf8(runtime, toString(runtime));
+  }
+   
+  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC_NAMED(JsiObjectWrapper, toStringImpl, toString),
+                       JSI_EXPORT_FUNC_NAMED(JsiObjectWrapper, toStringImpl, Symbol.toStringTag))
                               
   /**
    * Overridden setValue
@@ -93,21 +101,12 @@ public:
    */
   jsi::Value get(jsi::Runtime &runtime, const jsi::PropNameID &name) override {
     auto nameStr = name.utf8(runtime);
-    if (nameStr == "toString" || nameStr == "Symbol.toStringTag") {
-      return jsi::Function::createFromHostFunction(
-          runtime, jsi::PropNameID::forUtf8(runtime, "toString"), 0,
-          [this](jsi::Runtime &runtime, const jsi::Value &thisValue,
-                 const jsi::Value *arguments, size_t count) -> jsi::Value {
-            return jsi::String::createFromUtf8(runtime, toString(runtime));
-          });
-    }
-
     if (_properties.count(nameStr) != 0) {
       auto prop = _properties.at(nameStr);
       return JsiWrapper::unwrap(runtime, prop);
     }
 
-    return jsi::Value::undefined();
+    return JsiHostObject::get(runtime, name);
   }
 
   /**

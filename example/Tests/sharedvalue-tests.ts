@@ -49,6 +49,18 @@ export const sharedvalue_tests = {
     );
   },
 
+  array_destructure: () => {
+    const sharedValue = Worklets.createSharedValue([100, 200]);
+    sharedValue.value = [...sharedValue.value];
+    return ExpectValue(sharedValue.value, [100, 200]);
+  },
+
+  array_destructure_to_object: () => {
+    const sharedValue = Worklets.createSharedValue([100, 200]);
+    sharedValue.value = {...sharedValue.value};
+    return ExpectValue(sharedValue.value, {0: 100, 1: 200});
+  },
+
   array_length: () => {
     const sharedValue = Worklets.createSharedValue([100, 50]);
     return ExpectValue(sharedValue.value.length, 2);
