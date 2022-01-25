@@ -20,5 +20,8 @@ assert(sharedValue.value === 200);
 
 Sharing values between JS runtimes is done by using shared values. The goal of the project is to provide JS primitives, objects and arrays that are shareable without copying data.
 
-### Reanimated
+## Example project
+The example project is just a suite of tests to run that runs through all of the expected behaviour and tracks errors and failures.
+
+## Reanimated
 We're currently not using the worklet syntax when defining our worklets, but this can easily be added to the implementation and is done just to reduce the complexity of the project.
