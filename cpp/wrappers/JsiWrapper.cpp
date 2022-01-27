@@ -1,6 +1,7 @@
 #include "JsiWrapper.h"
 #include <JsiArrayWrapper.h>
 #include <JsiObjectWrapper.h>
+#include <JsiPromiseWrapper.h>
 
 namespace RNWorklet {
 using namespace facebook;
@@ -33,8 +34,11 @@ std::shared_ptr<JsiWrapper> JsiWrapper::wrap(jsi::Runtime &runtime,
       value.isNumber() || value.isString()) {
     retVal = std::make_shared<JsiWrapper>(runtime, value, parent);
   } else if (value.isObject()) {
-    if (value.asObject(runtime).isArray(runtime)) {
-      retVal = std::make_shared<JsiArrayWrapper>(runtime, value, parent);      
+    auto obj = value.asObject(runtime);
+    if (obj.isArray(runtime)) {
+      retVal = std::make_shared<JsiArrayWrapper>(runtime, value, parent);
+    } else if (JsiPromiseWrapper::isPromise(runtime, obj)) {
+      retVal = std::make_shared<JsiPromiseWrapper>(runtime, value, parent);
     } else {
       retVal = std::make_shared<JsiObjectWrapper>(runtime, value, parent);
     }

@@ -23,6 +23,16 @@ public:
                   JsiWrapper *parent)
       : JsiWrapper(runtime, value, parent, JsiWrapperType::Array) {}
 
+  JSI_PROPERTY_GET(prototype) {
+    auto retVal = runtime.global().getPropertyAsObject(runtime, "Array")
+      .getProperty(runtime, "prototype");
+    return retVal;
+  }
+                          
+  JSI_PROPERTY_GET(toStringTag) {
+    return jsi::String::createFromUtf8(runtime, "Array");
+  }
+                          
   JSI_PROPERTY_GET(length) { return (double)_array.size(); }
                           
   JSI_HOST_FUNCTION(iterator) {
@@ -41,7 +51,11 @@ public:
       return retVal;
     };
     
-    iterator.setProperty(runtime, "next", jsi::Function::createFromHostFunction(runtime, jsi::PropNameID::forUtf8(runtime, "next"), 0, next));
+    iterator.setProperty(runtime, "next",
+      jsi::Function::createFromHostFunction(runtime,
+                                            jsi::PropNameID::forUtf8(runtime, "next"),
+                                            0,
+                                            next));
     
     return iterator;
   }
@@ -146,7 +160,7 @@ public:
   JSI_HOST_FUNCTION(indexOf) {
     auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0]);
     for (size_t i = 0; i < _array.size(); i++) {
-      // TODO: Add == operator to JsiWrapper!!!
+      // TODO: Add == operator to JsiWrapper
       if(wrappedArg->getType() == _array[i]->getType()) {
         if(wrappedArg->toString(runtime) == _array[i]->toString(runtime)) {
           return static_cast<int>(i);
@@ -256,7 +270,10 @@ public:
     return jsi::String::createFromUtf8(runtime, toString(runtime));
   }
 
-  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiArrayWrapper, length))
+  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiArrayWrapper, length),
+                              JSI_EXPORT_PROP_GET(JsiArrayWrapper, prototype),
+                              JSI_EXPORT_PROP_GET(JsiArrayWrapper, toStringTag))
+                          
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiArrayWrapper, push),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, pop),
                        JSI_EXPORT_FUNC(JsiArrayWrapper, forEach),
@@ -305,6 +322,22 @@ public:
     for (size_t i = 0; i < size; i++) {
       _array[i] =
           JsiWrapper::wrap(runtime, array.getValueAtIndex(runtime, i), this);
+    }
+    
+    // Update prototype
+    auto objectCtor = runtime.global().getProperty(runtime, "Object");
+    if(!objectCtor.isUndefined()) {
+        // Get setPrototypeOf
+        auto setPrototypeOf = objectCtor.asObject(runtime).getProperty(runtime, "setPrototypeOf");
+        if(!setPrototypeOf.isUndefined()) {
+            auto array = runtime.global().getProperty(runtime, "Array");
+            if(!array.isUndefined()) {
+              auto arrayPrototype = array.asObject(runtime).getProperty(runtime, "prototype");
+              auto selfObject = jsi::Object::createFromHostObject(runtime, shared_from_this());
+              setPrototypeOf.asObject(runtime).asFunction(runtime).call(
+                runtime, selfObject, arrayPrototype);
+            }
+        }
     }
   }
 
@@ -364,6 +397,14 @@ public:
       retVal += (i > 0 ? "," : "") + str;
     }
     return "[" + retVal + "]";
+  }
+                          
+  std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &runtime) override {
+    std::vector<jsi::PropNameID> propNames;
+    for(size_t i=0; i < _array.size(); i++) {
+      propNames.push_back(jsi::PropNameID::forUtf8(runtime, std::to_string(i)));
+    }
+    return propNames;
   }
                           
   const std::vector<std::shared_ptr<JsiWrapper>>& getArray() { return _array; }

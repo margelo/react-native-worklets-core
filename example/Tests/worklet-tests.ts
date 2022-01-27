@@ -124,15 +124,26 @@ export const worklet_tests = {
     });
   },
 
+  call_async_to_and_from_worklet_with_return_value: () => {
+    const workletB = Worklets.createWorklet(() => 1000);
+    const workletA = Worklets.createWorklet(
+      function () {
+        return this.workletB.callInWorkletContext();
+      },
+      {workletB},
+    );
+    return ExpectValue(workletA.callInWorkletContext(), 1000);
+  },
+
   call_async_to_and_from_worklet_with_error: () => {
     const workletB = Worklets.createWorklet(() => {
       throw Error('Test error');
     });
     const workletA = Worklets.createWorklet(
       function () {
-        return this.callback.callInWorkletContext();
+        return this.workletB.callInWorkletContext();
       },
-      {callback: workletB},
+      {workletB},
     );
     return ExpectException(workletA.callInWorkletContext, 'Test error');
   },

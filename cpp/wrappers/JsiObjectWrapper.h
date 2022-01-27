@@ -3,6 +3,7 @@
 #include <JsiWrapper.h>
 #include <JsiHostObject.h>
 #include <jsi/jsi.h>
+#include <JsiPromiseWrapper.h>
 
 namespace RNWorklet {
 using namespace facebook;
@@ -22,10 +23,27 @@ public:
                    JsiWrapper *parent)
       : JsiWrapper(runtime, value, parent) {}
                            
+   JSI_PROPERTY_GET(__proto__) {
+     // Update prototype
+     auto objectCtor = runtime.global().getProperty(runtime, "Object");
+     if(!objectCtor.isUndefined()) {
+         // Get setPrototypeOf
+         auto setPrototypeOf = objectCtor.asObject(runtime).getProperty(runtime, "setPrototypeOf");
+         if(!setPrototypeOf.isUndefined()) {
+             auto object = runtime.global().getProperty(runtime, "Object");
+             if(!object.isUndefined()) {
+               return object.asObject(runtime).getProperty(runtime, "prototype");
+             }
+         }
+     }
+     return jsi::Value::undefined();
+  }
+                           
   JSI_HOST_FUNCTION(toStringImpl) {
      return jsi::String::createFromUtf8(runtime, toString(runtime));
   }
-   
+                       
+  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiObjectWrapper, __proto__))
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC_NAMED(JsiObjectWrapper, toStringImpl, toString),
                        JSI_EXPORT_FUNC_NAMED(JsiObjectWrapper, toStringImpl, Symbol.toStringTag))
 
@@ -76,6 +94,8 @@ public:
           *_hostFunction.get());
     case JsiWrapperType::Object:
       return jsi::Object::createFromHostObject(runtime, shared_from_this());
+    case JsiWrapperType::Promise:
+        jsi::detail::throwJSError(runtime, "Promise type not supported.");
     default:
       jsi::detail::throwJSError(runtime, "Value type not supported.");
       return jsi::Value::undefined();
@@ -152,7 +172,7 @@ private:
     jsi::detail::throwJSError(
         runtime, "Array buffers are not supported as shared values.");
   }
-
+                           
   void setObjectValue(jsi::Runtime &runtime, jsi::Object &obj) {
     setType(JsiWrapperType::Object);
     _properties.clear();
@@ -165,6 +185,23 @@ private:
       _properties.emplace(nameString, JsiWrapper::wrap(runtime, value, this));
     }
   }
+                           
+  /* void visitPrototype(jsi::Runtime &runtime, jsi::Object &obj) {
+    auto prototype = obj.getProperty(runtime, "__proto__");
+    if(prototype.isObject()) {
+      // We have a prototype
+      auto prototypeObj = prototype.asObject(runtime);
+      auto propNames = prototypeObj.getPropertyNames(runtime);
+      for (size_t i = 0; i < propNames.size(runtime); i++) {
+        auto nameString =
+            propNames.getValueAtIndex(runtime, i).asString(runtime).utf8(runtime);
+        if(nameString != "") {
+          
+        }
+      }
+      visitPrototype(runtime, prototypeObj);
+    }
+  }*/
 
   void setHostObjectValue(jsi::Runtime &runtime, jsi::Object &obj) {
     setType(JsiWrapperType::HostObject);
@@ -187,3 +224,4 @@ private:
   std::shared_ptr<jsi::HostObject> _hostObject;
 };
 } // namespace RNWorklet
+

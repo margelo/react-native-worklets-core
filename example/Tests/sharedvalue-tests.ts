@@ -81,16 +81,22 @@ export const sharedvalue_tests = {
     return ExpectValue(sharedValue.value, [100.34, 200]);
   },
 
+  array_spread: () => {
+    const sharedValue = Worklets.createSharedValue([100, 200]);
+    const p = [...sharedValue.value];
+    return ExpectValue(p, [100, 200]);
+  },
+
   array_destructure: () => {
     const sharedValue = Worklets.createSharedValue([100, 200]);
-    sharedValue.value = [...sharedValue.value];
-    return ExpectValue(sharedValue.value, [100, 200]);
+    const [first] = [...sharedValue.value];
+    return ExpectValue(first, 100);
   },
 
   array_destructure_to_object: () => {
     const sharedValue = Worklets.createSharedValue([100, 200]);
-    sharedValue.value = {...sharedValue.value};
-    return ExpectValue(sharedValue.value, {0: 100, 1: 200});
+    const p = {...sharedValue.value};
+    return ExpectValue(p, {0: 100, 1: 200});
   },
 
   array_length: () => {
@@ -100,17 +106,14 @@ export const sharedvalue_tests = {
 
   object_value_destructure: () => {
     const sharedValue = Worklets.createSharedValue({a: 100, b: 200});
-    sharedValue.value = {...sharedValue.value};
-    return ExpectValue(sharedValue.value, {a: 50, b: 100});
+    const {a, b} = {...sharedValue.value};
+    return ExpectValue({a, b}, {a: 100, b: 100});
   },
 
   object_value_spread: () => {
-    const sharedValue = Worklets.createSharedValue<Record<string, number>>({
-      a: 100,
-      b: 200,
-    });
-    sharedValue.value = {...sharedValue.value, c: 300};
-    return ExpectValue(sharedValue.value, {a: 50, b: 100, c: 300});
+    const sharedValue = Worklets.createSharedValue({a: 100, b: 200});
+    const p = {...sharedValue.value};
+    return ExpectValue(p, {a: 100, b: 200});
   },
 
   set_value_from_worklet: () => {

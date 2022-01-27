@@ -16,7 +16,6 @@ export interface IWorklet<A extends any[], T extends (...args: A) => any> {
   /**
    * Calls the worklet on the JS thread. This is a sync operation and
    * will return the same value as the original worklet function.
-   * NOTE: Calling this function can only be done from
    */
   callInJSContext: (...args: A) => ReturnType<T>;
   /**

@@ -33,6 +33,10 @@ export const wrapper_tests = {
     return ExpectValue(Array.isArray(Worklets.createSharedValue([])), true);
   },
 
+  array_instanceof_array: () => {
+    return ExpectValue(Worklets.createSharedValue([]) instanceof Array, true);
+  },
+
   array_get: () => ExpectValue(Worklets.createSharedValue([100]).value[0], 100),
 
   array_set: () => {
@@ -174,8 +178,10 @@ export const wrapper_tests = {
     const array = Worklets.createSharedValue([100, 200]);
     return ExpectValue(
       array.value.reduce((acc, cur, index) => {
+        console.log('before', acc, index, cur);
+        console.log({...acc});
         const retVal = {...acc, [index]: cur};
-        console.log('t', JSON.stringify(acc), '->', JSON.stringify(retVal));
+        console.log('after', retVal);
         return retVal;
       }, {}),
       {0: 100, 1: 200},
@@ -206,12 +212,3 @@ export const wrapper_tests = {
     {x: 5, y: 12},
   ]),
 };
-
-const a = [100, 200];
-console.log(
-  a.reduce((acc, cur, index) => {
-    const retVal = {...acc, [index]: cur};
-    console.log('*', JSON.stringify(acc), '->', JSON.stringify(retVal));
-    return retVal;
-  }, {}),
-);

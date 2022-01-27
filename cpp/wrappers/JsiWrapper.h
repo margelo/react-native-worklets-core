@@ -18,6 +18,7 @@ enum JsiWrapperType {
   String,
   Array,
   Object,
+  Promise,
   HostObject,
   HostFunction,
   Worklet
@@ -146,8 +147,23 @@ protected:
   jsi::Value callFunction(jsi::Runtime & runtime,
                           const jsi::Function &func,
                           const jsi::Value &thisValue,
-                          const jsi::Value *arguments, size_t count);
+                          const jsi::Value *arguments, size_t count);  
 
+protected:
+  /**
+   * Sets the value from a JS value
+   * @param runtime runtime for the value
+   * @param value Value to set
+   */
+  virtual void setValue(jsi::Runtime &runtime, const jsi::Value &value);
+
+  /**
+   * Returns the value as a javascript value on the provided runtime
+   * @param runtime Runtime to set value in
+   * @return A new js value in the provided runtime with the wrapped value
+   */
+  virtual jsi::Value getValue(jsi::Runtime &runtime);
+  
 private:
   /**
    * Notify listeners that the value has changed
@@ -165,20 +181,6 @@ private:
   JsiWrapper(JsiWrapper *parent) : _parent(parent) {
     _readWriteMutex = new std::mutex();
   }
-
-  /**
-   * Sets the value from a JS value
-   * @param runtime runtime for the value
-   * @param value Value to set
-   */
-  virtual void setValue(jsi::Runtime &runtime, const jsi::Value &value);
-
-  /**
-   * Returns the value as a javascript value on the provided runtime
-   * @param runtime Runtime to set value in
-   * @return A new js value in the provided runtime with the wrapped value
-   */
-  virtual jsi::Value getValue(jsi::Runtime &runtime);
 
   std::mutex *_readWriteMutex;
   JsiWrapper *_parent;
