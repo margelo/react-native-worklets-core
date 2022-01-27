@@ -110,6 +110,9 @@ private:
     for(auto listener: _resolveListeners) {
       listener();
     }
+    _rejectListeners.clear();
+    _resolveListeners.clear();
+    
     return jsi::Value::undefined();
   }
                             
@@ -129,6 +132,9 @@ private:
     for(auto listener: _rejectListeners) {
       listener();
     }
+    _rejectListeners.clear();
+    _resolveListeners.clear();
+    
     return jsi::Value::undefined();
   }
                             
