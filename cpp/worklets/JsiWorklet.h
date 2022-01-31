@@ -244,6 +244,8 @@ private:
                     .callWithThis(runtime, func, nullptr, 0)
                     .asString(runtime)
                     .utf8(runtime);
+    
+    jsi::Runtime *workletRuntime = &context->getWorkletRuntime();
 
     auto evaluatedFunction = context->evaluteJavascriptInWorkletRuntime(code);
     if(!evaluatedFunction.isObject()) {
@@ -251,13 +253,13 @@ private:
         "Eval did not return an object:\n" + code);
         return;
     }
-    if(!evaluatedFunction.asObject(runtime).isFunction(runtime)) {
+    if(!evaluatedFunction.asObject(*workletRuntime).isFunction(*workletRuntime)) {
         context->raiseError(std::string("Could not create worklet from function. ") +
                             "Eval did not return an object:\n" + code);
         return;
     }
     _workletFunction = std::make_unique<jsi::Function>(evaluatedFunction
-            .asObject(runtime).asFunction(runtime));
+      .asObject(*workletRuntime).asFunction(*workletRuntime));
   }
 
   /**
