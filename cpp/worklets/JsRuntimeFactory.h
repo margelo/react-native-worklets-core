@@ -19,7 +19,13 @@ namespace RNWorklet {
 
 using namespace facebook;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+
 static std::unique_ptr<jsi::Runtime> makeJSIRuntime() {
+
+#pragma clang diagnostic pop
+
 #if FOR_HERMES
   return facebook::hermes::makeHermesRuntime();
 #else
