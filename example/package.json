@@ -7,10 +7,11 @@
     "ios": "react-native run-ios",
     "start": "react-native start",
     "test": "jest",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "android-reverse-tcp": "adb devices | grep '\t' | awk '{print $1}' | sed 's/\\s//g' | xargs -I {} adb -s {} reverse tcp:8081 tcp:8081"
   },
   "dependencies": {
-    "deep-equal": "^2.0.5",
+    "fast-deep-equal": "^3.1.3",
     "react": "17.0.2",
     "react-native": "0.66.2",
     "react-native-worklets": "link:../"

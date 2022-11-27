@@ -255,7 +255,7 @@ private:
     }
     if(!evaluatedFunction.asObject(*workletRuntime).isFunction(*workletRuntime)) {
         context->raiseError(std::string("Could not create worklet from function. ") +
-                            "Eval did not return an object:\n" + code);
+                            "Eval did not return a function:\n" + code);
         return;
     }
     _workletFunction = std::make_unique<jsi::Function>(evaluatedFunction

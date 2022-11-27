@@ -26,6 +26,11 @@ public:
    * @param context Worklet context to install API for
    */
   static void installApi(std::shared_ptr<JsiWorkletContext> context) {
+    auto existingApi = (context->getJsRuntime()->global().getProperty(*context->getJsRuntime(), "Worklets"));
+    if(existingApi.isObject()) {
+      return;
+    }
+
     auto workletApi = std::make_shared<JsiWorkletApi>(context);
     context->getJsRuntime()->global().setProperty(
         *context->getJsRuntime(), "Worklets",

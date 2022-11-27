@@ -34,19 +34,9 @@ public:
             : _javaPart(jni::make_global(jThis)),
               _jsRuntime(runtime),
               _jsCallInvoker(jsCallInvoker) {
-
-        // Create error handler
-        auto errorHandler = std::make_shared<RNWorklet::JsiErrorHandler>([](const std::exception& err) {
-            // Todo: implement and send from jni layer to java?
-            throw err;
-        });
-
-        // Create worklet context
-        _workletContext = std::make_shared<RNWorklet::JsiWorkletContext>("default", runtime, jsCallInvoker, errorHandler);
-
-        // Create / install the worklet API
-        RNWorklet::JsiWorkletApi::installApi(_workletContext);
     }
+
+    void installApi();
 
 private:
     friend HybridBase;
