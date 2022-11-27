@@ -100,7 +100,7 @@ private:
       for (size_t i = 0; i < size; i++) {
         auto child = arr.getValueAtIndex(source, i);
         if (child.isObject() && child.asObject(source).isFunction(source)) {
-          jsi::detail::throwJSError(source,
+          throw jsi::JSError(source,
                                     "Functions in arrays not supported");
         }
 
