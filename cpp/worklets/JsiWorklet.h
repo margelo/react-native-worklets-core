@@ -240,7 +240,7 @@ private:
     auto func = function.asObject(runtime).asFunction(runtime);
 
     // Let us try to install the function in the worklet context
-    auto code = func.getPropertyAsFunction(runtime, "toString")
+    auto code = func.getPropertyAsFunction(runtime, "_code")
                     .callWithThis(runtime, func, nullptr, 0)
                     .asString(runtime)
                     .utf8(runtime);

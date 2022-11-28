@@ -3,7 +3,11 @@
 #include <jsi/jsi.h>
 
 #include <functional>
+#include <map>
+#include <memory>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 #define STR_CAT_NX(A, B) A##B
 #define STR_CAT(A, B) STR_CAT_NX(A, B)
@@ -42,7 +46,7 @@
  */
 #define JSI_EXPORT_FUNC(CLASS, FUNCTION)                                       \
   {                                                                            \
-#FUNCTION, (jsi::Value(JsiHostObject::*)(                                      \
+#FUNCTION, (jsi::Value(JsiHostObject::*)(                                  \
                    jsi::Runtime & runtime, const jsi::Value &thisValue,        \
                    const jsi::Value *arguments, size_t)) &                     \
                    CLASS::FUNCTION                                             \
@@ -63,16 +67,8 @@
  * Creates a JSI export functions statement
  */
 #define JSI_EXPORT_FUNCTIONS(...)                                              \
-  const std::unordered_map<std::string,                                        \
-                           jsi::Value (JsiHostObject::*)(                      \
-                               jsi::Runtime &, const jsi::Value &,             \
-                               const jsi::Value *, size_t)>                    \
-      &getExportedFunctionMap() override {                                     \
-    static std::unordered_map<std::string,                                     \
-                              jsi::Value (JsiHostObject::*)(                   \
-                                  jsi::Runtime &, const jsi::Value &,          \
-                                  const jsi::Value *, size_t)>                 \
-        map = {__VA_ARGS__};                                                   \
+  const RNWorklet::JsiFunctionMap &getExportedFunctionMap() override {             \
+    static RNWorklet::JsiFunctionMap map = {__VA_ARGS__};                          \
     return map;                                                                \
   }
 
@@ -89,12 +85,9 @@
  * Creates a JSI export getters statement
  */
 #define JSI_EXPORT_PROPERTY_GETTERS(...)                                       \
-  const std::unordered_map<std::string,                                        \
-                           jsi::Value (JsiHostObject::*)(jsi::Runtime &)>      \
-      &getExportedPropertyGettersMap() override {                              \
-    static std::unordered_map<std::string,                                     \
-                              jsi::Value (JsiHostObject::*)(jsi::Runtime &)>   \
-        map = {__VA_ARGS__};                                                   \
+  const RNWorklet::JsiPropertyGettersMap &getExportedPropertyGettersMap()          \
+      override {                                                               \
+    static RNWorklet::JsiPropertyGettersMap map = {__VA_ARGS__};                   \
     return map;                                                                \
   }
 
@@ -112,30 +105,35 @@
  * Creates a JSI export setters statement
  */
 #define JSI_EXPORT_PROPERTY_SETTERS(...)                                       \
-  const std::unordered_map<std::string,                                        \
-                           void (JsiHostObject::*)(jsi::Runtime &,             \
-                                                   const jsi::Value &)>        \
-      &getExportedPropertySettersMap() override {                              \
-    static std::unordered_map<std::string,                                     \
-                              void (JsiHostObject::*)(jsi::Runtime &,          \
-                                                      const jsi::Value &)>     \
-        map = {__VA_ARGS__};                                                   \
+  const RNWorklet::JsiPropertySettersMap &getExportedPropertySettersMap()          \
+      override {                                                               \
+    static RNWorklet::JsiPropertySettersMap map = {__VA_ARGS__};                   \
     return map;                                                                \
   }
 
 namespace RNWorklet {
 
-using namespace facebook;
+namespace jsi = facebook::jsi;
 
 using JsPropertyType = struct {
   std::function<jsi::Value(jsi::Runtime &)> get;
   std::function<void(jsi::Runtime &, const jsi::Value &)> set;
 };
 
-using JsiHostFunctionCache =
-    std::unordered_map<std::string, std::unique_ptr<jsi::Function>>;
-using JsiRuntimeCache =
-    std::unordered_map<jsi::Runtime *, JsiHostFunctionCache>;
+class JsiHostObject;
+
+using JsiFunctionMap =
+    std::unordered_map<std::string, jsi::Value (JsiHostObject::*)(
+                                        jsi::Runtime &, const jsi::Value &,
+                                        const jsi::Value *, size_t)>;
+
+using JsiPropertyGettersMap =
+    std::unordered_map<std::string,
+                       jsi::Value (JsiHostObject::*)(jsi::Runtime &)>;
+
+using JsiPropertySettersMap =
+    std::unordered_map<std::string, void (JsiHostObject::*)(
+                                        jsi::Runtime &, const jsi::Value &)>;
 
 /**
  * Base class for jsi host objects
@@ -149,43 +147,26 @@ protected:
   /**
    Override to return map of name/functions
    */
-  virtual const std::unordered_map<
-      std::string,
-      jsi::Value (JsiHostObject::*)(jsi::Runtime &, const jsi::Value &,
-                                    const jsi::Value *, size_t)> &
-  getExportedFunctionMap() {
-    static const std::unordered_map<std::string,
-                                    jsi::Value (JsiHostObject::*)(
-                                        jsi::Runtime &, const jsi::Value &,
-                                        const jsi::Value *, size_t)>
-        empty;
+  virtual const RNWorklet::JsiFunctionMap &getExportedFunctionMap() {
+    static const RNWorklet::JsiFunctionMap empty;
     return empty;
-  };
+  }
 
   /**
    Override to get property getters map of name/functions
    */
-  virtual const std::unordered_map<
-      std::string, jsi::Value (JsiHostObject::*)(jsi::Runtime &)> &
-  getExportedPropertyGettersMap() {
-    static const std::unordered_map<std::string, jsi::Value (JsiHostObject::*)(
-                                                     jsi::Runtime &)>
-        empty;
+  virtual const JsiPropertyGettersMap &getExportedPropertyGettersMap() {
+    static const JsiPropertyGettersMap empty;
     return empty;
-  };
+  }
 
   /**
    Override to get property setters map of name/functions
    */
-  virtual const std::unordered_map<
-      std::string, void (JsiHostObject::*)(jsi::Runtime &, const jsi::Value &)>
-      &getExportedPropertySettersMap() {
-    static const std::unordered_map<std::string,
-                                    void (JsiHostObject::*)(jsi::Runtime &,
-                                                            const jsi::Value &)>
-        empty;
+  virtual const JsiPropertySettersMap &getExportedPropertySettersMap() {
+    static const JsiPropertySettersMap empty;
     return empty;
-  };
+  }
 
   /**
    * Overridden jsi::HostObject set property method
@@ -235,7 +216,7 @@ protected:
   }
 
   /**
-   * Installs a property with only gettter
+   * Installs a property with only getter
    * @param name Name of property to install
    * @param get Getter function
    */
@@ -249,7 +230,7 @@ protected:
   }
 
   /**
-   * Installs a property wich points to a given host object
+   * Installs a property which points to a given host object
    * @param name Name of property to install
    * @param hostObject Object to return
    */
@@ -265,9 +246,134 @@ protected:
                            });
   }
 
+  /**
+   @Returns a reference to the argument at the given position in the arguments
+   array. Raises an error if the index is above the number of arguments.
+   @param runtime jsi::Runtime
+   @param arguments Arguments list
+   @param count Number of arguments in arguments list
+   @param index Index of parameter to return
+   */
+  static const jsi::Value &getArgument(jsi::Runtime &runtime,
+                                       const jsi::Value *arguments,
+                                       size_t count, size_t index) {
+    if (index >= count) {
+      throw jsi::JSError(runtime, "Argument index out of bounds.");
+    }
+
+    return arguments[index];
+  }
+
+  /**
+   Returns argument as number or throws
+   */
+  static double getArgumentAsNumber(jsi::Runtime &runtime,
+                                    const jsi::Value *arguments, size_t count,
+                                    size_t index) {
+    const jsi::Value &value = getArgument(runtime, arguments, count, index);
+    if (!value.isNumber()) {
+      throw jsi::JSError(runtime,
+                         "Expected type number for parameter at index " +
+                             std::to_string(index));
+    }
+    return value.asNumber();
+  }
+
+  /**
+   Returns argument as bool or throws
+   */
+  static bool getArgumentAsBool(jsi::Runtime &runtime,
+                                const jsi::Value *arguments, size_t count,
+                                size_t index) {
+    const jsi::Value &value = getArgument(runtime, arguments, count, index);
+    if (!value.isBool()) {
+      throw jsi::JSError(runtime,
+                         "Expected type boolean for parameter at index " +
+                             std::to_string(index));
+    }
+    return value.getBool();
+  }
+
+  /**
+   Returns argument as string or throws
+   */
+  static jsi::String getArgumentAsString(jsi::Runtime &runtime,
+                                         const jsi::Value *arguments,
+                                         size_t count, size_t index) {
+    const jsi::Value &value = getArgument(runtime, arguments, count, index);
+    if (!value.isString()) {
+      throw jsi::JSError(runtime,
+                         "Expected type string for parameter at index " +
+                             std::to_string(index));
+    }
+    return value.asString(runtime);
+  }
+
+  /**
+   Returns argument as object or throws
+   */
+  static jsi::Object getArgumentAsObject(jsi::Runtime &runtime,
+                                         const jsi::Value *arguments,
+                                         size_t count, size_t index) {
+    const jsi::Value &value = getArgument(runtime, arguments, count, index);
+    if (!value.isObject()) {
+      throw jsi::JSError(runtime,
+                         "Expected type object for parameter at index " +
+                             std::to_string(index));
+    }
+    return value.asObject(runtime);
+  }
+
+  /**
+   Returns argument as host object or throws
+   */
+  template <typename T = HostObject>
+  static std::shared_ptr<T>
+  getArgumentAsHostObject(jsi::Runtime &runtime, const jsi::Value *arguments,
+                          size_t count, size_t index) {
+    auto value = getArgumentAsObject(runtime, arguments, count, index);
+    if (!value.isHostObject(runtime)) {
+      throw jsi::JSError(runtime,
+                         "Expected type host object for parameter at index " +
+                             std::to_string(index));
+    }
+    return value.asHostObject<T>(runtime);
+  }
+
+  /**
+   Returns argument as array or throws
+   */
+  static jsi::Array getArgumentAsArray(jsi::Runtime &runtime,
+                                       const jsi::Value *arguments,
+                                       size_t count, size_t index) {
+    auto value = getArgumentAsObject(runtime, arguments, count, index);
+    if (!value.isArray(runtime)) {
+      throw jsi::JSError(runtime,
+                         "Expected type array for parameter at index " +
+                             std::to_string(index));
+    }
+    return value.asArray(runtime);
+  }
+
+  /**
+   Returns argument as function or throws
+   */
+  static jsi::Object getArgumentAsFunction(jsi::Runtime &runtime,
+                                           const jsi::Value *arguments,
+                                           size_t count, size_t index) {
+    auto value = getArgumentAsObject(runtime, arguments, count, index);
+    if (!value.isFunction(runtime)) {
+      throw jsi::JSError(runtime,
+                         "Expected type function for parameter at index " +
+                             std::to_string(index));
+    }
+    return value.asFunction(runtime);
+  }
+
 private:
   std::unordered_map<std::string, jsi::HostFunctionType> _funcMap;
   std::unordered_map<std::string, JsPropertyType> _propMap;
-  JsiRuntimeCache _cache;
+
+  std::map<std::string, jsi::Function> _hostFunctionCache;
 };
 } // namespace RNWorklet

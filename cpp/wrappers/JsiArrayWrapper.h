@@ -6,7 +6,9 @@
 #include <jsi/jsi.h>
 
 namespace RNWorklet {
-using namespace facebook;
+
+namespace jsi = facebook::jsi;
+
 class JsiWrapper;
 
 class JsiArrayWrapper : public JsiHostObject,
