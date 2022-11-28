@@ -39,7 +39,7 @@ public:
 
     // Make sure we call this from the main runtime
     if (context->isWorkletRuntime(runtime)) {
-      jsi::detail::throwJSError(
+      throw jsi::JSError(
           runtime, "A worklet must be created from the main runtime.");
       return;
     }
@@ -72,11 +72,11 @@ public:
       } catch (const jsi::JSError &err) {
         throw err;
       } catch (const std::exception &err) {
-        jsi::detail::throwJSError(runtime, err.what());
+        throw jsi::JSError(runtime, err.what());
       } catch (const std::runtime_error &err) {
-        jsi::detail::throwJSError(runtime, err.what());
+        throw jsi::JSError(runtime, err.what());
       } catch (...) {
-        jsi::detail::throwJSError(
+        throw jsi::JSError(
             runtime, "An unknown error occurred when calling the worklet.");
       }
       return jsi::Value::undefined();

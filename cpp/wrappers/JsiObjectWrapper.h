@@ -95,9 +95,9 @@ public:
     case JsiWrapperType::Object:
       return jsi::Object::createFromHostObject(runtime, shared_from_this());
     case JsiWrapperType::Promise:
-        jsi::detail::throwJSError(runtime, "Promise type not supported.");
+        throw jsi::JSError(runtime, "Promise type not supported.");
     default:
-      jsi::detail::throwJSError(runtime, "Value type not supported.");
+        throw jsi::JSError(runtime, "Value type not supported.");
       return jsi::Value::undefined();
     }
   }
@@ -162,14 +162,14 @@ public:
     case JsiWrapperType::Object:
       return "[Object object]";
     default:
-      jsi::detail::throwJSError(runtime, "Value type not supported.");
+      throw jsi::JSError(runtime, "Value type not supported.");
       return "[unsupported]";
     }
   }
 
 private:
   void setArrayBufferValue(jsi::Runtime &runtime, jsi::Object &obj) {
-    jsi::detail::throwJSError(
+    throw jsi::JSError(
         runtime, "Array buffers are not supported as shared values.");
   }
                            
@@ -215,7 +215,7 @@ private:
   }
 
   void setFunctionValue(jsi::Runtime &runtime, const jsi::Value &value) {
-    jsi::detail::throwJSError(
+    throw jsi::JSError(
         runtime, "Regular javascript functions cannot be shared.");
   }
 

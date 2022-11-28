@@ -33,7 +33,7 @@ RCT_EXPORT_MODULE()
     if (cxxBridge.runtime) {
       
       auto callInvoker = bridge.jsCallInvoker;
-      jsi::Runtime* jsRuntime = (jsi::Runtime*)cxxBridge.runtime;
+      facebook::jsi::Runtime* jsRuntime = (facebook::jsi::Runtime*)cxxBridge.runtime;
       
       // Create error handler
       auto errorHandler = std::make_shared<std::function<void(const std::exception &ex)>>([](const std::exception &err) {

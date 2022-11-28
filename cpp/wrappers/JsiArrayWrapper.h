@@ -360,7 +360,7 @@ public:
       // This is an edge case where the array is used as a
       // hashtable to set a value outside the bounds of the
       // array (ie. outside out the range of items being pushed)
-      jsi::detail::throwJSError(runtime, "Array out of bounds");
+      throw jsi::JSError(runtime, "Array out of bounds");
     }
   }
 

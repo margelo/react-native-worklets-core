@@ -20,7 +20,7 @@ jsi::Value JsiWrapper::getValue(jsi::Runtime &runtime) {
   case JsiWrapperType::String:
     return jsi::String::createFromUtf8(runtime, _stringValue);
   default:
-    jsi::detail::throwJSError(runtime, "Value type not supported.");
+      throw jsi::JSError(runtime, "Value type not supported.");
     return jsi::Value::undefined();
   }
 }
@@ -45,7 +45,7 @@ std::shared_ptr<JsiWrapper> JsiWrapper::wrap(jsi::Runtime &runtime,
   }
 
   if (retVal == nullptr) {
-    jsi::detail::throwJSError(runtime, "Value type not supported.");
+    throw jsi::JSError(runtime, "Value type not supported.");
     return nullptr;
   }
 
@@ -68,7 +68,7 @@ void JsiWrapper::setValue(jsi::Runtime &runtime, const jsi::Value &value) {
     _type = JsiWrapperType::String;
     _stringValue = value.asString(runtime).utf8(runtime);
   } else {
-    jsi::detail::throwJSError(runtime, "Value type not supported.");
+    throw jsi::JSError(runtime, "Value type not supported.");
   }
 }
 
@@ -112,7 +112,7 @@ std::string JsiWrapper::toString(jsi::Runtime &runtime) {
   case JsiWrapperType::String:
     return _stringValue;
   default:
-    jsi::detail::throwJSError(runtime, "Value type not supported.");
+      throw jsi::JSError(runtime, "Value type not supported.");
     return "[Unknown]";
   }
 }

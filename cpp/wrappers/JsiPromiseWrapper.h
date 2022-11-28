@@ -103,7 +103,7 @@ private:
   jsi::Value handlePromiseResolved(jsi::Runtime & runtime, const jsi::Value &thisValue,                     \
                              const jsi::Value *arguments, size_t count) {
     if(_resultSet) {
-      jsi::detail::throwJSError(runtime, "Promise is already resolved");
+      throw jsi::JSError(runtime, "Promise is already resolved");
     }
     _resultSet = true;
     _result = JsiWrapper::wrap(runtime, arguments[0]);
@@ -119,7 +119,7 @@ private:
   jsi::Value handlePromiseRejected(jsi::Runtime & runtime, const jsi::Value &thisValue,                     \
                              const jsi::Value *arguments, size_t count) {
     if(_errorSet) {
-      jsi::detail::throwJSError(runtime, "Promise is already resolved");
+      throw jsi::JSError(runtime, "Promise is already resolved");
     }
     _errorSet = true;
     // Error can be a string or an error objcet

@@ -58,7 +58,7 @@ public:
     if (arguments[0].isUndefined() || arguments[0].isNull() ||
         arguments[0].isObject() == false ||
         arguments[0].asObject(runtime).isFunction(runtime) == false) {
-      jsi::detail::throwJSError(
+      throw jsi::JSError(
           runtime, "addListener expects a function as its parameter.");
     }
 
@@ -86,7 +86,7 @@ public:
         runtime, thisValuePtr, functionPtr, nullptr,
         [&runtime, this](const char *err) {
           _context->runOnJavascriptThread(
-              [err, &runtime]() { jsi::detail::throwJSError(runtime, err); });
+              [err, &runtime]() { throw jsi::JSError(runtime, err); });
         });
 
     // Set up the callback to run on the correct runtime thread.
