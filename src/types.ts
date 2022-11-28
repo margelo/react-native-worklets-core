@@ -78,4 +78,4 @@ declare global {
   var Worklets: IWorkletNativeApi;
 }
 
-export const { Worklets } = global;
+export const { Worklets } = globalThis;
