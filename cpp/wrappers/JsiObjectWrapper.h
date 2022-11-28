@@ -6,7 +6,8 @@
 #include <JsiPromiseWrapper.h>
 
 namespace RNWorklet {
-using namespace facebook;
+
+namespace jsi = facebook::jsi;
 
 class JsiObjectWrapper : public JsiHostObject,
                          public std::enable_shared_from_this<JsiObjectWrapper>,

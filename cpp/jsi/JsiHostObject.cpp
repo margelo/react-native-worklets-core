@@ -1,25 +1,26 @@
 #include <JsiHostObject.h>
-#include <set>
+#include <functional>
+#include <vector>
 
 // To be able to find objects that aren't cleaned up correctly,
 // we can set this value to 1 and debug the constructor/destructor
-#define DEBUG_ALLOCATIONS = 0
+#define JSI_DEBUG_ALLOCATIONS 0
 
 namespace RNWorklet {
 
-#ifdef DEBUG_ALLOCATIONS
+#if JSI_DEBUG_ALLOCATIONS
 int objCounter = 0;
 std::vector<JsiHostObject *> objects;
 #endif
 
 JsiHostObject::JsiHostObject() {
-#ifdef DEBUG_ALLOCATIONS
+#if JSI_DEBUG_ALLOCATIONS
   objects.push_back(this);
   objCounter++;
 #endif
 }
 JsiHostObject::~JsiHostObject() {
-#ifdef DEBUG_ALLOCATIONS
+#if JSI_DEBUG_ALLOCATIONS
   for (size_t i = 0; i < objects.size(); ++i) {
     if (objects.at(i) == this) {
       objects.erase(objects.begin() + i);
@@ -32,11 +33,11 @@ JsiHostObject::~JsiHostObject() {
 
 void JsiHostObject::set(jsi::Runtime &rt, const jsi::PropNameID &name,
                         const jsi::Value &value) {
-  auto nameVal = name.utf8(rt);
-  auto nameStr = nameVal.c_str();
+
+  auto nameStr = name.utf8(rt);
 
   /** Check the static setters map */
-  auto setters = getExportedPropertySettersMap();
+  const JsiPropertySettersMap &setters = getExportedPropertySettersMap();
   auto setter = setters.find(nameStr);
   if (setter != setters.end()) {
     auto dispatcher = std::bind(setter->second, this, std::placeholders::_1,
@@ -52,49 +53,39 @@ void JsiHostObject::set(jsi::Runtime &rt, const jsi::PropNameID &name,
 
 jsi::Value JsiHostObject::get(jsi::Runtime &runtime,
                               const jsi::PropNameID &name) {
-  auto nameVal = name.utf8(runtime);
-  auto nameStr = nameVal.c_str();
+  auto nameStr = name.utf8(runtime);
 
-  /** Start by checking the cache for functions */
-  auto runtimeCache = _cache.find(&runtime);
-  JsiHostFunctionCache *currentCache;
-  if (runtimeCache != _cache.end()) {
-    currentCache = &runtimeCache->second;
-    // Check if the runtime cache as a cache of the host function
-    auto cachedFunc = runtimeCache->second.find(nameStr);
-    if (cachedFunc != runtimeCache->second.end()) {
-      return cachedFunc->second->asFunction(runtime);
-    }
-  } else {
-    // Create cache for this runtime
-    JsiHostFunctionCache runtimeCache;
-    _cache.emplace(&runtime, JsiHostFunctionCache{});
-    currentCache = &_cache.at(&runtime);
+  // Do the happy-paths first
+
+  // Check function cache
+  auto cachedFunc = _hostFunctionCache.find(nameStr);
+  if (cachedFunc != _hostFunctionCache.end()) {
+    return cachedFunc->second.asFunction(runtime);
   }
 
-  /* Check the static function map */
-  auto funcs = getExportedFunctionMap();
-  auto func = funcs.find(nameStr);
-  if (func != funcs.end()) {
-    auto dispatcher = std::bind(func->second, (JsiHostObject *)this,
-                                std::placeholders::_1, std::placeholders::_2,
-                                std::placeholders::_3, std::placeholders::_4);
-
-    // Add to cache
-    currentCache->emplace(nameStr, std::make_unique<jsi::Function>(
-                                       jsi::Function::createFromHostFunction(
-                                           runtime, name, 0, dispatcher)));
-
-    // return retVal;
-    return currentCache->at(nameStr)->asFunction(runtime);
-  }
-
-  /** Check the static getters map */
-  auto getters = getExportedPropertyGettersMap();
+  // Check the static getters map
+  const JsiPropertyGettersMap &getters = getExportedPropertyGettersMap();
   auto getter = getters.find(nameStr);
   if (getter != getters.end()) {
     auto dispatcher = std::bind(getter->second, this, std::placeholders::_1);
     return dispatcher(runtime);
+  }
+
+  // Check the static function map
+  const JsiFunctionMap &funcs = getExportedFunctionMap();
+  auto func = funcs.find(nameStr);
+  if (func != funcs.end()) {
+    auto dispatcher =
+        std::bind(func->second, reinterpret_cast<JsiHostObject *>(this),
+                  std::placeholders::_1, std::placeholders::_2,
+                  std::placeholders::_3, std::placeholders::_4);
+
+    // Add to cache - it is important to cache the results from the
+    // createFromHostFunction function which takes some time.
+    return _hostFunctionCache
+        .emplace(nameStr, jsi::Function::createFromHostFunction(runtime, name,
+                                                                0, dispatcher))
+        .first->second.asFunction(runtime);
   }
 
   if (_funcMap.count(nameStr) > 0) {
@@ -112,33 +103,39 @@ jsi::Value JsiHostObject::get(jsi::Runtime &runtime,
 
 std::vector<jsi::PropNameID>
 JsiHostObject::getPropertyNames(jsi::Runtime &runtime) {
-  std::vector<jsi::PropNameID> propNames;
   // statically exported functions
-  auto funcs = getExportedFunctionMap();
-  for (auto it = funcs.begin(); it != funcs.end(); ++it) {
-    propNames.push_back(jsi::PropNameID::forAscii(runtime, it->first));
-  }
+  const auto &funcs = getExportedFunctionMap();
 
   // Statically exported property getters
-  auto getters = getExportedPropertyGettersMap();
-  for (auto it = getters.begin(); it != getters.end(); ++it) {
+  const auto &getters = getExportedPropertyGettersMap();
+
+  // Statically exported property setters
+  const auto &setters = getExportedPropertySettersMap();
+
+  std::vector<jsi::PropNameID> propNames;
+  propNames.reserve(funcs.size() + getters.size() + setters.size() +
+                    _funcMap.size() + _propMap.size());
+
+  for (auto it = funcs.cbegin(); it != funcs.cend(); ++it) {
     propNames.push_back(jsi::PropNameID::forAscii(runtime, it->first));
   }
 
-  // Statically exported property setters
-  auto setters = getExportedPropertySettersMap();
-  for (auto it = getters.begin(); it != getters.end(); ++it) {
+  for (auto it = getters.cbegin(); it != getters.cend(); ++it) {
+    propNames.push_back(jsi::PropNameID::forUtf8(runtime, it->first));
+  }
+
+  for (auto it = getters.cbegin(); it != getters.cend(); ++it) {
     if (getters.count(it->first) == 0) {
-      propNames.push_back(jsi::PropNameID::forAscii(runtime, it->first));
+      propNames.push_back(jsi::PropNameID::forUtf8(runtime, it->first));
     }
   }
 
   // functions
-  for (auto it = _funcMap.begin(); it != _funcMap.end(); ++it) {
+  for (auto it = _funcMap.cbegin(); it != _funcMap.cend(); ++it) {
     propNames.push_back(jsi::PropNameID::forAscii(runtime, it->first));
   }
   // props
-  for (auto it = _propMap.begin(); it != _propMap.end(); ++it) {
+  for (auto it = _propMap.cbegin(); it != _propMap.cend(); ++it) {
     propNames.push_back(jsi::PropNameID::forAscii(runtime, it->first));
   }
   return propNames;
