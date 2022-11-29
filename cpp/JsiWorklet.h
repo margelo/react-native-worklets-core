@@ -112,6 +112,7 @@ private:
     newThis.setProperty(*runtime, "_closure", unwrappedClosure);
     runtime->global().setProperty(*runtime, "jsThis", newThis);
 
+    // TODO: Error handling!!
     if (!unwrappedClosure.isObject()) {
       retVal = _workletFunction->call(*runtime, arguments, count);
     } else {
@@ -120,6 +121,8 @@ private:
     }
     runtime->global().setProperty(*runtime, "jsThis", oldThis);
 
+    // TODO: Handle promises
+    // TODO: Convert to Wrapped value
     return retVal;
   }
 
