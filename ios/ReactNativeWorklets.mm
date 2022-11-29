@@ -1,8 +1,8 @@
 // ReactNativeWorklets.m
 #import "ReactNativeWorklets.h"
 
-#import <worklets/JsiWorkletApi.h>
-#import <worklets/JsiWorkletContext.h>
+#import <JsiWorkletApi.h>
+#import <JsiWorkletContext.h>
 
 #import <jsi/jsi.h>
 
@@ -36,12 +36,12 @@ RCT_EXPORT_MODULE()
       facebook::jsi::Runtime* jsRuntime = (facebook::jsi::Runtime*)cxxBridge.runtime;
       
       // Create error handler
-      auto errorHandler = std::make_shared<std::function<void(const std::exception &ex)>>([](const std::exception &err) {
+      auto errorHandler = [](const std::exception &err) {
         RCTFatal(RCTErrorWithMessage([NSString stringWithUTF8String:err.what()]));
-      });
+      };
       
       // Create the worklet context
-      auto workletContext = std::make_shared<RNWorklet::JsiWorkletContext>("default", jsRuntime, callInvoker, std::move(errorHandler));
+      auto workletContext = std::make_shared<RNWorklet::JsiWorkletContext>("default", jsRuntime, std::move(errorHandler));
       
       // Install the worklet API
       RNWorklet::JsiWorkletApi::installApi(workletContext);

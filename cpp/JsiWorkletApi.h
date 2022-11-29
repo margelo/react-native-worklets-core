@@ -2,14 +2,14 @@
 
 #include <jsi/jsi.h>
 
-#include <JsiHostObject.h>
-#include <JsiSharedValue.h>
-#include <JsiWorklet.h>
-#include <JsiWorkletContext.h>
+#include "JsiHostObject.h"
+#include "JsiSharedValue.h"
+#include "JsiWorklet.h"
+#include "JsiWorkletContext.h"
 
 namespace RNWorklet {
 
-using namespace facebook;
+namespace jsi = facebook::jsi;
 
 class JsiWorkletApi : public JsiHostObject {
 public:
@@ -26,8 +26,9 @@ public:
    * @param context Worklet context to install API for
    */
   static void installApi(std::shared_ptr<JsiWorkletContext> context) {
-    auto existingApi = (context->getJsRuntime()->global().getProperty(*context->getJsRuntime(), "Worklets"));
-    if(existingApi.isObject()) {
+    auto existingApi = (context->getJsRuntime()->global().getProperty(
+        *context->getJsRuntime(), "Worklets"));
+    if (existingApi.isObject()) {
       return;
     }
 
@@ -45,16 +46,16 @@ public:
                                   "from the javascript runtime.");
     }
 
-    if (count > 3) {
-      return _context->raiseError("createWorklet expects 2-3 parameters: "
-                                  "Worklet function and worklet closure, and "
-                                  "additionally a worklet context");
+    if (count > 2) {
+      return _context->raiseError(
+          "createWorklet expects a Javascript function as the first parameter, "
+          "and an optional worklet context as the second parameter.");
     }
 
     // Get the active context
     auto activeContext =
-        count == 3 && arguments[2].isObject()
-            ? arguments[2].asObject(runtime).getHostObject<JsiWorkletContext>(
+        count == 2 && arguments[1].isObject()
+            ? arguments[1].asObject(runtime).getHostObject<JsiWorkletContext>(
                   runtime)
             : _context;
 
@@ -62,10 +63,9 @@ public:
       return _context->raiseError("createWorklet called with invalid context.");
     }
 
-    // Install the worklet into the worklet runtime
+    // Create the worklet host object and return to JS caller
     return jsi::Object::createFromHostObject(
-        runtime, std::make_shared<JsiWorklet>(activeContext, runtime,
-                                              arguments[0], arguments[1]));
+        runtime, std::make_shared<JsiWorklet>(activeContext, arguments[0]));
   };
 
   JSI_HOST_FUNCTION(createWorkletContext) {

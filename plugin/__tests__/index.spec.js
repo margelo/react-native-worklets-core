@@ -29,8 +29,8 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
           run: (function () {
             const _run = function () {}
       
-            _run._scope = {}
-            _run._code = "function run(){}"
+            _run._closure = {}
+            _run.asString = "function run(){}"
             return _run
           })(),
         },
@@ -55,15 +55,15 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
               this.stop()
             }
       
-            _run._scope = {}
-            _run._code = "function run(){this.stop();}"
+            _run._closure = {}
+            _run.asString = "function run(){this.stop();}"
             return _run
           })(),
           stop: (function () {
             const _stop = function () {}
       
-            _stop._scope = {}
-            _stop._code = "function stop(){}"
+            _stop._closure = {}
+            _stop.asString = "function stop(){}"
             return _stop
           })(),
         },
@@ -91,11 +91,11 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
           return abba + 200 + z.value
         }
       
-        _test._scope = {
+        _test._closure = {
           abba,
           z,
         }
-        _test._code = "function test(){const{abba,z}=this;{return abba+200+z.value;}}"
+        _test.asString = "function test(){const{abba,z}=this;{return abba+200+z.value;}}"
         return _test
       })()
       `
@@ -117,10 +117,10 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
               }
             }
       
-            _run._scope = {
+            _run._closure = {
               a,
             }
-            _run._code = "function run(){const{a}=this;{if(a===Infinity){}}}"
+            _run.asString = "function run(){const{a}=this;{if(a===Infinity){}}}"
             return _run
           })(),
         },
@@ -140,8 +140,8 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
           }
         }
       
-        _run._scope = {}
-        _run._code = "function run(){if(isNaN(0)){}}"
+        _run._closure = {}
+        _run.asString = "function run(){if(isNaN(0)){}}"
         return _run
       })();`
     );
@@ -159,10 +159,10 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
           }
         }
       
-        _run._scope = {
+        _run._closure = {
           _defineProperty,
         }
-        _run._code =
+        _run.asString =
           "function run(){const{_defineProperty}=this;{if(_defineProperty(0)){}}}"
         return _run
       })();`

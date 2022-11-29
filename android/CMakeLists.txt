@@ -13,10 +13,8 @@ file (GLOB LIBRN_DIR "${BUILD_DIR}/react-native-0*/jni/${ANDROID_ABI}")
 
 add_library(worklets
         SHARED
-        cpp/jsi/JsiHostObject.cpp
-        cpp/wrappers/JsiWrapper.cpp
-        cpp/worklets/JsiWorkletContext.cpp
-        cpp/worklets/JsiDispatchQueue.cpp
+        cpp/JsiHostObject.cpp
+        cpp/JsiWrapper.cpp
         jni/jni-adapter.cpp
         jni/JniReactNativeWorkletsModule.cpp
 )

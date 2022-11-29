@@ -57,18 +57,18 @@
  */
 #define JSI_EXPORT_FUNC_NAMED(CLASS, FUNCTION, NAME)                           \
   {                                                                            \
-#NAME, (jsi::Value(JsiHostObject::*)(                                          \
-                   jsi::Runtime & runtime, const jsi::Value &thisValue,        \
-                   const jsi::Value *arguments, size_t)) &                     \
-                   CLASS::FUNCTION                                             \
+#NAME, (jsi::Value(JsiHostObject::*)(                                      \
+               jsi::Runtime & runtime, const jsi::Value &thisValue,            \
+               const jsi::Value *arguments, size_t)) &                         \
+               CLASS::FUNCTION                                                 \
   }
 
 /**
  * Creates a JSI export functions statement
  */
 #define JSI_EXPORT_FUNCTIONS(...)                                              \
-  const RNWorklet::JsiFunctionMap &getExportedFunctionMap() override {             \
-    static RNWorklet::JsiFunctionMap map = {__VA_ARGS__};                          \
+  const RNWorklet::JsiFunctionMap &getExportedFunctionMap() override {         \
+    static RNWorklet::JsiFunctionMap map = {__VA_ARGS__};                      \
     return map;                                                                \
   }
 
@@ -85,9 +85,9 @@
  * Creates a JSI export getters statement
  */
 #define JSI_EXPORT_PROPERTY_GETTERS(...)                                       \
-  const RNWorklet::JsiPropertyGettersMap &getExportedPropertyGettersMap()          \
+  const RNWorklet::JsiPropertyGettersMap &getExportedPropertyGettersMap()      \
       override {                                                               \
-    static RNWorklet::JsiPropertyGettersMap map = {__VA_ARGS__};                   \
+    static RNWorklet::JsiPropertyGettersMap map = {__VA_ARGS__};               \
     return map;                                                                \
   }
 
@@ -105,9 +105,9 @@
  * Creates a JSI export setters statement
  */
 #define JSI_EXPORT_PROPERTY_SETTERS(...)                                       \
-  const RNWorklet::JsiPropertySettersMap &getExportedPropertySettersMap()          \
+  const RNWorklet::JsiPropertySettersMap &getExportedPropertySettersMap()      \
       override {                                                               \
-    static RNWorklet::JsiPropertySettersMap map = {__VA_ARGS__};                   \
+    static RNWorklet::JsiPropertySettersMap map = {__VA_ARGS__};               \
     return map;                                                                \
   }
 

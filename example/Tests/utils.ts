@@ -1,5 +1,3 @@
-import deepEqual from 'fast-deep-equal';
-
 export const Expect = <V>(
   value: V | Promise<V>,
   expected: (v: V) => string | undefined,
@@ -33,7 +31,7 @@ export const ExpectValue = <V, T>(value: V | Promise<V>, expected: T) => {
       resolvedValue = value as any as V;
     }
 
-    if (!deepEqual(resolvedValue, expected)) {
+    if (JSON.stringify(resolvedValue) !== JSON.stringify(expected)) {
       reject(
         new Error(
           `Expected ${JSON.stringify(expected)}, got ${JSON.stringify(
@@ -74,4 +72,11 @@ export const ExpectException = <T>(
       }
     }
   });
+};
+
+export const getWorkletInfo = <T extends Array<unknown>, R>(
+  worklet: (...args: T) => R,
+) => {
+  // @ts-ignore
+  return {closure: worklet._closure, code: worklet.asString};
 };

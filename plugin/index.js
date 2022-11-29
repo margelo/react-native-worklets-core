@@ -123,9 +123,6 @@ function processWorkletFunction(t, fun) {
   const variables = Array.from(closure.values());
   const privateFunctionId = t.identifier("_" + functionName);
 
-  console.log("Variables", variables);
-  console.log("Location", fun.node.loc, state.file.opts.filename);
-
   // if we don't clone other modules won't process parts of newFun defined below
   // this is weird but couldn't find a better way to force transform helper to
   // process the function
@@ -145,7 +142,11 @@ function processWorkletFunction(t, fun) {
       t.expressionStatement(
         t.assignmentExpression(
           "=",
-          t.memberExpression(privateFunctionId, t.identifier("_scope"), false),
+          t.memberExpression(
+            privateFunctionId,
+            t.identifier("_closure"),
+            false
+          ),
           t.objectExpression(
             variables.map((variable) =>
               t.objectProperty(
@@ -161,7 +162,11 @@ function processWorkletFunction(t, fun) {
       t.expressionStatement(
         t.assignmentExpression(
           "=",
-          t.memberExpression(privateFunctionId, t.identifier("_code"), false),
+          t.memberExpression(
+            privateFunctionId,
+            t.identifier("asString"),
+            false
+          ),
           t.stringLiteral(funString)
         )
       ),

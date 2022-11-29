@@ -1,9 +1,9 @@
 #pragma once
 
-#include <JsiWrapper.h>
-#include <JsiHostObject.h>
 #include <jsi/jsi.h>
-#include <JsiPromiseWrapper.h>
+
+#include "JsiPromiseWrapper.h"
+#include "JsiWrapper.h"
 
 namespace RNWorklet {
 
@@ -12,7 +12,7 @@ namespace jsi = facebook::jsi;
 class JsiObjectWrapper : public JsiHostObject,
                          public std::enable_shared_from_this<JsiObjectWrapper>,
                          public JsiWrapper {
-                                                      
+
 public:
   /**
    * Constructor
@@ -23,36 +23,38 @@ public:
   JsiObjectWrapper(jsi::Runtime &runtime, const jsi::Value &value,
                    JsiWrapper *parent)
       : JsiWrapper(runtime, value, parent) {}
-                           
-   JSI_PROPERTY_GET(__proto__) {
-     // Update prototype
-     auto objectCtor = runtime.global().getProperty(runtime, "Object");
-     if(!objectCtor.isUndefined()) {
-         // Get setPrototypeOf
-         auto setPrototypeOf = objectCtor.asObject(runtime).getProperty(runtime, "setPrototypeOf");
-         if(!setPrototypeOf.isUndefined()) {
-             auto object = runtime.global().getProperty(runtime, "Object");
-             if(!object.isUndefined()) {
-               return object.asObject(runtime).getProperty(runtime, "prototype");
-             }
-         }
-     }
-     return jsi::Value::undefined();
-  }
-                           
-  JSI_HOST_FUNCTION(toStringImpl) {
-     return jsi::String::createFromUtf8(runtime, toString(runtime));
-  }
-                       
-  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiObjectWrapper, __proto__))
-  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC_NAMED(JsiObjectWrapper, toStringImpl, toString),
-                       JSI_EXPORT_FUNC_NAMED(JsiObjectWrapper, toStringImpl, Symbol.toStringTag))
 
-                           
+  JSI_PROPERTY_GET(__proto__) {
+    // Update prototype
+    auto objectCtor = runtime.global().getProperty(runtime, "Object");
+    if (!objectCtor.isUndefined()) {
+      // Get setPrototypeOf
+      auto setPrototypeOf =
+          objectCtor.asObject(runtime).getProperty(runtime, "setPrototypeOf");
+      if (!setPrototypeOf.isUndefined()) {
+        auto object = runtime.global().getProperty(runtime, "Object");
+        if (!object.isUndefined()) {
+          return object.asObject(runtime).getProperty(runtime, "prototype");
+        }
+      }
+    }
+    return jsi::Value::undefined();
+  }
+
+  JSI_HOST_FUNCTION(toStringImpl) {
+    return jsi::String::createFromUtf8(runtime, toString(runtime));
+  }
+
+  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiObjectWrapper, __proto__))
+  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC_NAMED(JsiObjectWrapper, toStringImpl,
+                                             toString),
+                       JSI_EXPORT_FUNC_NAMED(JsiObjectWrapper, toStringImpl,
+                                             Symbol.toStringTag))
+
   bool canUpdateValue(jsi::Runtime &runtime, const jsi::Value &value) override {
     return value.isObject() && !value.asObject(runtime).isArray(runtime);
   }
-                           
+
   /**
    * Overridden setValue
    * @param runtime Value's runtime
@@ -96,9 +98,9 @@ public:
     case JsiWrapperType::Object:
       return jsi::Object::createFromHostObject(runtime, shared_from_this());
     case JsiWrapperType::Promise:
-        throw jsi::JSError(runtime, "Promise type not supported.");
+      throw jsi::JSError(runtime, "Promise type not supported.");
     default:
-        throw jsi::JSError(runtime, "Value type not supported.");
+      throw jsi::JSError(runtime, "Value type not supported.");
       return jsi::Value::undefined();
     }
   }
@@ -170,10 +172,10 @@ public:
 
 private:
   void setArrayBufferValue(jsi::Runtime &runtime, jsi::Object &obj) {
-    throw jsi::JSError(
-        runtime, "Array buffers are not supported as shared values.");
+    throw jsi::JSError(runtime,
+                       "Array buffers are not supported as shared values.");
   }
-                           
+
   void setObjectValue(jsi::Runtime &runtime, jsi::Object &obj) {
     setType(JsiWrapperType::Object);
     _properties.clear();
@@ -186,7 +188,7 @@ private:
       _properties.emplace(nameString, JsiWrapper::wrap(runtime, value, this));
     }
   }
-                           
+
   /* void visitPrototype(jsi::Runtime &runtime, jsi::Object &obj) {
     auto prototype = obj.getProperty(runtime, "__proto__");
     if(prototype.isObject()) {
@@ -195,9 +197,9 @@ private:
       auto propNames = prototypeObj.getPropertyNames(runtime);
       for (size_t i = 0; i < propNames.size(runtime); i++) {
         auto nameString =
-            propNames.getValueAtIndex(runtime, i).asString(runtime).utf8(runtime);
-        if(nameString != "") {
-          
+            propNames.getValueAtIndex(runtime,
+  i).asString(runtime).utf8(runtime); if(nameString != "") {
+
         }
       }
       visitPrototype(runtime, prototypeObj);
@@ -216,8 +218,8 @@ private:
   }
 
   void setFunctionValue(jsi::Runtime &runtime, const jsi::Value &value) {
-    throw jsi::JSError(
-        runtime, "Regular javascript functions cannot be shared.");
+    throw jsi::JSError(runtime,
+                       "Regular javascript functions cannot be shared.");
   }
 
   std::map<std::string, std::shared_ptr<JsiWrapper>> _properties;
@@ -225,4 +227,3 @@ private:
   std::shared_ptr<jsi::HostObject> _hostObject;
 };
 } // namespace RNWorklet
-

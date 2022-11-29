@@ -64,13 +64,11 @@ export interface IWorkletNativeApi {
    * the worklet thread in the context given by the context name (or empty to run
    * in the default context)
    * @param worklet Function to use to create the worklet
-   * @param closure Values that will be copied to the worklet closure
    * @param context Worklet context to run the worklet in. Optional.
    * @param returns an @see(IWorklet) object
    */
-  createWorklet: <C extends ContextType, T, A extends any[]>(
+  createWorklet: <C extends ContextType, T, A extends Array<unknown>>(
     worklet: (this: C, ...args: A) => T,
-    closure?: C,
     context?: IWorkletContext
   ) => IWorklet<A, (...args: A) => T>;
 }

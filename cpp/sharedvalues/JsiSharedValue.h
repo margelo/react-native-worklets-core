@@ -1,12 +1,12 @@
 #pragma once
 
+#include <jsi/jsi.h>
 #include <map>
 
-#include <JsiDispatcher.h>
-#include <JsiHostObject.h>
-#include <JsiWorkletContext.h>
-#include <JsiWrapper.h>
-#include <jsi/jsi.h>
+#include "JsiDispatcher.h"
+#include "JsiHostObject.h"
+#include "JsiWorkletContext.h"
+#include "JsiWrapper.h"
 
 namespace RNWorklet {
 
@@ -41,7 +41,7 @@ public:
   }
 
   JSI_PROPERTY_SET(value) {
-    if(_valueWrapper->canUpdateValue(runtime, value)) {
+    if (_valueWrapper->canUpdateValue(runtime, value)) {
       _valueWrapper->updateValue(runtime, value);
     } else {
       _valueWrapper = JsiWrapper::wrap(runtime, value);
@@ -51,15 +51,17 @@ public:
   JSI_HOST_FUNCTION(addListener) {
     // This functionPtr should only be callable from the js runtime
     if (_context->isWorkletRuntime(runtime)) {
-      throw jsi::JSError(runtime, "addListener can only be called from the main Javascript context and not from a worklet.");
+      throw jsi::JSError(runtime,
+                         "addListener can only be called from the main "
+                         "Javascript context and not from a worklet.");
     }
 
     // Verify arguments
     if (arguments[0].isUndefined() || arguments[0].isNull() ||
         arguments[0].isObject() == false ||
         arguments[0].asObject(runtime).isFunction(runtime) == false) {
-      throw jsi::JSError(
-          runtime, "addListener expects a function as its parameter.");
+      throw jsi::JSError(runtime,
+                         "addListener expects a function as its parameter.");
     }
 
     // Wrap the callback into a dispatcher with error handling. This
@@ -85,8 +87,10 @@ public:
     auto dispatcher = JsiDispatcher::createDispatcher(
         runtime, thisValuePtr, functionPtr, nullptr,
         [&runtime, this](const char *err) {
-          _context->runOnJavascriptThread(
-              [err, &runtime]() { throw jsi::JSError(runtime, err); });
+          /*_context->runOnJavascriptThread(
+              [err, &runtime]() { throw jsi::JSError(runtime, err); });*/
+          // TODO: How to ensure errors are raised on the correct js thread?
+          throw jsi::JSError(runtime, err);
         });
 
     // Set up the callback to run on the correct runtime thread.

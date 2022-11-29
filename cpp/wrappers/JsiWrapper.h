@@ -33,11 +33,12 @@ public:
    * @param parent Optional parent wrapper
    * @paran type Type of wrapper
    */
-  JsiWrapper(jsi::Runtime &runtime, const jsi::Value &value, JsiWrapper *parent, JsiWrapperType type)
+  JsiWrapper(jsi::Runtime &runtime, const jsi::Value &value, JsiWrapper *parent,
+             JsiWrapperType type)
       : JsiWrapper(parent) {
     _type = type;
   }
-  
+
   /**
    * Constructor - called from static members
    * @param runtime Calling runtime
@@ -75,7 +76,7 @@ public:
    * @param value Value to set
    */
   virtual void updateValue(jsi::Runtime &runtime, const jsi::Value &value);
-  
+
   /**
    Returns true if the value provided can be contained in the wrapped instance.
    */
@@ -90,7 +91,7 @@ public:
    * Returns the object as a string
    */
   virtual std::string toString(jsi::Runtime &runtime);
-  
+
   /**
    * Add listener
    * @param listener callback to notify
@@ -107,7 +108,7 @@ public:
    * @param listenerId id of listener to remove
    */
   void removeListener(size_t listenerId) { _listeners.erase(listenerId); }
-    
+
 protected:
   /**
    * Returns a wrapper for the value
@@ -139,15 +140,14 @@ protected:
    * @return The parent object
    */
   JsiWrapper *getParent() { return _parent; }
-  
+
   /**
    Calls the Function and returns its value. This function will call the
    correct overload based on the this value
    */
-  jsi::Value callFunction(jsi::Runtime & runtime,
-                          const jsi::Function &func,
+  jsi::Value callFunction(jsi::Runtime &runtime, const jsi::Function &func,
                           const jsi::Value &thisValue,
-                          const jsi::Value *arguments, size_t count);  
+                          const jsi::Value *arguments, size_t count);
 
 protected:
   /**
@@ -163,7 +163,7 @@ protected:
    * @return A new js value in the provided runtime with the wrapped value
    */
   virtual jsi::Value getValue(jsi::Runtime &runtime);
-  
+
 private:
   /**
    * Notify listeners that the value has changed
@@ -173,7 +173,7 @@ private:
       (*listener.second)();
     }
   }
-  
+
   /**
    * Base Constructor
    * @param parent Parent wrapper
