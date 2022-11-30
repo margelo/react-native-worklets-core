@@ -108,6 +108,13 @@ public:
       } catch (const JsErrorWrapper &jsError) {
         // Create a new JSError - this time on the correct runtime.
         throw jsi::JSError(runtime, jsError.getMessage(), jsError.getStack());
+      } catch (const std::exception &err) {
+        throw jsi::JSError(runtime, err.what());
+      } catch (const std::runtime_error &err) {
+        throw jsi::JSError(runtime, err.what());
+      } catch (...) {
+        throw jsi::JSError(
+            runtime, "An unknown error occurred when calling the worklet.");
       }
       return jsi::Value::undefined();
     } else {
