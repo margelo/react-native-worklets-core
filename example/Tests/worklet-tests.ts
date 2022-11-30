@@ -33,7 +33,6 @@ export const worklet_tests = {
       'worklet';
       return a;
     });
-    console.log('@@@@ ', worklet, worklet.isWorklet);
     return ExpectValue(worklet.callInJSContext(100), 100);
   },
 
@@ -46,11 +45,12 @@ export const worklet_tests = {
   },
 
   call_async_to_worklet_thread: () => {
+    const x = 100;
     const worklet = Worklets.createWorklet((a: number) => {
       'worklet';
-      return a;
+      return a + x;
     });
-    return ExpectValue(worklet.callInWorkletContext(100), 100);
+    return ExpectValue(worklet.callInWorkletContext(100), 200);
   },
 
   call_async_to_worklet_thread_context: () => {
