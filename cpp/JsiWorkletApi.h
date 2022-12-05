@@ -2,10 +2,13 @@
 
 #include <jsi/jsi.h>
 
+#include <vector>
+
 #include "JsiHostObject.h"
 #include "JsiSharedValue.h"
 #include "JsiWorklet.h"
 #include "JsiWorkletContext.h"
+#include "JsiBaseDecorator.h"
 
 namespace RNWorklet {
 
@@ -19,7 +22,10 @@ public:
    * make sure only the runOnJsThread method is available.
    */
   JsiWorkletApi(std::shared_ptr<JsiWorkletContext> context)
-      : _context(context){};
+    : _context(context) {
+    // Add default decorators
+    
+  };
 
   /**
    * Installs the worklet API into the provided runtime
@@ -81,7 +87,7 @@ public:
 
     auto nameStr = arguments[0].asString(runtime).utf8(runtime);
     return jsi::Object::createFromHostObject(
-        runtime, std::make_shared<JsiWorkletContext>(nameStr, _context));
+        runtime, createWorkletContext(nameStr));
   };
 
   JSI_HOST_FUNCTION(createSharedValue) {
@@ -94,12 +100,53 @@ public:
         *_context->getJsRuntime(),
         std::make_shared<JsiSharedValue>(arguments[0], _context));
   };
+  
+  JSI_HOST_FUNCTION(isOnWorkletRuntime) {
+    // Get the active context
+    auto activeContext =
+        count == 1 && arguments[0].isObject()
+            ? arguments[0].asObject(runtime).getHostObject<JsiWorkletContext>(
+                  runtime)
+            : _context;
 
+    if (activeContext == nullptr) {
+      return _context->raiseError("createWorklet called with invalid context.");
+    }
+    
+    return activeContext->isWorkletRuntime(runtime);
+  }
+  
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletApi, createWorklet),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createSharedValue),
-                       JSI_EXPORT_FUNC(JsiWorkletApi, createWorkletContext))
+                       JSI_EXPORT_FUNC(JsiWorkletApi, createWorkletContext),
+                       JSI_EXPORT_FUNC(JsiWorkletApi, isOnWorkletRuntime))
+  
+  /**
+   Creates a new worklet context
+   @name Name of the context
+   @returns A new worklet context that has been initialized and decorated.
+   */
+  std::shared_ptr<JsiWorkletContext> createWorkletContext(const std::string& name) {
+    auto newContext =  std::make_shared<JsiWorkletContext>(name, _context);
+    for (auto &decorator: _decorators) {
+      newContext->decorate(decorator.get());
+    }
+    return newContext;
+  }
+  
+  /**
+   Adds a decorator that will be used to decorate all contexts.
+   @decorator The decorator to add
+   */
+  void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator) {
+    _decorators.push_back(decorator);
+    
+    // Decorate default context
+    _context->decorate(decorator.get());
+  }
 
 private:
   std::shared_ptr<JsiWorkletContext> _context;
+  std::vector<std::shared_ptr<JsiBaseDecorator>> _decorators;
 };
 } // namespace RNWorklet
