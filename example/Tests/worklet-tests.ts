@@ -120,7 +120,10 @@ export const worklet_tests = {
       'worklet';
       callback.callInJSContext();
     });
-    return ExpectException(workletA.callInWorkletContext, 'Test error');
+    return ExpectException(
+      workletA.callInWorkletContext,
+      'Exception in HostFunction: Test error',
+    );
   },
 
   call_async_to_and_from_worklet: () => {
@@ -134,6 +137,7 @@ export const worklet_tests = {
       'worklet';
       return workletB.callInWorkletContext(a);
     });
+
     return Expect(workletA.callInWorkletContext(100), () => {
       return sharedValue.value === 100
         ? undefined
