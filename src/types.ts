@@ -19,6 +19,10 @@ export interface IWorklet<A extends any[], T extends (...args: A) => any> {
    */
   callInJSContext: (...args: A) => ReturnType<T>;
   /**
+   * Returns the generated code for the worklet function.
+   */
+  getCode: () => string;
+  /**
    * Returns the context of the worklet
    */
   readonly context: IWorkletContext;
@@ -71,6 +75,11 @@ export interface IWorkletNativeApi {
     worklet: (this: C, ...args: A) => T,
     context?: IWorkletContext
   ) => IWorklet<A, (...args: A) => T>;
+  /**
+   * Returns true if we are in a worklet context or false if we are in the JS thread
+   * @param context Optional context to test for, otherwise default worklet context
+   */
+  isOnWorkletContext: (context?: IWorkletContext) => boolean;
 }
 declare global {
   var Worklets: IWorkletNativeApi;

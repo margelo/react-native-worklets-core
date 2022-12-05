@@ -31,6 +31,8 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
       
             _run._closure = {}
             _run.asString = "function run(){}"
+            _run.__location =
+              "/Users/christianfalch/repos/chrfalch/react-native-worklets/test.js (3:9)"
             return _run
           })(),
         },
@@ -57,6 +59,8 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
       
             _run._closure = {}
             _run.asString = "function run(){this.stop();}"
+            _run.__location =
+              "/Users/christianfalch/repos/chrfalch/react-native-worklets/test.js (3:9)"
             return _run
           })(),
           stop: (function () {
@@ -64,6 +68,8 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
       
             _stop._closure = {}
             _stop.asString = "function stop(){}"
+            _stop.__location =
+              "/Users/christianfalch/repos/chrfalch/react-native-worklets/test.js (7:10)"
             return _stop
           })(),
         },
@@ -96,6 +102,8 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
           z,
         }
         _test.asString = "function test(){const{abba,z}=this;{return abba+200+z.value;}}"
+        _test.__location =
+          "/Users/christianfalch/repos/chrfalch/react-native-worklets/test.js (3:0)"
         return _test
       })()
       `
@@ -121,6 +129,8 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
               a,
             }
             _run.asString = "function run(){const{a}=this;{if(a===Infinity){}}}"
+            _run.__location =
+              "/Users/christianfalch/repos/chrfalch/react-native-worklets/test.js (4:9)"            
             return _run
           })(),
         },
@@ -142,28 +152,49 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
       
         _run._closure = {}
         _run.asString = "function run(){if(isNaN(0)){}}"
+        _run.__location =
+          "/Users/christianfalch/repos/chrfalch/react-native-worklets/test.js (1:0)"
         return _run
       })();`
     );
     expect(output).toEqual(expected);
   });
 
-  it("should not add dependecy _defineProperty which is available in native", () => {
+  it("should not add dependecies defined in the global object", () => {
     const [, output, expected] = transformCode(
       `
-    function run() { "worklet"; if(_defineProperty(0)){} };
+    function run() { "worklet"; if(setImmediate(() => {}, 0)){} };
     `,
       `const run = (function () {
         const _run = function () {
-          if (_defineProperty(0)) {
+          if (setImmediate(() => {}, 0)) {
           }
         }
       
-        _run._closure = {
-          _defineProperty,
+        _run._closure = {}
+        _run.asString = "function run(){if(setImmediate(()=>{},0)){}}"
+        _run.__location =
+          "/Users/christianfalch/repos/chrfalch/react-native-worklets/test.js (1:0)"
+        return _run
+      })();`
+    );
+    expect(output).toEqual(expected);
+  });
+
+  it("should support null coalescing operator", () => {
+    const [, output, expected] = transformCode(
+      `
+    function run(obj) { "worklet"; return obj.foo ?? "default"; };
+    `,
+      `const run = (function () {
+        const _run = function (obj) {
+          return obj.foo ?? "default";
         }
-        _run.asString =
-          "function run(){const{_defineProperty}=this;{if(_defineProperty(0)){}}}"
+      
+        _run._closure = {}
+        _run.asString = 'function run(obj){return obj.foo??"default";}'
+        _run.__location =
+          "/Users/christianfalch/repos/chrfalch/react-native-worklets/test.js (1:0)"
         return _run
       })();`
     );

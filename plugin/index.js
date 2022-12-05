@@ -1,11 +1,11 @@
 "use strict";
 
 const generate = require("@babel/generator").default;
-// const hash = require('string-hash-64');
+const { transformSync } = require("@babel/core");
 const traverse = require("@babel/traverse").default;
 const parse = require("@babel/parser").parse;
 
-function buildWorkletString(t, fun, closureVariables, name) {
+function buildWorkletString(t, fun, closureVariables, name, state) {
   fun.traverse({
     enter(path) {
       t.removeComments(path.node);
@@ -44,10 +44,14 @@ function buildWorkletString(t, fun, closureVariables, name) {
     );
   }
 
-  return generate(workletFunction, { compact: true }).code;
+  return generate(workletFunction, {
+    compact: true,
+    sourceMaps: true,
+    sourceFileName: state.file.opts.filename,
+  });
 }
 
-function processWorkletFunction(t, fun) {
+function processWorkletFunction(t, fun, state) {
   if (!t.isFunctionParent(fun)) {
     return;
   }
@@ -85,17 +89,15 @@ function processWorkletFunction(t, fun) {
       }
 
       let currentScope = path.scope;
-      let found = false;
       while (currentScope != null) {
         if (currentScope.bindings[name] != null) {
-          found = true;
-          break;
+          return;
         }
         currentScope = currentScope.parent;
       }
-
+      console.log(Object.keys(global));
       // Check if it exists on global object
-      if (!global.hasOwnProperty(name) && !found) {
+      if (!global.hasOwnProperty(name)) {
         closure.set(name, path.node);
       }
     },
@@ -120,6 +122,11 @@ function processWorkletFunction(t, fun) {
     },
   });
 
+  const codeObject = generate(fun.node, {
+    sourceMaps: true,
+    sourceFileName: state.file.opts.filename,
+  });
+
   const variables = Array.from(closure.values());
   const privateFunctionId = t.identifier("_" + functionName);
 
@@ -129,8 +136,32 @@ function processWorkletFunction(t, fun) {
   const clone = t.cloneNode(fun.node);
   const funExpression = t.functionExpression(null, clone.params, clone.body);
 
-  const funString = buildWorkletString(t, fun, variables, functionName);
+  const { code: funString } = buildWorkletString(
+    t,
+    fun,
+    variables,
+    functionName,
+    state
+  );
+
+  // console.log(transformed.code, "\n\n", funString, "\n");
+
+  let location = state.file.opts.filename;
+  if (state.opts && state.opts.relativeSourceLocation) {
+    const path = require("path");
+    location = path.relative(state.cwd, location);
+  }
+
+  const loc = fun && fun.node && fun.node.loc && fun.node.loc.start;
+  if (loc) {
+    const { line, column } = loc;
+    if (typeof line === "number" && typeof column === "number") {
+      location = `${location} (${line}:${column})`;
+    }
+  }
+
   // const workletHash = hash(funString);
+  // console.log(JSON.stringify(props, null, 2));
 
   const newFun = t.functionExpression(
     fun.id,
@@ -170,6 +201,17 @@ function processWorkletFunction(t, fun) {
           t.stringLiteral(funString)
         )
       ),
+      t.expressionStatement(
+        t.assignmentExpression(
+          "=",
+          t.memberExpression(
+            privateFunctionId,
+            t.identifier("__location"),
+            false
+          ),
+          t.stringLiteral(location)
+        )
+      ),
       t.returnStatement(privateFunctionId),
     ])
   );
@@ -191,7 +233,7 @@ function processWorkletFunction(t, fun) {
   );
 }
 
-function processIfWorkletNode(t, p) {
+function processIfWorkletNode(t, p, state) {
   const fun = p;
 
   fun.traverse({
@@ -208,7 +250,7 @@ function processIfWorkletNode(t, p) {
               directive.value.value === "worklet"
           )
         ) {
-          processWorkletFunction(t, fun);
+          processWorkletFunction(t, fun, state);
         }
       }
     },
@@ -219,8 +261,8 @@ module.exports = function ({ types: t }) {
   return {
     visitor: {
       "FunctionDeclaration|FunctionExpression|ArrowFunctionExpression": {
-        exit(path) {
-          processIfWorkletNode(t, path);
+        exit(path, state) {
+          processIfWorkletNode(t, path, state);
         },
       },
     },
