@@ -10,6 +10,7 @@
 namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
+namespace react = facebook::react;
 
 /// Class for wrapping jsi::JSError
 class JsErrorWrapper : public std::exception {
@@ -50,20 +51,9 @@ public:
 
     // Is this called on the javascript thread?
     if (!_context->isWorkletRuntime(runtime)) {
-      // The we can just call it directly
-      try {
-        return callInJsRuntime(argsWrapper);
-      } catch (const jsi::JSError &err) {
-        throw err;
-      } catch (const std::exception &err) {
-        throw jsi::JSError(runtime, err.what());
-      } catch (const std::runtime_error &err) {
-        throw jsi::JSError(runtime, err.what());
-      } catch (...) {
-        throw jsi::JSError(
-            runtime, "An unknown error occurred when calling the worklet.");
-      }
-      return jsi::Value::undefined();
+      // The we can just call it directly - we can also leave out any
+      // error handling since this will be handled correctly.
+      return callInJsRuntime(argsWrapper);
     }
 
     // Create simple dispatcher without promise since we don't support
@@ -90,8 +80,15 @@ public:
         } catch (...) {
           ex = std::current_exception();
         }
-      } catch (...) {
-        ex = std::current_exception();
+      } catch (const std::exception& err) {
+        std::string a = typeid(err).name();
+        std::string b = typeid(jsi::JSError).name();
+        if (a == b) {
+          const auto *jsError = static_cast<const jsi::JSError *>(&err);
+          ex = std::make_exception_ptr(JsErrorWrapper(jsError->getMessage(), jsError->getStack()));
+        } else {
+          ex = std::make_exception_ptr(err);
+        }
       }
 
       isFinished = true;
@@ -103,20 +100,7 @@ public:
 
     // Check for errors
     if (ex != nullptr) {
-      try {
-        std::rethrow_exception(ex);
-      } catch (const JsErrorWrapper &jsError) {
-        // Create a new JSError - this time on the correct runtime.
-        throw jsi::JSError(runtime, jsError.getMessage(), jsError.getStack());
-      } catch (const std::exception &err) {
-        throw jsi::JSError(runtime, err.what());
-      } catch (const std::runtime_error &err) {
-        throw jsi::JSError(runtime, err.what());
-      } catch (...) {
-        throw jsi::JSError(
-            runtime, "An unknown error occurred when calling the worklet.");
-      }
-      return jsi::Value::undefined();
+      std::rethrow_exception(ex);
     } else {
       return JsiWrapper::unwrap(runtime, retVal);
     }
@@ -172,32 +156,39 @@ public:
                                                       retValWrapper));
                 });
 
-              } catch (const jsi::JSError &err) {
-                auto errorMessage = err.getMessage();
-                _context->invokeOnJsThread(
-                    [=]() { promise->reject(errorMessage); });
-              } catch (const std::exception &err) {
-                auto errorMessage = err.what();
-                _context->invokeOnJsThread(
-                    [=]() { promise->reject(errorMessage); });
-              } catch (const std::runtime_error &err) {
-                auto errorMessage = err.what();
-                _context->invokeOnJsThread(
-                    [=]() { promise->reject(errorMessage); });
               } catch (...) {
-                _context->invokeOnJsThread([=]() {
-                  promise->reject(
-                      "An unknown error occurred when calling the worklet.");
+                auto err = std::current_exception();
+                _context->invokeOnJsThread([promise, err]() {
+                  try {
+                    std::rethrow_exception(err);
+                  } catch (const std::exception& e) {
+                    // A little trick to find out if the exception is a js error,
+                    // comparing the typeid name and then doing a static_cast
+                    std::string a = typeid(e).name();
+                    std::string b = typeid(jsi::JSError).name();
+                    if (a == b) {
+                      const auto *jsError = static_cast<const jsi::JSError *>(&e);
+                      // Javascript error, pass message
+                      promise->reject(jsError->getMessage());
+                    } else {
+                      promise->reject(e.what());
+                    }
+                  }
                 });
               }
             });
           }
         });
   }
+  
+  JSI_HOST_FUNCTION(getCode) {
+    return jsi::String::createFromUtf8(runtime, _code);
+  }
 
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorklet, isWorklet),
                        JSI_EXPORT_FUNC(JsiWorklet, callInJSContext),
-                       JSI_EXPORT_FUNC(JsiWorklet, callInWorkletContext))
+                       JSI_EXPORT_FUNC(JsiWorklet, callInWorkletContext),
+                       JSI_EXPORT_FUNC(JsiWorklet, getCode))
 
   JSI_PROPERTY_GET(context) {
     return jsi::Object::createFromHostObject(runtime, _context);
@@ -345,9 +336,9 @@ private:
         !asStringProp.isString()) {
       return;
     }
-
-    // TODO: Get location - our plugin does not yet support location
-    /*jsi::Value locationProp = _jsFunction->getProperty(runtime, "__location");
+    
+    // Get location
+    jsi::Value locationProp = _jsFunction->getProperty(runtime, "__location");
     if (locationProp.isUndefined() ||
         locationProp.isNull() ||
         !locationProp.isString()) {
@@ -356,36 +347,30 @@ private:
 
     // Set location
     _location = locationProp.asString(runtime).utf8(runtime);
-     */
 
     // This is a worklet
     _isWorklet = true;
-
-    // TODO: Add support for caching based on worklet hash
 
     // Create closure wrapper so it will be accessible across runtimes
     _closureWrapper = JsiWrapper::wrap(runtime, closure);
 
     // Let us try to install the function in the worklet context
-    auto code = asStringProp.asString(runtime).utf8(runtime);
-#if DEBUG
-    _code = code;
-#endif
+    _code = asStringProp.asString(runtime).utf8(runtime);
 
     jsi::Runtime *workletRuntime = &_context->getWorkletRuntime();
 
-    auto evaluatedFunction = evaluteJavascriptInWorkletRuntime(code);
+    auto evaluatedFunction = evaluteJavascriptInWorkletRuntime(_code);
     if (!evaluatedFunction.isObject()) {
       _context->raiseError(
           std::string("Could not create worklet from function. ") +
-          "Eval did not return an object:\n" + code);
+          "Eval did not return an object:\n" + _code);
       return;
     }
     if (!evaluatedFunction.asObject(*workletRuntime)
              .isFunction(*workletRuntime)) {
       _context->raiseError(
           std::string("Could not create worklet from function. ") +
-          "Eval did not return a function:\n" + code);
+          "Eval did not return a function:\n" + _code);
       return;
     }
     // TODO: This object fails when doing hot reloading, since
@@ -398,9 +383,8 @@ private:
 
   jsi::Value evaluteJavascriptInWorkletRuntime(const std::string &code) {
     auto workletRuntime = &_context->getWorkletRuntime();
-    auto eval =
-        workletRuntime->global().getPropertyAsFunction(*workletRuntime, "eval");
-    return eval.call(*workletRuntime, ("(" + code + ")").c_str());
+    auto codeBuffer = std::make_shared<const jsi::StringBuffer>("(" + code + "\n)");
+    return workletRuntime->evaluateJavaScript(codeBuffer, _location);    
   }
 
   bool _isWorklet = false;
