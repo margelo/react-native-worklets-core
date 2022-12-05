@@ -4,6 +4,7 @@
 #include "DispatchQueue.h"
 #include "JsRuntimeFactory.h"
 #include "JsiHostObject.h"
+#include "JsiBaseDecorator.h"
 
 #include <exception>
 #include <functional>
@@ -129,6 +130,10 @@ public:
    Executes a function in the JS thread
    */
   void invokeOnJsThread(std::function<void()> &&fp) {
+    if (_jsCallInvoker == nullptr) {
+      throw std::runtime_error(
+          "Expected Worklet context to have a JS call invoker.");
+    }
     _jsCallInvoker(std::move(fp));
   }
 
@@ -136,6 +141,10 @@ public:
    Executes a function in the worklet thread
    */
   void invokeOnWorkletThread(std::function<void()> &&fp) {
+    if (_workletCallInvoker == nullptr) {
+      throw std::runtime_error(
+          "Expected Worklet context to have a worklet call invoker.");
+    }
     _workletCallInvoker(std::move(fp));
   }
 
@@ -150,13 +159,10 @@ public:
   }
 
   /**
-   Calls a function async on the JS thread.
+   Decorates the worklet runtime.
    */
-  void callOnJsThread(const std::function<void()> &func) {
-    if (_jsCallInvoker == nullptr) {
-      throw std::runtime_error(
-          "Expected Worklet context to have a JS call invoker.");
-    }
+  void decorate(JsiBaseDecorator* decorator) {
+    decorator->decorateRuntime(*_workletRuntime);
   }
 
 private:
