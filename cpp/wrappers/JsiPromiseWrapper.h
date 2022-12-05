@@ -11,6 +11,7 @@
 namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
+namespace react = facebook::react;
 
 class JsiWrapper;
 

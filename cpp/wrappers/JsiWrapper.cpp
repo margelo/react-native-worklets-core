@@ -4,7 +4,8 @@
 #include "JsiPromiseWrapper.h"
 
 namespace RNWorklet {
-using namespace facebook;
+
+namespace jsi = facebook::jsi;
 
 jsi::Value JsiWrapper::getValue(jsi::Runtime &runtime) {
   std::unique_lock<std::mutex> lock(*_readWriteMutex);

@@ -17,7 +17,7 @@
 
 namespace RNWorklet {
 
-using namespace facebook;
+namespace jsi = facebook::jsi;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"

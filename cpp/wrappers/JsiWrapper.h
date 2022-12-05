@@ -8,7 +8,7 @@
 
 namespace RNWorklet {
 
-using namespace facebook;
+namespace jsi = facebook::jsi;
 
 enum JsiWrapperType {
   Undefined,

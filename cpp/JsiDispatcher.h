@@ -1,11 +1,14 @@
 #pragma once
 
+#include <cxxabi.h>
+
 #include <jsi/jsi.h>
 
 #include "JsiWrapper.h"
 
 namespace RNWorklet {
-using namespace facebook;
+
+namespace jsi = facebook::jsi;
 
 class JsiDispatcher {
 public:

@@ -10,7 +10,7 @@
 
 namespace RNWorklet {
 
-using namespace facebook;
+namespace jsi = facebook::jsi;
 
 class JsiSharedValue : public JsiHostObject {
 public:
@@ -87,10 +87,8 @@ public:
     auto dispatcher = JsiDispatcher::createDispatcher(
         runtime, thisValuePtr, functionPtr, nullptr,
         [&runtime, this](const char *err) {
-          /*_context->runOnJavascriptThread(
-              [err, &runtime]() { throw jsi::JSError(runtime, err); });*/
-          // TODO: How to ensure errors are raised on the correct js thread?
-          throw jsi::JSError(runtime, err);
+          _context->invokeOnJsThread(
+              [err, &runtime]() { throw jsi::JSError(runtime, err); });
         });
 
     // Set up the callback to run on the correct runtime thread.
