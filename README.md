@@ -8,14 +8,13 @@ The API for creating a worklet (API is up for discussion):
 
 ```ts
 const sharedValue = Worklets.createSharedValue(0);
-const worklet = Worklets.createWorklet(
-  function (a: number) {
+const worklet = Worklets.createWorklet((a: number) => {
     this.sharedValue.value = a;
-  },
-  {sharedValue},
-);
-await worklet.callInWorkletContext(200)
+    return 1000;
+  });
+const result = await worklet.callInWorkletContext(200)
 assert(sharedValue.value === 200);
+assert(result === 1000);
 ```
 
 Sharing values between JS runtimes is done by using shared values. The goal of the project is to provide JS primitives, objects and arrays that are shareable without copying data.
