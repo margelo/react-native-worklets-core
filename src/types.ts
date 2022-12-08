@@ -58,7 +58,7 @@ export interface IWorkletNativeApi {
    * name of the worklet runtime a worklet will be executed in when you call the
    * worklet.runOnWorkletThread();
    */
-  createWorkletContext: (name: string) => IWorkletContext;
+  createContext: (name: string) => IWorkletContext;
   /**
    * Creates a value that can be shared between runtimes
    */

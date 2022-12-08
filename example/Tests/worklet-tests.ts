@@ -54,7 +54,7 @@ export const worklet_tests = {
   },
 
   call_async_to_worklet_thread_context: () => {
-    const context = Worklets.createWorkletContext('test');
+    const context = Worklets.createContext('test');
     const worklet = Worklets.createWorklet((a: number) => {
       'worklet';
       return a;
@@ -71,7 +71,7 @@ export const worklet_tests = {
   },
 
   call_async_to_worklet_thread_with_error_in_context: () => {
-    const context = Worklets.createWorkletContext('test');
+    const context = Worklets.createContext('test');
     const worklet = Worklets.createWorklet(() => {
       'worklet';
       throw new Error('Test error');

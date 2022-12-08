@@ -74,7 +74,7 @@ public:
         runtime, std::make_shared<JsiWorklet>(activeContext, arguments[0]));
   };
 
-  JSI_HOST_FUNCTION(createWorkletContext) {
+  JSI_HOST_FUNCTION(createContext) {
     if (count == 0) {
       _context->raiseError(
           "createWorkletContext expects the context name parameter.");
@@ -118,7 +118,7 @@ public:
   
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletApi, createWorklet),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createSharedValue),
-                       JSI_EXPORT_FUNC(JsiWorkletApi, createWorkletContext),
+                       JSI_EXPORT_FUNC(JsiWorkletApi, createContext),
                        JSI_EXPORT_FUNC(JsiWorkletApi, isOnWorkletRuntime))
   
   /**
