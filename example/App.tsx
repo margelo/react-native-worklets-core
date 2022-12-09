@@ -3,10 +3,9 @@ import {Button, ScrollView, StyleSheet, Text, View} from 'react-native';
 
 import {Tests} from './Tests';
 import {TestState, TestWrapper} from './Tests/TestWrapper';
-import {Test} from './Tests/types';
 
 type TestInfo = {
-  run: Test;
+  run: () => Promise<void>;
   name: string;
   category: string;
   state: TestState;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "JsiWorkletContext.h"
+
 #include <map>
 #include <mutex>
 #include <vector>
@@ -20,8 +22,7 @@ enum JsiWrapperType {
   Object,
   Promise,
   HostObject,
-  HostFunction,
-  Worklet
+  HostFunction
 };
 
 class JsiWrapper {

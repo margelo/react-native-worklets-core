@@ -35,18 +35,11 @@ RCT_EXPORT_MODULE()
     facebook::jsi::Runtime *jsRuntime =
         (facebook::jsi::Runtime *)cxxBridge.runtime;
 
-    // Create error handler
-    auto errorHandler = [](const std::exception &err) {
-      RCTFatal(RCTErrorWithMessage([NSString stringWithUTF8String:err.what()]));
-    };
-
     // Create the worklet context
     auto workletContext = std::make_shared<RNWorklet::JsiWorkletContext>(
-        "default", jsRuntime,
-        [=](std::function<void()> &&f) {
+        "default", jsRuntime, [=](std::function<void()> &&f) {
           callInvoker->invokeAsync(std::move(f));
-        },
-        std::move(errorHandler));
+        });
 
     // Install the worklet API
     RNWorklet::JsiWorkletApi::installApi(workletContext);

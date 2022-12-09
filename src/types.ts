@@ -6,32 +6,19 @@ export interface ISharedValue<T> {
 
 export interface IWorklet<A extends any[], T extends (...args: A) => any> {
   /**
-   * Calls the worklet on the worklet thread. This is an async operation
-   * and will return a promise with the same type as the return type of
-   * the original worklet function.
-   * NOTE: Calling this function can be done from both the JS thread and
-   * the worklet thread.
-   */
-  callInWorkletContext: (...args: A) => Promise<ReturnType<T>>;
-  /**
-   * Calls the worklet on the JS thread. This is a sync operation and
-   * will return the same value as the original worklet function.
-   */
-  callInJSContext: (...args: A) => ReturnType<T>;
-  /**
    * Returns the generated code for the worklet function.
    */
-  getCode: () => string;
-  /**
-   * Returns the context of the worklet
-   */
-  readonly context: IWorkletContext;
+  readonly code: string;
   /**
    * Returns true for worklets.
    */
   readonly isWorklet: true;
 }
 
+/*
+  Defines the interface for a worklet context. A worklet context is a javascript 
+  runtime that can be run in its own thread.
+*/
 export interface IWorkletContext {
   readonly name: string;
 }
@@ -67,19 +54,38 @@ export interface IWorkletNativeApi {
    * Creates a worklet that can be executed on either then main thread or on
    * the worklet thread in the context given by the context name (or empty to run
    * in the default context)
-   * @param worklet Function to use to create the worklet
+   * @param fn Decorated function that will be used as the worklet
    * @param context Worklet context to run the worklet in. Optional.
    * @param returns an @see(IWorklet) object
    */
   createWorklet: <C extends ContextType, T, A extends Array<unknown>>(
-    worklet: (this: C, ...args: A) => T,
+    fn: (this: C, ...args: A) => T,
     context?: IWorkletContext
   ) => IWorklet<A, (...args: A) => T>;
   /**
-   * Returns true if we are in a worklet context or false if we are in the JS thread
-   * @param context Optional context to test for, otherwise default worklet context
+   * Creates a function that will be executed in the worklet context. The function
+   * will return a promise that will be resolved when the function has been
+   * executed on the worklet thread.
+   *
+   * Used to create a function to call from the JS thread to the worklet thread.
+   * @param worklet Decorated function that will be called in the context
+   * @param context Context to call function in, or default context if not set.
+   * @returns A function that will be called in the worklet context
    */
-  isOnWorkletContext: (context?: IWorkletContext) => boolean;
+  createRunInContextFn: <C extends ContextType, T, A extends Array<unknown>>(
+    fn: (this: C, ...args: A) => T,
+    context?: IWorkletContext
+  ) => (...args: A) => Promise<T>;
+  /**
+   * Creates a function that will be executed in the javascript context.
+   *
+   * Used to create a function to call back to the JS context from a worklet context.
+   * @param worklet Decorated function that will be called in the JS context
+   * @returns A promise that will be resolved when the function has been executed
+   */
+  createRunInJsFn: <C extends ContextType, T, A extends Array<unknown>>(
+    fn: (this: C, ...args: A) => T
+  ) => (...args: A) => T;
 }
 declare global {
   var Worklets: IWorkletNativeApi;

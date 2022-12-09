@@ -9,8 +9,31 @@
 
 namespace RNWorklet {
 
+static const char *PropHiddenWorkletName = "__worklet";
+static const char *PropClosureName = "_closure";
+static const char *PropAsStringName = "asString";
+static const char *PropLocationName = "__location";
+static const char *PropNameJsThis = "jsThis";
+
 namespace jsi = facebook::jsi;
 namespace react = facebook::react;
+
+class JsThisWrapper {
+public:
+  JsThisWrapper(jsi::Runtime &runtime, const jsi::Value &thisValue) {
+    _oldThis = runtime.global().getProperty(runtime, PropNameJsThis);
+    runtime.global().setProperty(runtime, PropNameJsThis, thisValue);
+    _runtime = &runtime;
+  }
+
+  ~JsThisWrapper() {
+    _runtime->global().setProperty(*_runtime, PropNameJsThis, _oldThis);
+  }
+
+private:
+  jsi::Value _oldThis;
+  jsi::Runtime *_runtime;
+};
 
 /// Class for wrapping jsi::JSError
 class JsErrorWrapper : public std::exception {
@@ -34,167 +57,18 @@ private:
  */
 class JsiWorklet : public JsiHostObject {
 public:
-  JsiWorklet(std::shared_ptr<JsiWorkletContext> context, const jsi::Value &arg)
-      : _context(context) {
-    createWorklet(arg);
+  JsiWorklet(jsi::Runtime &runtime, const jsi::Value &arg) {
+    createWorklet(runtime, arg);
   }
 
   JSI_HOST_FUNCTION(isWorklet) { return isWorklet(); }
 
-  JSI_HOST_FUNCTION(callInJSContext) {
-    std::vector<std::shared_ptr<JsiWrapper>> argsWrapper;
-    argsWrapper.reserve(count);
-
-    for (size_t i = 0; i < count; i++) {
-      argsWrapper.push_back(JsiWrapper::wrap(runtime, arguments[i]));
-    }
-
-    // Is this called on the javascript thread?
-    if (!_context->isWorkletRuntime(runtime)) {
-      // The we can just call it directly - we can also leave out any
-      // error handling since this will be handled correctly.
-      return callInJsRuntime(argsWrapper);
-    }
-
-    // Create simple dispatcher without promise since we don't support
-    // promises on Android in the Javascript runtime. This will then run
-    // blocking
-    std::mutex mu;
-    std::condition_variable cond;
-    std::exception_ptr ex;
-    std::shared_ptr<JsiWrapper> retVal;
-    bool isFinished = false;
-    std::unique_lock<std::mutex> lock(mu);
-
-    _context->invokeOnJsThread([&]() {
-      std::lock_guard<std::mutex> lock(mu);
-
-      try {
-        auto result = callInJsRuntime(argsWrapper);
-        retVal = JsiWrapper::wrap(runtime, result);
-      } catch (const jsi::JSError &err) {
-        // When rethrowing we need to make sure that any jsi errors are
-        // transferred to the correct runtime.
-        try {
-          throw JsErrorWrapper(err.getMessage(), err.getStack());
-        } catch (...) {
-          ex = std::current_exception();
-        }
-      } catch (const std::exception& err) {
-        std::string a = typeid(err).name();
-        std::string b = typeid(jsi::JSError).name();
-        if (a == b) {
-          const auto *jsError = static_cast<const jsi::JSError *>(&err);
-          ex = std::make_exception_ptr(JsErrorWrapper(jsError->getMessage(), jsError->getStack()));
-        } else {
-          ex = std::make_exception_ptr(err);
-        }
-      }
-
-      isFinished = true;
-      cond.notify_one();
-    });
-
-    // Wait untill the blocking code as finished
-    cond.wait(lock, [&]() { return isFinished; });
-
-    // Check for errors
-    if (ex != nullptr) {
-      std::rethrow_exception(ex);
-    } else {
-      return JsiWrapper::unwrap(runtime, retVal);
-    }
-  }
-
-  JSI_HOST_FUNCTION(callInWorkletContext) {
-    // Wrap the arguments
-    std::vector<std::shared_ptr<JsiWrapper>> argsWrapper;
-    argsWrapper.reserve(count);
-    for (size_t i = 0; i < count; i++) {
-      argsWrapper.push_back(JsiWrapper::wrap(runtime, arguments[i]));
-    }
-
-    // Create promise as return value when running on the worklet runtime
-    return react::createPromiseAsJSIValue(
-        runtime,
-        [this, argsWrapper, count](jsi::Runtime &runtime,
-                                   std::shared_ptr<react::Promise> promise) {
-          // Is this called from the worklet thread?
-          if (_context->isWorkletRuntime(runtime)) {
-            // The we can just call it directly
-            try {
-              auto result = callInWorkletRuntime(argsWrapper);
-              promise->resolve(result);
-            } catch (const jsi::JSError &err) {
-              promise->reject(err.getMessage());
-            } catch (const std::exception &err) {
-              promise->reject(err.what());
-            } catch (const std::runtime_error &err) {
-              promise->reject(err.what());
-            } catch (...) {
-              promise->reject(
-                  "An unknown error occurred when calling the worklet.");
-            }
-
-          } else {
-            // Run on the Worklet thread
-            _context->invokeOnWorkletThread([=]() {
-              // Dispatch and resolve / reject promise
-              auto workletRuntime = &_context->getWorkletRuntime();
-
-              // Prepare result
-              try {
-                auto retVal = callInWorkletRuntime(argsWrapper);
-
-                // Since we are returning this on another context, we need
-                // to wrap/unwrap the value
-                auto retValWrapper = JsiWrapper::wrap(*workletRuntime, retVal);
-
-                _context->invokeOnJsThread([=]() {
-                  // Return on Javascript thread/context
-                  promise->resolve(JsiWrapper::unwrap(*_context->getJsRuntime(),
-                                                      retValWrapper));
-                });
-
-              } catch (...) {
-                auto err = std::current_exception();
-                _context->invokeOnJsThread([promise, err]() {
-                  try {
-                    std::rethrow_exception(err);
-                  } catch (const std::exception& e) {
-                    // A little trick to find out if the exception is a js error,
-                    // comparing the typeid name and then doing a static_cast
-                    std::string a = typeid(e).name();
-                    std::string b = typeid(jsi::JSError).name();
-                    if (a == b) {
-                      const auto *jsError = static_cast<const jsi::JSError *>(&e);
-                      // Javascript error, pass message
-                      promise->reject(jsError->getMessage());
-                    } else {
-                      promise->reject(e.what());
-                    }
-                  }
-                });
-              }
-            });
-          }
-        });
-  }
-  
   JSI_HOST_FUNCTION(getCode) {
     return jsi::String::createFromUtf8(runtime, _code);
   }
 
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorklet, isWorklet),
-                       JSI_EXPORT_FUNC(JsiWorklet, callInJSContext),
-                       JSI_EXPORT_FUNC(JsiWorklet, callInWorkletContext),
                        JSI_EXPORT_FUNC(JsiWorklet, getCode))
-
-  JSI_PROPERTY_GET(context) {
-    return jsi::Object::createFromHostObject(runtime, _context);
-  }
-
-  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorklet, context))
 
   /**
    Returns true if the function is a worklet
@@ -207,112 +81,175 @@ public:
   const std::string &getLocation() { return _location; }
 
   /**
-   Returns the current runtime depending on wether we are running as a worklet
-   or not.
+   Returns the JsiWorklet object from the provided function. The function MUST
+   be a javascript decorated worklet function
    */
-  jsi::Runtime &getRuntime() {
-    if (isWorklet()) {
-      return _context->getWorkletRuntime();
-    } else {
-      return *_context->getJsRuntime();
+  static std::shared_ptr<JsiWorklet> getWorklet(jsi::Runtime &runtime,
+                                                const jsi::Value &value) {
+    if (!value.isObject()) {
+      throw std::runtime_error("Expected an object / function when calling the "
+                               "getWorklet function.");
     }
+
+    auto obj = value.asObject(runtime);
+    if (!obj.isFunction(runtime)) {
+      throw std::runtime_error(
+          "Expected a function when calling the getWorklet function.");
+    }
+    auto workletProp = obj.getProperty(runtime, PropHiddenWorkletName);
+    if (!workletProp.isObject()) {
+      // Create and associate worklet
+      /*auto context = JsiWorkletContext::getContextInRuntime(runtime);
+      auto worklet =
+          std::make_shared<JsiWorklet>(context->shared_from_this(), value);
+      obj.setProperty(runtime, PropHiddenWorkletName,
+                      jsi::Object::createFromHostObject(runtime, worklet));
+      return worklet;*/
+    }
+    // return the worklet
+    return workletProp.asObject(runtime).asHostObject<JsiWorklet>(runtime);
+  }
+
+  /**
+   Returns true if the provided function is decorated with worklet info
+   @runtime Runtime
+   @value Function to check
+   */
+  static bool isDecoratedAsWorklet(jsi::Runtime &runtime,
+                                   const jsi::Value &value) {
+    if (!value.isObject()) {
+      return false;
+    }
+
+    // get object
+    auto obj = value.asObject(runtime);
+    if (!obj.isFunction(runtime)) {
+      return false;
+    }
+
+    // We have a quick path here - we add the worklet as a hidden property on
+    // the function object!
+    auto workletProp = obj.getProperty(runtime, PropHiddenWorkletName);
+    if (workletProp.isObject()) {
+      return true;
+    }
+
+    // get function
+    jsi::Function jsFunction = obj.asFunction(runtime);
+
+    // Try to get the closure
+    jsi::Value closure = jsFunction.getProperty(runtime, PropClosureName);
+
+    // Return if this is not a worklet
+    if (closure.isUndefined() || closure.isNull()) {
+      return false;
+    }
+
+    // Try to get the asString function
+    jsi::Value asStringProp = jsFunction.getProperty(runtime, PropAsStringName);
+    if (asStringProp.isUndefined() || asStringProp.isNull() ||
+        !asStringProp.isString()) {
+      return false;
+    }
+
+    // Get location
+    jsi::Value locationProp = jsFunction.getProperty(runtime, PropLocationName);
+    if (locationProp.isUndefined() || locationProp.isNull() ||
+        !locationProp.isString()) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   Creates a jsi::Function in the provided runtime
+   */
+  jsi::Function createJsFunctionInRuntime(jsi::Runtime &runtime) {
+    auto evaluatedFunction = evaluteJavascriptInWorkletRuntime(runtime, _code);
+    if (!evaluatedFunction.isObject()) {
+      throw jsi::JSError(
+          runtime, std::string("Could not create worklet from function. ") +
+                       "Eval did not return an object:\n" + _code);
+    }
+
+    if (!evaluatedFunction.asObject(runtime).isFunction(runtime)) {
+      throw jsi::JSError(
+          runtime, std::string("Could not create worklet from function. ") +
+                       "Eval did not return a function:\n" + _code);
+    }
+
+    return evaluatedFunction.asObject(runtime).asFunction(runtime);
+  }
+
+  /**
+   Calls the
+   */
+  jsi::Value call(jsi::Runtime &runtime, const jsi::Value *arguments,
+                  size_t count) {
+    // Wrap the arguments
+    std::vector<std::shared_ptr<JsiWrapper>> argsWrapper;
+    argsWrapper.reserve(count);
+    for (size_t i = 0; i < count; i++) {
+      argsWrapper.push_back(JsiWrapper::wrap(runtime, arguments[i]));
+    }
+
+    return call(runtime, argsWrapper);
+  }
+
+  /**
+     Calls the worklet in the provided runtime
+     */
+  jsi::Value call(jsi::Runtime &runtime,
+                  const std::vector<std::shared_ptr<JsiWrapper>> &argsWrapper) {
+    // Unwrap closure
+    auto unwrappedClosure = JsiWrapper::unwrap(runtime, _closureWrapper);
+
+    // Create arguments
+    size_t size = argsWrapper.size();
+    std::vector<jsi::Value> args(size);
+
+    // Add the rest of the arguments
+    for (size_t i = 0; i < size; i++) {
+      args[i] = JsiWrapper::unwrap(runtime, argsWrapper.at(i));
+    }
+
+    // Create the worklet function
+    auto workletFunction = createJsFunctionInRuntime(runtime);
+
+    // Prepare return value
+    jsi::Value retVal;
+
+    // Prepare jsThis - we don't use it in our plugin, but REA uses it
+    // when decorating worklet functions. TODO: We need to solve this,
+    // should we do as REA or just use this like we do?
+    auto thisWrapper =
+        std::make_unique<JsThisWrapper>(runtime, unwrappedClosure);
+
+    // Call the unwrapped function
+    if (!unwrappedClosure.isObject()) {
+      retVal = workletFunction.call(
+          runtime, static_cast<const jsi::Value *>(args.data()),
+          argsWrapper.size());
+    } else {
+      retVal = workletFunction.callWithThis(
+          runtime, unwrappedClosure.asObject(runtime),
+          static_cast<const jsi::Value *>(args.data()), argsWrapper.size());
+    }
+
+    return retVal;
   }
 
 private:
   /**
-   Calls the worklet in the worklet runtime
-   */
-  jsi::Value callInWorkletRuntime(
-      const std::vector<std::shared_ptr<JsiWrapper>> &argsWrapper) {
-    auto runtime = &_context->getWorkletRuntime();
-
-    // Unwrap closure
-    auto unwrappedClosure = JsiWrapper::unwrap(*runtime, _closureWrapper);
-
-    // Create arguments
-    size_t size = argsWrapper.size();
-    std::vector<jsi::Value> args(size);
-
-    // Add the rest of the arguments
-    for (size_t i = 0; i < size; i++) {
-      args[i] = JsiWrapper::unwrap(*runtime, argsWrapper.at(i));
-    }
-
-    // Prepare return value
-    jsi::Value retVal;
-
-    // Prepare this
-    auto oldThis = runtime->global().getProperty(*runtime, "jsThis");
-    auto newThis = jsi::Object(*runtime);
-    newThis.setProperty(*runtime, "_closure", unwrappedClosure);
-    runtime->global().setProperty(*runtime, "jsThis", newThis);
-
-    // TODO: Wrap the THIS set/reset in a auto release object!!
-
-    if (!unwrappedClosure.isObject()) {
-      retVal = _workletFunction->call(
-          *runtime, static_cast<const jsi::Value *>(args.data()),
-          argsWrapper.size());
-    } else {
-      retVal = _workletFunction->callWithThis(
-          *runtime, unwrappedClosure.asObject(*runtime),
-          static_cast<const jsi::Value *>(args.data()), argsWrapper.size());
-    }
-
-    runtime->global().setProperty(*runtime, "jsThis", oldThis);
-
-    return retVal;
-  }
-
-  /**
-   Calls the worklet in the Javascript runtime
-   */
-  jsi::Value
-  callInJsRuntime(const std::vector<std::shared_ptr<JsiWrapper>> &argsWrapper) {
-    auto runtime = _context->getJsRuntime();
-
-    // Unwrap closure
-    auto unwrappedClosure = JsiWrapper::unwrap(*runtime, _closureWrapper);
-
-    // Create arguments
-    size_t size = argsWrapper.size();
-    std::vector<jsi::Value> args(size);
-
-    // Add the rest of the arguments
-    for (size_t i = 0; i < size; i++) {
-      args[i] = JsiWrapper::unwrap(*runtime, argsWrapper.at(i));
-    }
-
-    // Prepare return value
-    jsi::Value retVal;
-
-    if (!unwrappedClosure.isObject()) {
-      // Call without this object
-      retVal = _jsFunction->call(*runtime,
-                                 static_cast<const jsi::Value *>(args.data()),
-                                 argsWrapper.size());
-    } else {
-      // Call with closure as this object
-      retVal = _jsFunction->callWithThis(
-          *runtime, unwrappedClosure.asObject(*runtime),
-          static_cast<const jsi::Value *>(args.data()), argsWrapper.size());
-    }
-
-    return retVal;
-  }
-
-  /**
    Installs the worklet function into the worklet runtime
    */
-  void createWorklet(const jsi::Value &arg) {
-
-    jsi::Runtime &runtime = *_context->getJsRuntime();
+  void createWorklet(jsi::Runtime &runtime, const jsi::Value &arg) {
 
     // Make sure arg is a function
     if (!arg.isObject() || !arg.asObject(runtime).isFunction(runtime)) {
-      _context->raiseError(
-          "Worklets must be initialized from a valid function.");
-      return;
+      throw jsi::JSError(runtime,
+                         "Worklets must be initialized from a valid function.");
     }
 
     // This is a worklet
@@ -323,7 +260,7 @@ private:
         arg.asObject(runtime).asFunction(runtime));
 
     // Try to get the closure
-    jsi::Value closure = _jsFunction->getProperty(runtime, "_closure");
+    jsi::Value closure = _jsFunction->getProperty(runtime, PropClosureName);
 
     // Return if this is not a worklet
     if (closure.isUndefined() || closure.isNull()) {
@@ -331,16 +268,17 @@ private:
     }
 
     // Try to get the asString function
-    jsi::Value asStringProp = _jsFunction->getProperty(runtime, "asString");
+    jsi::Value asStringProp =
+        _jsFunction->getProperty(runtime, PropAsStringName);
     if (asStringProp.isUndefined() || asStringProp.isNull() ||
         !asStringProp.isString()) {
       return;
     }
-    
+
     // Get location
-    jsi::Value locationProp = _jsFunction->getProperty(runtime, "__location");
-    if (locationProp.isUndefined() ||
-        locationProp.isNull() ||
+    jsi::Value locationProp =
+        _jsFunction->getProperty(runtime, PropLocationName);
+    if (locationProp.isUndefined() || locationProp.isNull() ||
         !locationProp.isString()) {
       return;
     }
@@ -356,46 +294,20 @@ private:
 
     // Let us try to install the function in the worklet context
     _code = asStringProp.asString(runtime).utf8(runtime);
-
-    jsi::Runtime *workletRuntime = &_context->getWorkletRuntime();
-
-    auto evaluatedFunction = evaluteJavascriptInWorkletRuntime(_code);
-    if (!evaluatedFunction.isObject()) {
-      _context->raiseError(
-          std::string("Could not create worklet from function. ") +
-          "Eval did not return an object:\n" + _code);
-      return;
-    }
-    if (!evaluatedFunction.asObject(*workletRuntime)
-             .isFunction(*workletRuntime)) {
-      _context->raiseError(
-          std::string("Could not create worklet from function. ") +
-          "Eval did not return a function:\n" + _code);
-      return;
-    }
-    // TODO: This object fails when doing hot reloading, since
-    // it tries to destroy the worklet object after the worklet
-    // runtime has been removed.
-    _workletFunction = std::make_shared<jsi::Function>(
-        evaluatedFunction.asObject(*workletRuntime)
-            .asFunction(*workletRuntime));
   }
 
-  jsi::Value evaluteJavascriptInWorkletRuntime(const std::string &code) {
-    auto workletRuntime = &_context->getWorkletRuntime();
-    auto codeBuffer = std::make_shared<const jsi::StringBuffer>("(" + code + "\n)");
-    return workletRuntime->evaluateJavaScript(codeBuffer, _location);    
+  jsi::Value evaluteJavascriptInWorkletRuntime(jsi::Runtime &runtime,
+                                               const std::string &code) {
+    auto codeBuffer =
+        std::make_shared<const jsi::StringBuffer>("(" + code + "\n)");
+    return runtime.evaluateJavaScript(codeBuffer, _location);
   }
 
   bool _isWorklet = false;
   std::shared_ptr<jsi::Function> _jsFunction;
-  std::shared_ptr<jsi::Function> _workletFunction;
-  std::shared_ptr<JsiWorkletContext> _context;
   std::shared_ptr<JsiWrapper> _closureWrapper;
   std::string _location = "";
-#if DEBUG
   std::string _code = "";
-#endif
   double _workletHash = 0;
 };
 } // namespace RNWorklet
