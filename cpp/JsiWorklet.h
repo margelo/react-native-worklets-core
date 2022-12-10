@@ -18,6 +18,9 @@ static const char *PropNameJsThis = "jsThis";
 namespace jsi = facebook::jsi;
 namespace react = facebook::react;
 
+/**
+ Class for wrapping jsThis when executing worklets
+ */
 class JsThisWrapper {
 public:
   JsThisWrapper(jsi::Runtime &runtime, const jsi::Value &thisValue) {
@@ -35,7 +38,9 @@ private:
   jsi::Runtime *_runtime;
 };
 
-/// Class for wrapping jsi::JSError
+/**
+ Class for wrapping jsi::JSError
+ */
 class JsErrorWrapper : public std::exception {
 public:
   JsErrorWrapper(std::string message, std::string stack)
@@ -79,36 +84,6 @@ public:
    Returns the source location for the worklet
    */
   const std::string &getLocation() { return _location; }
-
-  /**
-   Returns the JsiWorklet object from the provided function. The function MUST
-   be a javascript decorated worklet function
-   */
-  static std::shared_ptr<JsiWorklet> getWorklet(jsi::Runtime &runtime,
-                                                const jsi::Value &value) {
-    if (!value.isObject()) {
-      throw std::runtime_error("Expected an object / function when calling the "
-                               "getWorklet function.");
-    }
-
-    auto obj = value.asObject(runtime);
-    if (!obj.isFunction(runtime)) {
-      throw std::runtime_error(
-          "Expected a function when calling the getWorklet function.");
-    }
-    auto workletProp = obj.getProperty(runtime, PropHiddenWorkletName);
-    if (!workletProp.isObject()) {
-      // Create and associate worklet
-      /*auto context = JsiWorkletContext::getContextInRuntime(runtime);
-      auto worklet =
-          std::make_shared<JsiWorklet>(context->shared_from_this(), value);
-      obj.setProperty(runtime, PropHiddenWorkletName,
-                      jsi::Object::createFromHostObject(runtime, worklet));
-      return worklet;*/
-    }
-    // return the worklet
-    return workletProp.asObject(runtime).asHostObject<JsiWorklet>(runtime);
-  }
 
   /**
    Returns true if the provided function is decorated with worklet info
@@ -163,23 +138,28 @@ public:
   }
 
   /**
-   Creates a jsi::Function in the provided runtime
+   Creates a jsi::Function in the provided runtime for the worklet. This function can then be used
+   to execute the worklet
    */
-  jsi::Function createJsFunctionInRuntime(jsi::Runtime &runtime) {
-    auto evaluatedFunction = evaluteJavascriptInWorkletRuntime(runtime, _code);
-    if (!evaluatedFunction.isObject()) {
-      throw jsi::JSError(
-          runtime, std::string("Could not create worklet from function. ") +
-                       "Eval did not return an object:\n" + _code);
+  std::shared_ptr<jsi::Function> getWorkletJsFunction(jsi::Runtime &runtime) {
+    if (_workletJsFunction == nullptr) {
+      auto evaluatedFunction = evaluteJavascriptInWorkletRuntime(runtime, _code);
+      if (!evaluatedFunction.isObject()) {
+        throw jsi::JSError(
+                           runtime, std::string("Could not create worklet from function. ") +
+                           "Eval did not return an object:\n" + _code);
+      }
+      
+      if (!evaluatedFunction.asObject(runtime).isFunction(runtime)) {
+        throw jsi::JSError(
+                           runtime, std::string("Could not create worklet from function. ") +
+                           "Eval did not return a function:\n" + _code);
+      }
+      
+      _workletJsFunction = std::make_shared<jsi::Function>(evaluatedFunction.asObject(runtime).asFunction(runtime));
     }
-
-    if (!evaluatedFunction.asObject(runtime).isFunction(runtime)) {
-      throw jsi::JSError(
-          runtime, std::string("Could not create worklet from function. ") +
-                       "Eval did not return a function:\n" + _code);
-    }
-
-    return evaluatedFunction.asObject(runtime).asFunction(runtime);
+    
+    return _workletJsFunction;
   }
 
   /**
@@ -214,8 +194,9 @@ public:
       args[i] = JsiWrapper::unwrap(runtime, argsWrapper.at(i));
     }
 
-    // Create the worklet function
-    auto workletFunction = createJsFunctionInRuntime(runtime);
+    // Get the worklet function - the js function wrapping a call to
+    // the js code.
+    auto workletFunction = getWorkletJsFunction(runtime);
 
     // Prepare return value
     jsi::Value retVal;
@@ -228,11 +209,11 @@ public:
 
     // Call the unwrapped function
     if (!unwrappedClosure.isObject()) {
-      retVal = workletFunction.call(
+      retVal = workletFunction->call(
           runtime, static_cast<const jsi::Value *>(args.data()),
           argsWrapper.size());
     } else {
-      retVal = workletFunction.callWithThis(
+      retVal = workletFunction->callWithThis(
           runtime, unwrappedClosure.asObject(runtime),
           static_cast<const jsi::Value *>(args.data()), argsWrapper.size());
     }
@@ -305,6 +286,7 @@ private:
 
   bool _isWorklet = false;
   std::shared_ptr<jsi::Function> _jsFunction;
+  std::shared_ptr<jsi::Function> _workletJsFunction;
   std::shared_ptr<JsiWrapper> _closureWrapper;
   std::string _location = "";
   std::string _code = "";

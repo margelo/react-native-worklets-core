@@ -216,7 +216,7 @@ private:
     }
     throw jsi::JSError(
         runtime, "Regular javascript functions cannot be shared. Try "
-                 "decorating the worklet with the 'worklet' keyword to allow "
+                 "decorating the function with the 'worklet' keyword to allow "
                  "the javascript function to be used as a worklet.");
   }
 
