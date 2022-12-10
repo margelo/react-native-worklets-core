@@ -118,14 +118,11 @@ export const sharedvalue_tests = {
 
   set_value_from_worklet: () => {
     const sharedValue = Worklets.createSharedValue('hello world');
-    const worklet = Worklets.createWorklet(
-      function () {
-        this.sharedValue.value = 'hello worklet';
-      },
-      {sharedValue},
-    );
+    const worklet = Worklets.createRunInContextFn(function () {
+      sharedValue.value = 'hello worklet';
+    });
     sharedValue.value = 'hello worklet';
-    return Expect(worklet.callInWorkletContext, () =>
+    return Expect(worklet(), () =>
       sharedValue.value === 'hello worklet'
         ? undefined
         : `Expected ${"'hello worklet'"} but got ${sharedValue.value}`,
@@ -150,14 +147,11 @@ export const sharedvalue_tests = {
 
   add_listener_from_worklet_should_fail: () => {
     const sharedValue = Worklets.createSharedValue(100);
-    const worklet = Worklets.createWorklet(
-      function () {
-        this.sharedValue.addListener(() => {});
-      },
-      {sharedValue},
-    );
+    const worklet = Worklets.createRunInContextFn(function () {
+      sharedValue.addListener(() => {});
+    });
     return ExpectException(
-      worklet.callInWorkletContext,
+      worklet,
       'addListener can only be called from the main Javascript context and not from a worklet.',
     );
   },

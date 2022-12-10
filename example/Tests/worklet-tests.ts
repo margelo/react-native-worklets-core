@@ -1,7 +1,16 @@
 import {Worklets} from 'react-native-worklets';
-import {ExpectValue, getWorkletInfo} from './utils';
+import {ExpectException, ExpectValue, getWorkletInfo} from './utils';
 
 export const worklet_tests = {
+  check_is_not_worklet: () => {
+    return ExpectException(
+      () =>
+        Worklets.createRunInContextFn((a: number) => {
+          return a * 200;
+        }),
+      'Exception in HostFunction: createRunInContextFn expects a worklet decorated function as its first parameter.',
+    );
+  },
   check_worklet_closure: () => {
     const x = 100;
     const w = (a: number) => {
@@ -29,3 +38,11 @@ export const worklet_tests = {
     return ExpectValue(code, 'function _f(a){return a;}');
   },
 };
+
+// const s = (b: number) => {
+//   return Math.sqrt(b);
+// };
+// const b = Worklets.createRunInContextFn((a: number) => {
+//   'worklet';
+//   return s(a);
+// });

@@ -2,7 +2,7 @@ import { NativeModules } from "react-native";
 
 console.log("Loading Worklets...");
 
-if (global.Worklets == undefined || global.Worklets == null) {
+if (globalThis.Worklets == undefined || globalThis.Worklets == null) {
   // Initialize Worklets API
   const WorkletsModule = NativeModules.ReactNativeWorklets;
 

@@ -12,10 +12,10 @@ export type TestState = 'notrun' | 'running' | 'success' | 'failure';
 type Props = {
   state: TestState;
   name: string;
-  onRerun: () => void;
+  onRun: () => void;
 };
 
-export const TestWrapper: React.FC<Props> = ({state, name, onRerun}) => {
+export const TestWrapper: React.FC<Props> = ({state, name, onRun}) => {
   return (
     <View style={styles.container}>
       <View style={styles.symbolContainer}>
@@ -30,16 +30,11 @@ export const TestWrapper: React.FC<Props> = ({state, name, onRerun}) => {
         )}
       </View>
       <Text style={styles.name}>{name}</Text>
-      {state === 'failure' ? (
-        <TouchableOpacity style={styles.button} onPress={onRerun}>
-          <Text style={styles.buttonText}>rerun</Text>
-        </TouchableOpacity>
-      ) : null}
-      {state !== 'failure' ? (
-        <TouchableOpacity style={styles.button} onPress={onRerun}>
-          <Text style={styles.buttonText}>run</Text>
-        </TouchableOpacity>
-      ) : null}
+      <TouchableOpacity style={styles.button} onPress={onRun}>
+        <Text style={styles.buttonText}>
+          {state === 'failure' ? 'rerun' : 'run'}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
