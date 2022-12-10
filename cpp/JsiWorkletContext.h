@@ -3,8 +3,8 @@
 
 #include "DispatchQueue.h"
 #include "JsRuntimeFactory.h"
-#include "JsiHostObject.h"
 #include "JsiBaseDecorator.h"
+#include "JsiHostObject.h"
 
 #include <exception>
 #include <functional>
@@ -14,45 +14,42 @@
 
 namespace RNWorklet {
 
+const char *WorkletRuntimeFlag = "__rn_worklets_runtime_flag";
+
 namespace jsi = facebook::jsi;
 
 class JsiWorkletContext : public JsiHostObject {
 public:
-  const char *WorkletRuntimeFlag = "__rn_worklets_runtime_flag";
-
   /**
-   * Creates a new worklet context that can be used to run jsi::Functions as
-   * worklets in a separate thread / js runtime.
+   * Creates a new worklet context that can be used to run javascript functions
+   * as worklets in a separate threads / js runtimes.
    * @param name Name of the context
    * @param jsRuntime Main javascript runtime.
    * @param jsCallInvoker Callback for running a function on the JS thread.
    * @param workletCallInvoker Callback for running a function on the worklet
    * thread
-   * @param raiseError Callback for raising errors
    */
   JsiWorkletContext(
       const std::string &name, jsi::Runtime *jsRuntime,
       std::function<void(std::function<void()> &&)> jsCallInvoker,
-      std::function<void(std::function<void()> &&)> workletCallInvoker,
-      std::function<void(const std::exception &)> raiseError)
-      : _name(name), _jsRuntime(jsRuntime), _raise(raiseError),
-        _jsCallInvoker(jsCallInvoker), _workletCallInvoker(workletCallInvoker) {
-  }
+      std::function<void(std::function<void()> &&)> workletCallInvoker)
+      : _name(name), _jsRuntime(jsRuntime), _jsCallInvoker(jsCallInvoker),
+        _workletCallInvoker(workletCallInvoker) {}
 
   /**
    * Ctor for the JsiWorkletContext
    * @param name Name of the context
    * @param jsRuntime Runtime for the main javascript runtime.
    * @param jsCallInvoker Callback for running a function on the JS thread.
-   * @param raiseError Callback for raising errors
    */
   JsiWorkletContext(const std::string &name, jsi::Runtime *jsRuntime,
-                    std::function<void(std::function<void()> &&)> jsCallInvoker,
-                    std::function<void(const std::exception &)> raiseError)
-      : _name(name), _jsRuntime(jsRuntime), _raise(raiseError),
-        _jsCallInvoker(jsCallInvoker) {
+                    std::function<void(std::function<void()> &&)> jsCallInvoker)
+      : _name(name), _jsRuntime(jsRuntime), _jsCallInvoker(jsCallInvoker) {
+    // Create queue
     auto dispatchQueue =
         std::make_shared<DispatchQueue>(name + "_worklet_dispatch_queue", 1);
+
+    // Create invoker
     _workletCallInvoker = [dispatchQueue](std::function<void()> &&f) {
       dispatchQueue->dispatch(std::move(f));
     };
@@ -68,8 +65,7 @@ public:
   JsiWorkletContext(const std::string &name,
                     std::shared_ptr<JsiWorkletContext> parentContext)
       : JsiWorkletContext(name, parentContext->_jsRuntime,
-                          parentContext->_jsCallInvoker,
-                          parentContext->_raise) {}
+                          parentContext->_jsCallInvoker) {}
 
   /**
    * Destructor
@@ -101,29 +97,8 @@ public:
       _workletRuntime->global().setProperty(*_workletRuntime,
                                             WorkletRuntimeFlag, true);
     }
+
     return *_workletRuntime;
-  }
-
-  /**
-   * Raises an exception on the platform. This function does not necessarily
-   * throw an exception and stop execution, so it is important to stop execution
-   * by returning after calling the function
-   * @param err Error to raise
-   */
-  jsi::Value raiseError(const std::exception &err) {
-    _raise(err);
-    return jsi::Value::undefined();
-  };
-
-  /**
-   * Raises an exception on the platform. This function does not necessarily
-   * throw an exception and stop execution, so it is important to stop execution
-   * by returning after calling the function
-   * @param message Message to show
-   */
-  jsi::Value raiseError(const std::string &message) {
-    raiseError(std::runtime_error(message));
-    return jsi::Value::undefined();
   }
 
   /**
@@ -161,16 +136,16 @@ public:
   /**
    Decorates the worklet runtime.
    */
-  void decorate(JsiBaseDecorator* decorator) {
+  void decorate(JsiBaseDecorator *decorator) {
     decorator->decorateRuntime(*_workletRuntime);
   }
 
 private:
   jsi::Runtime *_jsRuntime;
   std::unique_ptr<jsi::Runtime> _workletRuntime;
-  std::function<void(const std::exception &)> _raise;
   std::string _name;
   std::function<void(std::function<void()> &&)> _jsCallInvoker;
   std::function<void(std::function<void()> &&)> _workletCallInvoker;
 };
+
 } // namespace RNWorklet

@@ -3,6 +3,7 @@
 #include <jsi/jsi.h>
 
 #include "JsiPromiseWrapper.h"
+#include "JsiWorklet.h"
 #include "JsiWrapper.h"
 
 namespace RNWorklet {
@@ -189,23 +190,6 @@ private:
     }
   }
 
-  /* void visitPrototype(jsi::Runtime &runtime, jsi::Object &obj) {
-    auto prototype = obj.getProperty(runtime, "__proto__");
-    if(prototype.isObject()) {
-      // We have a prototype
-      auto prototypeObj = prototype.asObject(runtime);
-      auto propNames = prototypeObj.getPropertyNames(runtime);
-      for (size_t i = 0; i < propNames.size(runtime); i++) {
-        auto nameString =
-            propNames.getValueAtIndex(runtime,
-  i).asString(runtime).utf8(runtime); if(nameString != "") {
-
-        }
-      }
-      visitPrototype(runtime, prototypeObj);
-    }
-  }*/
-
   void setHostObjectValue(jsi::Runtime &runtime, jsi::Object &obj) {
     setType(JsiWrapperType::HostObject);
     _hostObject = obj.asHostObject(runtime);
@@ -218,8 +202,22 @@ private:
   }
 
   void setFunctionValue(jsi::Runtime &runtime, const jsi::Value &value) {
-    throw jsi::JSError(runtime,
-                       "Regular javascript functions cannot be shared.");
+    // Check if the function is decorated as a worklet
+    if (JsiWorklet::isDecoratedAsWorklet(runtime, value)) {
+      setType(JsiWrapperType::HostFunction);
+      // Create worklet
+      auto worklet = std::make_shared<JsiWorklet>(runtime, value);
+      // Create wrapping host function
+      _hostFunction =
+          std::make_shared<jsi::HostFunctionType>(JSI_HOST_FUNCTION_LAMBDA {
+            return worklet->call(runtime, arguments, count);
+          });
+      return;
+    }
+    throw jsi::JSError(
+        runtime, "Regular javascript functions cannot be shared. Try "
+                 "decorating the function with the 'worklet' keyword to allow "
+                 "the javascript function to be used as a worklet.");
   }
 
   std::map<std::string, std::shared_ptr<JsiWrapper>> _properties;

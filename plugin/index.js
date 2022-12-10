@@ -95,7 +95,6 @@ function processWorkletFunction(t, fun, state) {
         }
         currentScope = currentScope.parent;
       }
-      console.log(Object.keys(global));
       // Check if it exists on global object
       if (!global.hasOwnProperty(name)) {
         closure.set(name, path.node);

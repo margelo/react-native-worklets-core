@@ -16,15 +16,9 @@ void JniReactNativeWorkletsModule::registerNatives() {
 }
 
 void JniReactNativeWorkletsModule::installApi() {
-    // Create error handler
-    auto errorHandler = std::make_shared<RNWorklet::JsiErrorHandler>([](const std::exception& err) {
-        // Todo: implement and send from jni layer to java?
-        throw err;
-    });
-
     // Create/install worklet API
     _workletContext = std::make_shared<RNWorklet::JsiWorkletContext>("default", _jsRuntime,
-        _jsCallInvoker, errorHandler);
+        _jsCallInvoker);
 
     // Create / install the worklet API
     RNWorklet::JsiWorkletApi::installApi(_workletContext);
