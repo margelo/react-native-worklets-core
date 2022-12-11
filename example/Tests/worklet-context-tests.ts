@@ -170,6 +170,22 @@ export const worklet_context_tests = {
     return ExpectValue(workletA(), 1000);
   },
 
+  call_async_to_and_from_worklet_multiple_times_with_return_value: () => {
+    const workletB = (): number => {
+      'worklet';
+      return 1000;
+    };
+    const workletA = Worklets.createRunInContextFn(function () {
+      'worklet';
+      let r = 0;
+      for (let i = 0; i < 100; i++) {
+        r += workletB();
+      }
+      return r;
+    });
+    return ExpectValue(workletA(), 100000);
+  },
+
   call_async_to_and_from_worklet_with_error: () => {
     const workletB = () => {
       'worklet';

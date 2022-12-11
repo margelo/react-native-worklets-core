@@ -1,8 +1,9 @@
 import { NativeModules } from "react-native";
+import { addDecorators } from "./decorators";
 
-console.log("Loading Worklets...");
+console.log("Loading react-native-worklets...");
 
-if (global.Worklets == undefined || global.Worklets == null) {
+if (globalThis.Worklets == undefined || globalThis.Worklets == null) {
   // Initialize Worklets API
   const WorkletsModule = NativeModules.ReactNativeWorklets;
 
@@ -12,6 +13,7 @@ if (global.Worklets == undefined || global.Worklets == null) {
         "installed native dependencies and rebuilt your app."
     );
   } else {
+    // Install the module
     const result = WorkletsModule.install();
     if (result !== true) {
       console.error(
@@ -19,6 +21,9 @@ if (global.Worklets == undefined || global.Worklets == null) {
       );
     } else {
       console.log("Worklets loaded successfully");
+      addDecorators();
     }
   }
+} else {
+  addDecorators();
 }

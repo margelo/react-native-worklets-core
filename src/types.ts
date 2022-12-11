@@ -86,6 +86,13 @@ export interface IWorkletNativeApi {
   createRunInJsFn: <C extends ContextType, T, A extends Array<unknown>>(
     fn: (this: C, ...args: A) => T
   ) => (...args: A) => T;
+  /**
+   * Adds an object to the worklet context. The object will be available in all worklets
+   * on the global object by referencing to the propertyName
+   * @param propertyName
+   * @param propertyObject
+   */
+  addDecorator: <T>(propertyName: string, propertyObject: T) => void;
 }
 declare global {
   var Worklets: IWorkletNativeApi;

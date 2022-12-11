@@ -64,11 +64,11 @@ export const ExpectException = <T>(
       if (resolvedReason === expectedReason) {
         resolve();
       } else {
-        reject(
-          new Error(
-            `Expected error message '${expectedReason}', got '${resolvedReason}'.`,
-          ),
-        );
+        const errorMessage = `Expected error message '${expectedReason.substr(
+          0,
+          80,
+        )}', got '${resolvedReason.substr(0, 80)}'.`;
+        reject(new Error(errorMessage));
       }
     }
   });

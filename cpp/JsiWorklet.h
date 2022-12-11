@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ReactCommon/TurboModuleUtils.h>
 #include <jsi/jsi.h>
 
 #include "JsiHostObject.h"
@@ -16,7 +15,6 @@ static const char *PropLocationName = "__location";
 static const char *PropNameJsThis = "jsThis";
 
 namespace jsi = facebook::jsi;
-namespace react = facebook::react;
 
 /**
  Class for wrapping jsThis when executing worklets
@@ -138,27 +136,29 @@ public:
   }
 
   /**
-   Creates a jsi::Function in the provided runtime for the worklet. This function can then be used
-   to execute the worklet
+   Creates a jsi::Function in the provided runtime for the worklet. This
+   function can then be used to execute the worklet
    */
   std::shared_ptr<jsi::Function> getWorkletJsFunction(jsi::Runtime &runtime) {
     if (_workletJsFunction == nullptr) {
-      auto evaluatedFunction = evaluteJavascriptInWorkletRuntime(runtime, _code);
+      auto evaluatedFunction =
+          evaluteJavascriptInWorkletRuntime(runtime, _code);
       if (!evaluatedFunction.isObject()) {
         throw jsi::JSError(
-                           runtime, std::string("Could not create worklet from function. ") +
-                           "Eval did not return an object:\n" + _code);
+            runtime, std::string("Could not create worklet from function. ") +
+                         "Eval did not return an object:\n" + _code);
       }
-      
+
       if (!evaluatedFunction.asObject(runtime).isFunction(runtime)) {
         throw jsi::JSError(
-                           runtime, std::string("Could not create worklet from function. ") +
-                           "Eval did not return a function:\n" + _code);
+            runtime, std::string("Could not create worklet from function. ") +
+                         "Eval did not return a function:\n" + _code);
       }
-      
-      _workletJsFunction = std::make_shared<jsi::Function>(evaluatedFunction.asObject(runtime).asFunction(runtime));
+
+      _workletJsFunction = std::make_shared<jsi::Function>(
+          evaluatedFunction.asObject(runtime).asFunction(runtime));
     }
-    
+
     return _workletJsFunction;
   }
 
