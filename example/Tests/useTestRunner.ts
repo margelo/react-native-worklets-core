@@ -22,7 +22,7 @@ export const useTestRunner = () => {
   const runTests = (testsToRun: TestInfo[]) => {
     // Setting state will trigger a rerender which in turn will start the first test
     setActiveTests({
-      tests: testsToRun,
+      tests: testsToRun.map(t => ({...t, state: 'notrun'})),
       index: 0,
       output: ['Starting test runner...'],
     });
@@ -128,16 +128,7 @@ export const useTestRunner = () => {
   return useMemo(
     () => ({
       runTests,
-      runSingleTest: (test: TestInfo) => {
-        setActiveTests(p => ({
-          ...(p ?? {
-            tests: [test],
-            index: 0,
-            output: [],
-          }),
-          tests: updateTestState(test, 'notrun', p?.tests ?? [test]),
-        }));
-      },
+      runSingleTest: (test: TestInfo) => runTests([test]),
       runAllTests,
       isRunning: activeTests !== undefined && activeTests.index !== -1,
       tests: tests.map(
