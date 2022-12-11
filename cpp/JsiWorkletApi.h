@@ -6,6 +6,8 @@
 
 #include "JsiBaseDecorator.h"
 #include "JsiHostObject.h"
+#include "JsiJsDecorator.h"
+#include "JsiPromise.h"
 #include "JsiSharedValue.h"
 #include "JsiWorklet.h"
 #include "JsiWorkletContext.h"
@@ -45,6 +47,33 @@ public:
         *context->getJsRuntime(), WorkletsApiName,
         jsi::Object::createFromHostObject(*context->getJsRuntime(),
                                           std::move(workletApi)));
+  }
+
+  JSI_HOST_FUNCTION(addDecorator) {
+    if (_context->isWorkletRuntime(runtime)) {
+      throw jsi::JSError(runtime, "addDecorator should only be called "
+                                  "from the javascript runtime.");
+    }
+
+    if (count != 2) {
+      throw jsi::JSError(runtime, "addDecorator expects a property name and a "
+                                  "Javascript object as its arguments.");
+    }
+    if (!arguments[0].isString()) {
+      throw jsi::JSError(runtime, "addDecorator expects a property name and a "
+                                  "Javascript object as its arguments.");
+    }
+
+    if (!arguments[1].isObject()) {
+      throw jsi::JSError(runtime, "addDecorator expects a property name and a "
+                                  "Javascript object as its arguments.");
+    }
+
+    // Create / add the decorator
+    addDecorator(std::make_shared<JsiJsDecorator>(
+        runtime, arguments[0].asString(runtime).utf8(runtime), arguments[1]));
+
+    return jsi::Value::undefined();
   }
 
   JSI_HOST_FUNCTION(createWorklet) {
@@ -124,13 +153,15 @@ public:
           "createRunInJsFn expects a function as its first parameter.");
     }
 
-    if (!JsiWorklet::isDecoratedAsWorklet(runtime, arguments[0])) {
-      throw jsi::JSError(runtime, "createRunInJsFn expects a worklet "
-                                  "decorated function as its first parameter.");
+    if (!arguments[0].asObject(runtime).isFunction(runtime)) {
+      throw jsi::JSError(
+          runtime,
+          "createRunInJsFn expects a function as its first parameter.");
     }
 
-    // Now let's get the worklet
-    auto worklet = std::make_shared<JsiWorklet>(runtime, arguments[0]);
+    // Now let's get the function
+    auto func = std::make_shared<jsi::Function>(
+        arguments[0].asObject(runtime).asFunction(runtime));
 
     // Get the active context
     auto activeContext =
@@ -145,7 +176,7 @@ public:
     }
 
     return jsi::Function::createFromHostFunction(
-        runtime, jsi::PropNameID::forAscii(runtime, "runInContextFn"), 0,
+        runtime, jsi::PropNameID::forAscii(runtime, "runInJsFn"), 0,
         JSI_HOST_FUNCTION_LAMBDA {
           // Ensure that the function is called in the worklet context
           if (&runtime == activeContext->getJsRuntime()) {
@@ -170,11 +201,24 @@ public:
           bool isFinished = false;
           std::unique_lock<std::mutex> lock(mu);
 
+          // Now lets go back and into the safety of the good ol' javascript
+          // thread.
           activeContext->invokeOnJsThread([&]() {
             std::lock_guard<std::mutex> lock(mu);
 
+            jsi::Runtime &runtime = *activeContext->getJsRuntime();
+
             try {
-              auto result = worklet->call(runtime, argsWrapper);
+              size_t size = argsWrapper.size();
+              std::vector<jsi::Value> args(size);
+
+              // Add the rest of the arguments
+              for (size_t i = 0; i < size; i++) {
+                args[i] = JsiWrapper::unwrap(runtime, argsWrapper.at(i));
+              }
+
+              auto result = func->call(
+                  runtime, static_cast<const jsi::Value *>(args.data()), size);
               retVal = JsiWrapper::wrap(runtime, result);
             } catch (const jsi::JSError &err) {
               // When rethrowing we need to make sure that any jsi errors are
@@ -270,10 +314,10 @@ public:
           }
 
           // Create promise as return value when running on the worklet runtime
-          return react::createPromiseAsJSIValue(
-              runtime, [this, argsWrapper, activeContext, worklet,
-                        count](jsi::Runtime &runtime,
-                               std::shared_ptr<react::Promise> promise) {
+          return JsiPromise::createPromiseAsJSIValue(
+              runtime,
+              [this, argsWrapper, activeContext, worklet, count](
+                  jsi::Runtime &runtime, std::shared_ptr<JsiPromise> promise) {
                 // Run on the Worklet thread
                 activeContext->invokeOnWorkletThread([=]() {
                   // Dispatch and resolve / reject promise
@@ -309,9 +353,10 @@ public:
                           const auto *jsError =
                               static_cast<const jsi::JSError *>(&e);
                           // Javascript error, pass message
-                          promise->reject(jsError->getMessage());
+                          promise->reject(jsError->getMessage(),
+                                          jsError->getStack());
                         } else {
-                          promise->reject(e.what());
+                          promise->reject(e.what(), "(unknown stack frame)");
                         }
                       }
                     });
@@ -325,7 +370,8 @@ public:
                        JSI_EXPORT_FUNC(JsiWorkletApi, createSharedValue),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createContext),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createRunInContextFn),
-                       JSI_EXPORT_FUNC(JsiWorkletApi, createRunInJsFn))
+                       JSI_EXPORT_FUNC(JsiWorkletApi, createRunInJsFn),
+                       JSI_EXPORT_FUNC(JsiWorkletApi, addDecorator))
 
   /**
    Creates a new worklet context

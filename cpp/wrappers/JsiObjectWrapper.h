@@ -69,12 +69,7 @@ public:
     if (object.isHostObject(runtime)) {
       setHostObjectValue(runtime, object);
     } else if (object.isFunction(runtime)) {
-      auto func = object.asFunction(runtime);
-      if (func.isHostFunction(runtime)) {
-        setHostFunctionValue(runtime, object);
-      } else {
-        setFunctionValue(runtime, value);
-      }
+      setFunctionValue(runtime, value);
     } else if (object.isArrayBuffer(runtime)) {
       setArrayBufferValue(runtime, object);
     } else {
@@ -195,12 +190,6 @@ private:
     _hostObject = obj.asHostObject(runtime);
   }
 
-  void setHostFunctionValue(jsi::Runtime &runtime, jsi::Object &obj) {
-    setType(JsiWrapperType::HostFunction);
-    _hostFunction = std::make_shared<jsi::HostFunctionType>(
-        obj.asFunction(runtime).getHostFunction(runtime));
-  }
-
   void setFunctionValue(jsi::Runtime &runtime, const jsi::Value &value) {
     // Check if the function is decorated as a worklet
     if (JsiWorklet::isDecoratedAsWorklet(runtime, value)) {
@@ -214,10 +203,19 @@ private:
           });
       return;
     }
-    throw jsi::JSError(
-        runtime, "Regular javascript functions cannot be shared. Try "
-                 "decorating the function with the 'worklet' keyword to allow "
-                 "the javascript function to be used as a worklet.");
+    auto func = value.asObject(runtime).asFunction(runtime);
+    if (func.isHostFunction(runtime)) {
+      setType(JsiWrapperType::HostFunction);
+      _hostFunction = std::make_shared<jsi::HostFunctionType>(
+          func.getHostFunction(runtime));
+    } else {
+
+      throw jsi::JSError(
+          runtime,
+          "Regular javascript functions cannot be shared. Try "
+          "decorating the function with the 'worklet' keyword to allow "
+          "the javascript function to be used as a worklet.");
+    }
   }
 
   std::map<std::string, std::shared_ptr<JsiWrapper>> _properties;

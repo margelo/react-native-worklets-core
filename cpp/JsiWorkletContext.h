@@ -137,7 +137,7 @@ public:
    Decorates the worklet runtime.
    */
   void decorate(JsiBaseDecorator *decorator) {
-    decorator->decorateRuntime(*_workletRuntime);
+    decorator->decorateRuntime(getWorkletRuntime());
   }
 
 private:

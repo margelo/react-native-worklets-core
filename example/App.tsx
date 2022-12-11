@@ -12,8 +12,6 @@ import {TestWrapper} from './Tests/TestWrapper';
 
 const App = () => {
   const {tests, categories, output, runTests, runSingleTest} = useTestRunner();
-  // console.log('STATE: ', tests.map(t => t.name + ': ' + t.state).join(', '));
-  // console.log('OUTPUT:', output.join('\n'));
   return (
     <View style={styles.container}>
       <View style={styles.tests}>

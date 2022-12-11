@@ -38,11 +38,3 @@ export const worklet_tests = {
     return ExpectValue(code, 'function _f(a){return a;}');
   },
 };
-
-// const s = (b: number) => {
-//   return Math.sqrt(b);
-// };
-// const b = Worklets.createRunInContextFn((a: number) => {
-//   'worklet';
-//   return s(a);
-// });

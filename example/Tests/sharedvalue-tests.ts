@@ -119,6 +119,7 @@ export const sharedvalue_tests = {
   set_value_from_worklet: () => {
     const sharedValue = Worklets.createSharedValue('hello world');
     const worklet = Worklets.createRunInContextFn(function () {
+      'worklet';
       sharedValue.value = 'hello worklet';
     });
     sharedValue.value = 'hello worklet';
@@ -148,6 +149,7 @@ export const sharedvalue_tests = {
   add_listener_from_worklet_should_fail: () => {
     const sharedValue = Worklets.createSharedValue(100);
     const worklet = Worklets.createRunInContextFn(function () {
+      'worklet';
       sharedValue.addListener(() => {});
     });
     return ExpectException(
