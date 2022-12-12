@@ -24,7 +24,7 @@ const a = (b: number) => {
   return b + 1;
 };
 
-const worklet = Worklets.createRunOnWorkletFn(a);
+const worklet = Worklets.createRunInContextFn(a);
 const result = await worklet(100);
 assert(result === 101);
 ```
