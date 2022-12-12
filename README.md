@@ -8,10 +8,18 @@ Worklet runner for React Native
 npm install react-native-worklets
 ```
 
+Remember to add the babel plugin to your babel config:
+
+```js
+module.exports = {
+  plugins: ["react-native-worklets/plugin"],
+};
+```
+
 ## Usage
 
 ```js
-import { multiply } from 'react-native-worklets';
+import { multiply } from "react-native-worklets";
 
 // ...
 
