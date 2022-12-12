@@ -19,11 +19,14 @@ module.exports = {
 ## Usage
 
 ```js
-import { multiply } from "react-native-worklets";
+const a = (b: number) => {
+  "worklet";
+  return b + 1;
+};
 
-// ...
-
-const result = await multiply(3, 7);
+const worklet = Worklets.createRunOnWorkletFn(a);
+const result = await worklet(100);
+assert(result === 101);
 ```
 
 ## Contributing
