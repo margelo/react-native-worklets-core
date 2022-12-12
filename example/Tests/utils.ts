@@ -1,6 +1,6 @@
 export const Expect = <V>(
   value: V | Promise<V>,
-  expected: (v: V) => string | undefined,
+  expected: (v: V) => string | undefined
 ) => {
   return new Promise<void>(async (resolve, reject) => {
     let resolvedValue: V;
@@ -35,9 +35,9 @@ export const ExpectValue = <V, T>(value: V | Promise<V>, expected: T) => {
       reject(
         new Error(
           `Expected ${JSON.stringify(expected)}, got ${JSON.stringify(
-            resolvedValue,
-          )}.`,
-        ),
+            resolvedValue
+          )}.`
+        )
       );
     } else {
       resolve();
@@ -47,26 +47,26 @@ export const ExpectValue = <V, T>(value: V | Promise<V>, expected: T) => {
 
 export const ExpectException = <T>(
   executor: (() => T) | (() => Promise<T>),
-  expectedReason: string,
+  expectedReason: string
 ) => {
   return new Promise<void>(async (resolve, reject) => {
     try {
       const value = executor();
       if (value instanceof Promise) {
         await value;
-        reject(new Error('Expected error but function succeeded (Promise).'));
+        reject(new Error("Expected error but function succeeded (Promise)."));
       } else {
-        reject(new Error('Expected error but function succeeded.'));
+        reject(new Error("Expected error but function succeeded."));
       }
     } catch (reason: any) {
       const resolvedReason =
-        typeof reason === 'object' ? reason.message : reason;
+        typeof reason === "object" ? reason.message : reason;
       if (resolvedReason === expectedReason) {
         resolve();
       } else {
         const errorMessage = `Expected error message '${expectedReason.substr(
           0,
-          80,
+          80
         )}', got '${resolvedReason.substr(0, 80)}'.`;
         reject(new Error(errorMessage));
       }
@@ -75,8 +75,8 @@ export const ExpectException = <T>(
 };
 
 export const getWorkletInfo = <T extends Array<unknown>, R>(
-  worklet: (...args: T) => R,
+  worklet: (...args: T) => R
 ) => {
   // @ts-ignore
-  return {closure: worklet._closure, code: worklet.asString};
+  return { closure: worklet._closure, code: worklet.asString };
 };

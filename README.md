@@ -1,43 +1,31 @@
 # react-native-worklets
 
-## Notes:
+Worklet runner for React Native
 
-Implements a simple API around calling javascript functions in separate Javascript threads/engines with value sharing. When a function is transferred to another JS runtime, the `asString` method of the function is called to get its source code.
+## Installation
 
-```ts
-const worklet = Worklets.createRunInContextFn(function (a: number) {
-  "worklet";
-  return Math.sqrt(a);
-});
-// Will run in the default context' thread / runtime
-const a = await worklet(64);
-assert(a === 8);
+```sh
+npm install react-native-worklets
 ```
 
-It is also possible to create multiple contexts:
+## Usage
 
-```ts
-const context = Worklets.createContext("test");
-const worklet = Worklets.createRunInContextFn(function (a: number) {
-  "worklet";
-  return Math.sqrt(a);
-}, context);
+```js
+import { multiply } from 'react-native-worklets';
 
-// Will run in the test-context' thread / runtime
-const a = await worklet(64);
-assert(a === 8);
+// ...
+
+const result = await multiply(3, 7);
 ```
 
-If you want finer control over how contexts are setup, or want to integrate the library in your library, the C++ code implements a simple API for creating contexts and running functions in them.
+## Contributing
 
-## Shared Values
+See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the repository and the development workflow.
 
-Sharing values between JS runtimes is done by using shared values. The goal of the project is to provide JS primitives, objects and arrays that are shareable without copying data.
+## License
 
-## Example project
+MIT
 
-The example project is just a suite of tests to run that runs through all of the expected behaviour and tracks errors and failures.
+---
 
-## Reanimated
-
-TODO: Compatibility with Reanimated
+Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)

@@ -1,17 +1,16 @@
 #pragma once
 
-#include <ReactCommon/TurboModuleUtils.h>
 #include <jsi/jsi.h>
 
 #include <functional>
 
 #include "JsiHostObject.h"
+#include "JsiPromise.h"
 #include "JsiWrapper.h"
 
 namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
-namespace react = facebook::react;
 
 class JsiWrapper;
 
@@ -35,9 +34,9 @@ protected:
   }
 
   jsi::Value getValue(jsi::Runtime &runtime) override {
-    return react::createPromiseAsJSIValue(
+    return JsiPromise::createPromiseAsJSIValue(
         runtime,
-        [this](jsi::Runtime &runtime, std::shared_ptr<react::Promise> promise) {
+        [this](jsi::Runtime &runtime, std::shared_ptr<JsiPromise> promise) {
           // First of all, check if the promise is resolved
           if (_resultSet) {
             // resolve
@@ -47,7 +46,7 @@ protected:
 
           // Or if it failed
           if (_errorSet) {
-            promise->reject(_error);
+            promise->reject(_error, "");
             return;
           }
 
@@ -57,7 +56,7 @@ protected:
           });
 
           _rejectListeners.push_back(
-              [this, &runtime, promise]() { promise->reject(_error); });
+              [this, &runtime, promise]() { promise->reject(_error, ""); });
         });
   }
 

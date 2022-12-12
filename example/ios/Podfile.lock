@@ -302,12 +302,7 @@ PODS:
   - React-jsinspector (0.70.6)
   - React-logger (0.70.6):
     - glog
-  - react-native-worklets (1.0.0):
-    - React
-    - React-callinvoker
-    - React-Core
-    - react-native-worklets/Worklets (= 1.0.0)
-  - react-native-worklets/Worklets (1.0.0):
+  - react-native-worklets (0.1.0):
     - React
     - React-callinvoker
     - React-Core
@@ -429,7 +424,7 @@ DEPENDENCIES:
   - React-jsiexecutor (from `../node_modules/react-native/ReactCommon/jsiexecutor`)
   - React-jsinspector (from `../node_modules/react-native/ReactCommon/jsinspector`)
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
-  - react-native-worklets (from `../node_modules/react-native-worklets`)
+  - react-native-worklets (from `../..`)
   - React-perflogger (from `../node_modules/react-native/ReactCommon/reactperflogger`)
   - React-RCTActionSheet (from `../node_modules/react-native/Libraries/ActionSheetIOS`)
   - React-RCTAnimation (from `../node_modules/react-native/Libraries/NativeAnimation`)
@@ -506,7 +501,7 @@ EXTERNAL SOURCES:
   React-logger:
     :path: "../node_modules/react-native/ReactCommon/logger"
   react-native-worklets:
-    :path: "../node_modules/react-native-worklets"
+    :path: "../.."
   React-perflogger:
     :path: "../node_modules/react-native/ReactCommon/reactperflogger"
   React-RCTActionSheet:
@@ -569,7 +564,7 @@ SPEC CHECKSUMS:
   React-jsiexecutor: b4a65947391c658450151275aa406f2b8263178f
   React-jsinspector: 60769e5a0a6d4b32294a2456077f59d0266f9a8b
   React-logger: 1623c216abaa88974afce404dc8f479406bbc3a0
-  react-native-worklets: d55ac470e2e0885f0043d9eca9bda22f3a7dc4c5
+  react-native-worklets: 06cb4b7b94b67a59a6c78deb5a9734ee282532eb
   React-perflogger: 8c79399b0500a30ee8152d0f9f11beae7fc36595
   React-RCTActionSheet: 7316773acabb374642b926c19aef1c115df5c466
   React-RCTAnimation: 5341e288375451297057391227f691d9b2326c3d
@@ -586,6 +581,6 @@ SPEC CHECKSUMS:
   Yoga: 99caf8d5ab45e9d637ee6e0174ec16fbbb01bcfc
   YogaKit: f782866e155069a2cca2517aafea43200b01fd5a
 
-PODFILE CHECKSUM: a4fc36eb2d6192315432f65c10275d57e9dc87de
+PODFILE CHECKSUM: a672e224eae3e0f718d49285f5268f08a58cc69c
 
 COCOAPODS: 1.11.3
