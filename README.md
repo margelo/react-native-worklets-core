@@ -1,43 +1,39 @@
 # react-native-worklets
 
-## Notes:
+Worklet runner for React Native
 
-Implements a simple API around calling javascript functions in separate Javascript threads/engines with value sharing. When a function is transferred to another JS runtime, the `asString` method of the function is called to get its source code.
+## Installation
 
-```ts
-const worklet = Worklets.createRunInContextFn(function (a: number) {
-  "worklet";
-  return Math.sqrt(a);
-});
-// Will run in the default context' thread / runtime
-const a = await worklet(64);
-assert(a === 8);
+```sh
+npm install react-native-worklets
 ```
 
-It is also possible to create multiple contexts:
+Remember to add the babel plugin to your babel config:
 
-```ts
-const context = Worklets.createContext("test");
-const worklet = Worklets.createRunInContextFn(function (a: number) {
-  "worklet";
-  return Math.sqrt(a);
-}, context);
-
-// Will run in the test-context' thread / runtime
-const a = await worklet(64);
-assert(a === 8);
+```js
+module.exports = {
+  plugins: ["react-native-worklets/plugin"],
+};
 ```
 
-If you want finer control over how contexts are setup, or want to integrate the library in your library, the C++ code implements a simple API for creating contexts and running functions in them.
+## Usage
 
-## Shared Values
+```js
+import { multiply } from "react-native-worklets";
 
-Sharing values between JS runtimes is done by using shared values. The goal of the project is to provide JS primitives, objects and arrays that are shareable without copying data.
+// ...
 
-## Example project
+const result = await multiply(3, 7);
+```
 
-The example project is just a suite of tests to run that runs through all of the expected behaviour and tracks errors and failures.
+## Contributing
 
-## Reanimated
+See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the repository and the development workflow.
 
-TODO: Compatibility with Reanimated
+## License
+
+MIT
+
+---
+
+Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)

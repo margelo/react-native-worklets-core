@@ -1,2 +1,2 @@
-import "./NativeSetup";
+import "./NativeWorklets";
 export * from "./types";
