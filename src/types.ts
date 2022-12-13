@@ -4,7 +4,7 @@ export interface ISharedValue<T> {
   addListener(listener: () => void): () => void;
 }
 
-export interface IWorklet<A extends any[], T extends (...args: A) => any> {
+export interface IWorklet {
   /**
    * Returns the generated code for the worklet function.
    */
@@ -16,7 +16,7 @@ export interface IWorklet<A extends any[], T extends (...args: A) => any> {
 }
 
 /*
-  Defines the interface for a worklet context. A worklet context is a javascript 
+  Defines the interface for a worklet context. A worklet context is a javascript
   runtime that can be run in its own thread.
 */
 export interface IWorkletContext {
@@ -36,7 +36,7 @@ export type ContextType = {
     | number[]
     | string[]
     | boolean[]
-    | IWorklet<any, any>;
+    | IWorklet;
 };
 
 export interface IWorkletNativeApi {
@@ -61,7 +61,7 @@ export interface IWorkletNativeApi {
   createWorklet: <C extends ContextType, T, A extends Array<unknown>>(
     fn: (this: C, ...args: A) => T,
     context?: IWorkletContext
-  ) => IWorklet<A, (...args: A) => T>;
+  ) => IWorklet;
   /**
    * Creates a function that will be executed in the worklet context. The function
    * will return a promise that will be resolved when the function has been
