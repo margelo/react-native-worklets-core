@@ -3,12 +3,10 @@ import { ExpectException, ExpectValue, getWorkletInfo } from "./utils";
 
 export const worklet_tests = {
   check_is_not_worklet: () => {
-    return ExpectException(
-      () =>
-        Worklets.createRunInContextFn((a: number) => {
-          return a * 200;
-        }),
-      "Exception in HostFunction: createRunInContextFn expects a worklet decorated function as its first parameter."
+    return ExpectException(() =>
+      Worklets.createRunInContextFn((a: number) => {
+        return a * 200;
+      })
     );
   },
   check_worklet_closure: () => {
@@ -36,5 +34,16 @@ export const worklet_tests = {
     };
     const { code } = getWorkletInfo(w);
     return ExpectValue(code, "function _f(a){return a;}");
+  },
+  check_share_object_with_js_function_fails_on_call: () => {
+    const api = {
+      call: () => 100,
+    };
+    const f = () => {
+      "worklet";
+      return api.call();
+    };
+    const w = Worklets.createRunInContextFn(f);
+    return ExpectException(w);
   },
 };

@@ -59,7 +59,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(install) {
       (facebook::jsi::Runtime *)cxxBridge.runtime;
 
   installApi(callInvoker, jsRuntime);
-  
+
   return std::make_shared<facebook::react::NativeWorkletsSpecJSI>(params);
 }
 #endif

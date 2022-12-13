@@ -47,7 +47,7 @@ export const ExpectValue = <V, T>(value: V | Promise<V>, expected: T) => {
 
 export const ExpectException = <T>(
   executor: (() => T) | (() => Promise<T>),
-  expectedReason: string
+  expectedReason?: string
 ) => {
   return new Promise<void>(async (resolve, reject) => {
     try {
@@ -59,16 +59,20 @@ export const ExpectException = <T>(
         reject(new Error("Expected error but function succeeded."));
       }
     } catch (reason: any) {
-      const resolvedReason =
-        typeof reason === "object" ? reason.message : reason;
-      if (resolvedReason === expectedReason) {
-        resolve();
+      if (expectedReason) {
+        const resolvedReason =
+          typeof reason === "object" ? reason.message : reason;
+        if (resolvedReason === expectedReason) {
+          resolve();
+        } else {
+          const errorMessage = `Expected error message '${expectedReason.substr(
+            0,
+            80
+          )}', got '${resolvedReason.substr(0, 80)}'.`;
+          reject(new Error(errorMessage));
+        }
       } else {
-        const errorMessage = `Expected error message '${expectedReason.substr(
-          0,
-          80
-        )}', got '${resolvedReason.substr(0, 80)}'.`;
-        reject(new Error(errorMessage));
+        resolve();
       }
     }
   });
