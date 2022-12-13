@@ -209,12 +209,14 @@ private:
       _hostFunction = std::make_shared<jsi::HostFunctionType>(
           func.getHostFunction(runtime));
     } else {
-
-      throw jsi::JSError(
-          runtime,
-          "Regular javascript functions cannot be shared. Try "
-          "decorating the function with the 'worklet' keyword to allow "
-          "the javascript function to be used as a worklet.");
+      _hostFunction =
+          std::make_shared<jsi::HostFunctionType>(JSI_HOST_FUNCTION_LAMBDA {
+            throw jsi::JSError(
+                runtime,
+                "Regular javascript functions cannot be shared. Try "
+                "decorating the function with the 'worklet' keyword to allow "
+                "the javascript function to be used as a worklet.");
+          });
     }
   }
 
