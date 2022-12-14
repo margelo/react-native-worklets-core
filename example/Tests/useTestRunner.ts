@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { TestInfo, TestState } from "./types";
+import type { TestInfo, TestState } from "./types";
 import { useTests } from "./useTests";
 
 /**
@@ -113,12 +113,13 @@ export const useTestRunner = () => {
     }
 
     if (
+      activeTests &&
       activeTests.index > -1 &&
-      activeTests.tests[activeTests.index].state === "notrun"
+      activeTests.tests[activeTests.index]?.state === "notrun"
     ) {
       // Start the test
       console.log("Starting test with index", activeTests.index + 1);
-      runTest(activeTests.tests[activeTests.index]);
+      runTest(activeTests.tests[activeTests.index]!);
     }
   }, [activeTests, runTest]);
 
