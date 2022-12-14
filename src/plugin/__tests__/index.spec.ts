@@ -3,7 +3,6 @@ const prettier = require("prettier");
 
 const conf = {
   filename: "test.js",
-  plugins: ["./src/plugin/index.js"],
 };
 
 describe("babel-plugin-preserve-jscontext-function-to-string", () => {
@@ -25,7 +24,7 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
     const output = runPluginAndEval(
       `function run(a:number):number {
         "worklet";
-        return a*2; 
+        return a*2;
       }`
     );
     expect(output.asString).toEqual("function run(a){return a*2;}");
@@ -33,7 +32,7 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
 
   it("should not remove this keyword", () => {
     const [, output] = transformCode(
-      `var desc = { 
+      `var desc = {
         functions: {
           run: function run() {"worklet"; this.stop();},
           stop: function stop () {"worklet";}
@@ -60,7 +59,7 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
     const output = runPluginAndEval(
       `function run(a) {
         "worklet";
-        return a === Infinity ? 1 : 0; 
+        return a === Infinity ? 1 : 0;
       }`
     );
     expect(output._closure).toEqual({});
@@ -70,7 +69,7 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
     const output = runPluginAndEval(
       `function run(a) {
         "worklet";
-        return isNaN(a) ? 1 : 0; 
+        return isNaN(a) ? 1 : 0;
       }`
     );
     expect(output._closure).toEqual({});
@@ -80,7 +79,7 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
     const output = runPluginAndEval(
       `function run(a?:number) {
         "worklet";
-        return a ?? 0; 
+        return a ?? 0;
       }`
     );
     expect(output.asString).toEqual("function run(a){return a!=null?a:0;}");
@@ -90,12 +89,30 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
     const output = runPluginAndEval(
       `const value = 'a';
       const run = () => {
-        'worklet';    
+        'worklet';
         const someObj = {};
         someObj[value] = 1;
       };`
     );
     expect(output._closure).toEqual({ value: "a" });
+  });
+
+  it("should handle globals option", () => {
+    const output = runPluginAndEval(
+      `const run = () => {
+        'worklet';
+        return someCustomGlobal;
+      };`,
+      { globals: ["someCustomGlobal"] }
+    );
+    expect(output._closure).toEqual({});
+  });
+
+  it("should handle functionsToWorkletize option", () => {
+    const [, output] = transformCode(`useWorklet(() => 1);`, undefined, {
+      functionsToWorkletize: [{ name: "useWorklet", args: [0] }],
+    });
+    expect(output).toContain(`__f.asString = "function _f(){return 1;}"`);
   });
 });
 
@@ -103,23 +120,29 @@ function formatCode(code: string): string {
   return prettier.format(code, { semi: false, parser: "babel" });
 }
 
-function runPluginAndEval(input: string) {
+function runPluginAndEval(input: string, opts?: any) {
   // eslint-disable-next-line no-eval
-  eval(runPlugin(input));
+  eval(runPlugin(input, opts));
   // eslint-disable-next-line no-eval
   return eval("run");
 }
 
-function runPlugin(input: string): string {
+function runPlugin(input: string, opts?: any): string {
   const inputFormatted = formatCode(input);
-  const { code } = transform(inputFormatted, conf);
+  const { code } = transform(inputFormatted, {
+    ...conf,
+    plugins: [["./src/plugin/index.js", opts]],
+  });
   return code;
 }
 
-function transformCode(input: string, expected?: string) {
+function transformCode(input: string, expected?: string, opts?: any) {
   const inputFormatted = formatCode(input);
 
-  const { code } = transform(inputFormatted, conf);
+  const { code } = transform(inputFormatted, {
+    ...conf,
+    plugins: [["./src/plugin/index.js", opts]],
+  });
   const codeFormatted = formatCode(code);
 
   const expectedFormatted = expected ? formatCode(expected) : "";
