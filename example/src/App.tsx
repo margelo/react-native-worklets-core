@@ -1,14 +1,14 @@
-import React from 'react';
+import React from "react";
 import {
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
 
-import { useTestRunner } from '../Tests';
-import { TestWrapper } from '../Tests/TestWrapper';
+import { useTestRunner } from "../Tests";
+import { TestWrapper } from "../Tests/TestWrapper";
 
 const App = () => {
   const { tests, categories, output, runTests, runSingleTest } =
@@ -45,7 +45,7 @@ const App = () => {
       </View>
       <View style={styles.output}>
         <ScrollView>
-          <Text style={styles.outputText}>{output.join('\n')}</Text>
+          <Text style={styles.outputText}>{output.join("\n")}</Text>
         </ScrollView>
       </View>
     </View>
@@ -65,10 +65,10 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   output: {
-    borderTopColor: '#CCC',
+    borderTopColor: "#CCC",
     borderTopWidth: StyleSheet.hairlineWidth,
     flex: 0.2,
-    backgroundColor: '#EFEFEF',
+    backgroundColor: "#EFEFEF",
   },
   outputText: {
     padding: 8,
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 4,
     paddingHorizontal: 8,
-    textDecorationLine: 'underline',
+    textDecorationLine: "underline",
   },
 });
 

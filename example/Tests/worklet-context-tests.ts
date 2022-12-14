@@ -1,10 +1,10 @@
-import {Worklets} from 'react-native-worklets';
-import {Expect, ExpectException, ExpectValue} from './utils';
+import { Worklets } from "react-native-worklets";
+import { Expect, ExpectException, ExpectValue } from "./utils";
 
 export const worklet_context_tests = {
   call_sync_on_js_thread: () => {
     const worklet = (a: number) => {
-      'worklet';
+      "worklet";
       return a;
     };
     return ExpectValue(worklet(100), 100);
@@ -12,16 +12,16 @@ export const worklet_context_tests = {
 
   call_sync_on_js_thread_with_error: () => {
     const worklet = () => {
-      'worklet';
-      throw new Error('Test error');
+      "worklet";
+      throw new Error("Test error");
     };
-    return ExpectException(worklet, 'Test error');
+    return ExpectException(worklet, "Test error");
   },
 
   call_async_to_worklet_thread: () => {
     const x = 100;
     const f = (a: number) => {
-      'worklet';
+      "worklet";
       return a + x;
     };
     const w = Worklets.createRunInContextFn(f);
@@ -29,9 +29,9 @@ export const worklet_context_tests = {
   },
 
   call_async_to_worklet_thread_context: () => {
-    const context = Worklets.createContext('test');
+    const context = Worklets.createContext("test");
     const f = (a: number) => {
-      'worklet';
+      "worklet";
       return a;
     };
     const w = Worklets.createRunInContextFn(f, context);
@@ -40,32 +40,32 @@ export const worklet_context_tests = {
 
   call_async_to_worklet_thread_with_error: () => {
     const f = () => {
-      'worklet';
-      throw new Error('Test error');
+      "worklet";
+      throw new Error("Test error");
     };
     const w = Worklets.createRunInContextFn(f);
-    return ExpectException(w, 'Test error');
+    return ExpectException(w, "Test error");
   },
 
   call_async_to_worklet_thread_with_error_in_context: () => {
-    const context = Worklets.createContext('test');
+    const context = Worklets.createContext("test");
     const f = () => {
-      'worklet';
-      throw new Error('Test error');
+      "worklet";
+      throw new Error("Test error");
     };
     const w = Worklets.createRunInContextFn(f, context);
-    return ExpectException(w, 'Test error');
+    return ExpectException(w, "Test error");
   },
 
   call_async_to_worklet_thread_and_call_second_worklet: () => {
     const sharedValue = Worklets.createSharedValue(0);
     const workletB = function (a: number) {
-      'worklet';
+      "worklet";
       sharedValue.value = a;
     };
 
     const workletA = function (a: number) {
-      'worklet';
+      "worklet";
       workletB(a);
     };
 
@@ -80,14 +80,14 @@ export const worklet_context_tests = {
   call_sync_to_js_from_worklet: () => {
     const sharedValue = Worklets.createSharedValue(0);
     const setSharedValue = function (a: number) {
-      'worklet';
+      "worklet";
       sharedValue.value = a;
     };
 
     const js1 = Worklets.createRunInJsFn(setSharedValue);
 
     const w1 = function (a: number) {
-      'worklet';
+      "worklet";
       js1(a);
     };
 
@@ -101,12 +101,12 @@ export const worklet_context_tests = {
 
   call_sync_to_js_from_worklet_with_retval: () => {
     const workletB = Worklets.createRunInJsFn(function (a: number) {
-      'worklet';
+      "worklet";
       return a;
     });
 
     const workletA = Worklets.createRunInContextFn(function (a: number) {
-      'worklet';
+      "worklet";
       return workletB(a);
     });
     return ExpectValue(workletA(200), 200);
@@ -114,25 +114,25 @@ export const worklet_context_tests = {
 
   call_sync_to_js_from_worklet_with_error: () => {
     const callback = Worklets.createRunInJsFn(() => {
-      'worklet';
-      throw new Error('Test error');
+      "worklet";
+      throw new Error("Test error");
     });
 
     const workletA = Worklets.createRunInContextFn(function () {
-      'worklet';
+      "worklet";
       callback();
     });
-    return ExpectException(workletA, 'Exception in HostFunction: Test error');
+    return ExpectException(workletA, "Exception in HostFunction: Test error");
   },
 
   call_decorated_js_function_from_worklet: () => {
     const adder = (a: number) => {
-      'worklet';
+      "worklet";
       return a + a;
     };
 
     const w_square = Worklets.createRunInContextFn(function (a: number) {
-      'worklet';
+      "worklet";
       return Math.sqrt(adder(a));
     });
 
@@ -142,12 +142,12 @@ export const worklet_context_tests = {
   call_async_to_and_from_worklet: () => {
     const sharedValue = Worklets.createSharedValue(0);
     const workletB = function (b: number) {
-      'worklet';
+      "worklet";
       sharedValue.value = b;
     };
 
     const workletA = Worklets.createRunInContextFn(function (a: number) {
-      'worklet';
+      "worklet";
       return workletB(a);
     });
 
@@ -160,11 +160,11 @@ export const worklet_context_tests = {
 
   call_async_to_and_from_worklet_with_return_value: () => {
     const workletB = () => {
-      'worklet';
+      "worklet";
       return 1000;
     };
     const workletA = Worklets.createRunInContextFn(function () {
-      'worklet';
+      "worklet";
       return workletB();
     });
     return ExpectValue(workletA(), 1000);
@@ -172,11 +172,11 @@ export const worklet_context_tests = {
 
   call_async_to_and_from_worklet_multiple_times_with_return_value: () => {
     const workletB = (): number => {
-      'worklet';
+      "worklet";
       return 1000;
     };
     const workletA = Worklets.createRunInContextFn(function () {
-      'worklet';
+      "worklet";
       let r = 0;
       for (let i = 0; i < 100; i++) {
         r += workletB();
@@ -188,13 +188,13 @@ export const worklet_context_tests = {
 
   call_async_to_and_from_worklet_with_error: () => {
     const workletB = () => {
-      'worklet';
-      throw Error('Test error');
+      "worklet";
+      throw Error("Test error");
     };
     const workletA = Worklets.createRunInContextFn(function () {
-      'worklet';
+      "worklet";
       return workletB();
     });
-    return ExpectException(workletA, 'Test error');
+    return ExpectException(workletA, "Test error");
   },
 };

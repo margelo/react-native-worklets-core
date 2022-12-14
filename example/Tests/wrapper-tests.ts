@@ -1,9 +1,8 @@
-import {Worklets} from 'react-native-worklets';
-import {Test} from './types';
-import {ExpectException, ExpectValue} from './utils';
+import { Worklets } from "react-native-worklets";
+import { ExpectException, ExpectValue } from "./utils";
 
 const convert =
-  <T>(value: T): Test =>
+  <T>(value: T): (() => Promise<void>) =>
   () =>
     ExpectValue(Worklets.createSharedValue(value).value, value);
 
@@ -11,22 +10,22 @@ export const wrapper_tests = {
   convert_undefined: convert(undefined),
   convert_null: convert(null),
   convert_number: convert(123),
-  convert_string: convert('abc'),
+  convert_string: convert("abc"),
   convert_boolean: convert(true),
-  convert_object: convert({a: 123, b: 'abc', child: {x: 5, y: 23}}),
+  convert_object: convert({ a: 123, b: "abc", child: { x: 5, y: 23 } }),
   convert_object_with_children: convert({
     a: 123,
-    b: 'abc',
+    b: "abc",
     children: [
-      {x: 5, y: 23},
-      {x: 5, y: 23},
-      {x: 5, y: 23},
+      { x: 5, y: 23 },
+      { x: 5, y: 23 },
+      { x: 5, y: 23 },
     ],
   }),
   convert_function_throws_exception: () => {
     return ExpectException(() => {
       return Promise.resolve(Worklets.createSharedValue(() => {}));
-    }, 'Regular javascript functions cannot be shared.');
+    }, "Regular javascript functions cannot be shared.");
   },
 
   array_is_array: () => {
@@ -60,7 +59,7 @@ export const wrapper_tests = {
   array_forEach: () => {
     const array = Worklets.createSharedValue([100, 200]);
     let sum = 0;
-    array.value.forEach(value => {
+    array.value.forEach((value) => {
       sum += value;
     });
     return ExpectValue(sum, 300);
@@ -68,13 +67,13 @@ export const wrapper_tests = {
 
   array_filter: () => {
     const array = Worklets.createSharedValue([100, 200]);
-    const lessThan150 = array.value.filter(value => value < 150);
+    const lessThan150 = array.value.filter((value) => value < 150);
     return ExpectValue(lessThan150.length, 1);
   },
 
   array_map: () => {
     const array = Worklets.createSharedValue([100, 200]);
-    const copy = array.value.map(value => value);
+    const copy = array.value.map((value) => value);
     return ExpectValue(copy, [100, 200]);
   },
 
@@ -86,31 +85,31 @@ export const wrapper_tests = {
 
   array_find: () => {
     const array = Worklets.createSharedValue([100, 200]);
-    const result = array.value.find(p => p === 100);
+    const result = array.value.find((p) => p === 100);
     return ExpectValue(result, 100);
   },
 
   array_every: () => {
     const array = Worklets.createSharedValue([100, 200]);
-    const result = array.value.every(p => p > 50);
+    const result = array.value.every((p) => p > 50);
     return ExpectValue(result, true);
   },
 
   array_every_false: () => {
     const array = Worklets.createSharedValue([100, 200]);
-    const result = array.value.every(p => p > 100);
+    const result = array.value.every((p) => p > 100);
     return ExpectValue(result, false);
   },
 
   array_findIndex: () => {
     const array = Worklets.createSharedValue([100, 200]);
-    const result = array.value.findIndex(p => p === 200);
+    const result = array.value.findIndex((p) => p === 200);
     return ExpectValue(result, 1);
   },
 
   array_findIndex_false: () => {
     const array = Worklets.createSharedValue([100, 200]);
-    const result = array.value.findIndex(p => p === 300);
+    const result = array.value.findIndex((p) => p === 300);
     return ExpectValue(result, -1);
   },
 
@@ -166,25 +165,25 @@ export const wrapper_tests = {
 
   array_join: () => {
     const array = Worklets.createSharedValue([100, 200]);
-    return ExpectValue(array.value.join(), '100,200');
+    return ExpectValue(array.value.join(), "100,200");
   },
 
   array_join_separator: () => {
     const array = Worklets.createSharedValue([100, 200]);
-    return ExpectValue(array.value.join('+'), '100+200');
+    return ExpectValue(array.value.join("+"), "100+200");
   },
 
   array_reduce: () => {
     const array = Worklets.createSharedValue([100, 200]);
     return ExpectValue(
       array.value.reduce((acc, cur, index) => {
-        console.log('before', acc, index, cur);
-        console.log({...acc});
-        const retVal = {...acc, [index]: cur};
-        console.log('after', retVal);
+        console.log("before", acc, index, cur);
+        console.log({ ...acc });
+        const retVal = { ...acc, [index]: cur };
+        console.log("after", retVal);
         return retVal;
       }, {}),
-      {0: 100, 1: 200},
+      { 0: 100, 1: 200 }
     );
   },
 
@@ -192,8 +191,8 @@ export const wrapper_tests = {
     const array = Worklets.createSharedValue([100, 200]);
     return ExpectValue(
       // @ts-ignore
-      array.value.reduce((acc, cur, index) => ({...acc, [index]: cur})),
-      {0: 100, 1: 200},
+      array.value.reduce((acc, cur, index) => ({ ...acc, [index]: cur })),
+      { 0: 100, 1: 200 }
     );
   },
 
@@ -206,9 +205,9 @@ export const wrapper_tests = {
     return ExpectValue(sum, 300);
   },
 
-  convert_array: convert([123, 'abc']),
+  convert_array: convert([123, "abc"]),
   convert_array_of_objects: convert([
-    {x: 1, y: 2},
-    {x: 5, y: 12},
+    { x: 1, y: 2 },
+    { x: 5, y: 12 },
   ]),
 };

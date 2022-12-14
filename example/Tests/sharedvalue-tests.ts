@@ -1,5 +1,5 @@
-import {Worklets} from 'react-native-worklets';
-import {Expect, ExpectException, ExpectValue} from './utils';
+import { Worklets } from "react-native-worklets";
+import { Expect, ExpectException, ExpectValue } from "./utils";
 
 export const sharedvalue_tests = {
   get_set_numeric_value: () => {
@@ -20,62 +20,62 @@ export const sharedvalue_tests = {
   },
 
   get_set_string_value: () => {
-    const sharedValue = Worklets.createSharedValue('hello world');
-    sharedValue.value = 'hello worklet';
-    return ExpectValue(sharedValue.value, 'hello worklet');
+    const sharedValue = Worklets.createSharedValue("hello world");
+    sharedValue.value = "hello worklet";
+    return ExpectValue(sharedValue.value, "hello worklet");
   },
 
   get_set_object_value: () => {
-    const sharedValue = Worklets.createSharedValue({a: 100, b: 200});
+    const sharedValue = Worklets.createSharedValue({ a: 100, b: 200 });
     sharedValue.value.a = 50;
     sharedValue.value.b = 100;
-    return ExpectValue(sharedValue.value, {a: 50, b: 100});
+    return ExpectValue(sharedValue.value, { a: 50, b: 100 });
   },
 
   get_set_array_value: () => {
     const sharedValue = Worklets.createSharedValue([100, 50]);
     return ExpectValue(sharedValue.value[0], 100).then(() =>
-      ExpectValue(sharedValue.value[1], 50),
+      ExpectValue(sharedValue.value[1], 50)
     );
   },
 
   box_number_to_string: () => {
     const sharedValue = Worklets.createSharedValue(100);
     // @ts-ignore
-    sharedValue.value = '100';
-    return ExpectValue(sharedValue.value, '100');
+    sharedValue.value = "100";
+    return ExpectValue(sharedValue.value, "100");
   },
 
   box_string_to_number: () => {
-    const sharedValue = Worklets.createSharedValue('100');
+    const sharedValue = Worklets.createSharedValue("100");
     // @ts-ignore
     sharedValue.value = 100;
     return ExpectValue(sharedValue.value, 100);
   },
 
   box_string_to_array: () => {
-    const sharedValue = Worklets.createSharedValue('100');
+    const sharedValue = Worklets.createSharedValue("100");
     // @ts-ignore
     sharedValue.value = [100, 200];
     return ExpectValue(sharedValue.value, [100, 200]);
   },
 
   box_string_to_object: () => {
-    const sharedValue = Worklets.createSharedValue('100');
+    const sharedValue = Worklets.createSharedValue("100");
     // @ts-ignore
-    sharedValue.value = {a: 100, b: 200};
-    return ExpectValue(sharedValue.value, {a: 100, b: 200});
+    sharedValue.value = { a: 100, b: 200 };
+    return ExpectValue(sharedValue.value, { a: 100, b: 200 });
   },
 
   box_array_to_object: () => {
     const sharedValue = Worklets.createSharedValue([100, 200]);
     // @ts-ignore
-    sharedValue.value = {a: 100, b: 200};
-    return ExpectValue(sharedValue.value, {a: 100, b: 200});
+    sharedValue.value = { a: 100, b: 200 };
+    return ExpectValue(sharedValue.value, { a: 100, b: 200 });
   },
 
   box_object_to_array: () => {
-    const sharedValue = Worklets.createSharedValue({a: 100, b: 200});
+    const sharedValue = Worklets.createSharedValue({ a: 100, b: 200 });
     // @ts-ignore
     sharedValue.value = [100.34, 200];
     return ExpectValue(sharedValue.value, [100.34, 200]);
@@ -95,8 +95,8 @@ export const sharedvalue_tests = {
 
   array_destructure_to_object: () => {
     const sharedValue = Worklets.createSharedValue([100, 200]);
-    const p = {...sharedValue.value};
-    return ExpectValue(p, {0: 100, 1: 200});
+    const p = { ...sharedValue.value };
+    return ExpectValue(p, { 0: 100, 1: 200 });
   },
 
   array_length: () => {
@@ -105,35 +105,35 @@ export const sharedvalue_tests = {
   },
 
   object_value_destructure: () => {
-    const sharedValue = Worklets.createSharedValue({a: 100, b: 200});
-    const {a, b} = {...sharedValue.value};
-    return ExpectValue({a, b}, {a: 100, b: 100});
+    const sharedValue = Worklets.createSharedValue({ a: 100, b: 200 });
+    const { a, b } = { ...sharedValue.value };
+    return ExpectValue({ a, b }, { a: 100, b: 100 });
   },
 
   object_value_spread: () => {
-    const sharedValue = Worklets.createSharedValue({a: 100, b: 200});
-    const p = {...sharedValue.value};
-    return ExpectValue(p, {a: 100, b: 200});
+    const sharedValue = Worklets.createSharedValue({ a: 100, b: 200 });
+    const p = { ...sharedValue.value };
+    return ExpectValue(p, { a: 100, b: 200 });
   },
 
   set_value_from_worklet: () => {
-    const sharedValue = Worklets.createSharedValue('hello world');
+    const sharedValue = Worklets.createSharedValue("hello world");
     const worklet = Worklets.createRunInContextFn(function () {
-      'worklet';
-      sharedValue.value = 'hello worklet';
+      "worklet";
+      sharedValue.value = "hello worklet";
     });
-    sharedValue.value = 'hello worklet';
+    sharedValue.value = "hello worklet";
     return Expect(worklet(), () =>
-      sharedValue.value === 'hello worklet'
+      sharedValue.value === "hello worklet"
         ? undefined
-        : `Expected ${"'hello worklet'"} but got ${sharedValue.value}`,
+        : `Expected ${"'hello worklet'"} but got ${sharedValue.value}`
     );
   },
 
   set_function_with_error: () => {
     return ExpectException(() => {
       Worklets.createSharedValue(() => {});
-    }, 'Regular javascript functions cannot be shared.');
+    }, "Regular javascript functions cannot be shared.");
   },
 
   add_listener: () => {
@@ -149,12 +149,12 @@ export const sharedvalue_tests = {
   add_listener_from_worklet_should_fail: () => {
     const sharedValue = Worklets.createSharedValue(100);
     const worklet = Worklets.createRunInContextFn(function () {
-      'worklet';
+      "worklet";
       sharedValue.addListener(() => {});
     });
     return ExpectException(
       worklet,
-      'addListener can only be called from the main Javascript context and not from a worklet.',
+      "addListener can only be called from the main Javascript context and not from a worklet."
     );
   },
 };

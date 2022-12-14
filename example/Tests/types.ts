@@ -1,4 +1,4 @@
-export type TestState = 'notrun' | 'running' | 'success' | 'failure';
+export type TestState = "notrun" | "running" | "success" | "failure";
 
 export type TestInfo = {
   run: () => Promise<void>;
