@@ -75,7 +75,8 @@ function processWorkletFunction(t, fun, state) {
 
       if (
         parentNode.type === "MemberExpression" &&
-        parentNode.object !== path.node
+        parentNode.object !== path.node &&
+        !parentNode.computed
       ) {
         return;
       }
