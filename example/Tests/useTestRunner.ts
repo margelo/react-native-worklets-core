@@ -1,6 +1,6 @@
-import {useCallback, useEffect, useMemo, useState} from 'react';
-import {TestInfo, TestState} from './types';
-import {useTests} from './useTests';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { TestInfo, TestState } from "./types";
+import { useTests } from "./useTests";
 
 /**
  * Creates a simple test runner for running tests on the device
@@ -14,7 +14,7 @@ export const useTestRunner = () => {
     output: string[];
   }>();
 
-  const {tests, categories} = useTests();
+  const { tests, categories } = useTests();
 
   /**
    * Runs a set of tests from start to end
@@ -22,24 +22,24 @@ export const useTestRunner = () => {
   const runTests = (testsToRun: TestInfo[]) => {
     // Setting state will trigger a rerender which in turn will start the first test
     setActiveTests({
-      tests: testsToRun.map(t => ({...t, state: 'notrun'})),
+      tests: testsToRun.map((t) => ({ ...t, state: "notrun" })),
       index: 0,
-      output: ['Starting test runner...'],
+      output: ["Starting test runner..."],
     });
   };
 
   const runAllTests = useCallback(() => runTests(tests), [tests]);
   const runTest = useCallback((test: TestInfo) => {
-    console.log('Running test: ' + test.name);
+    console.log("Running test: " + test.name);
     // Set the test state to running
-    setActiveTests(p => ({
+    setActiveTests((p) => ({
       ...(p ?? {
         tests: [test],
         index: 0,
         output: [],
       }),
-      tests: updateTestState(test, 'running', p?.tests ?? [test]),
-      output: addOutputStateLine(test.name + ' running...', p?.output ?? []),
+      tests: updateTestState(test, "running", p?.tests ?? [test]),
+      output: addOutputStateLine(test.name + " running...", p?.output ?? []),
     }));
 
     // Start the test!
@@ -48,39 +48,36 @@ export const useTestRunner = () => {
         test
           .run()
           .then(() => {
-            console.log('Test: ' + test.name + ' succeeded.');
+            console.log("Test: " + test.name + " succeeded.");
             setTimeout(
               () =>
-                setActiveTests(p => ({
+                setActiveTests((p) => ({
                   ...p!,
-                  tests: updateTestState(test, 'success', p!.tests),
+                  tests: updateTestState(test, "success", p!.tests),
                   output: removeOutputStateLine(p!.output),
                 })),
-              100,
+              100
             );
           })
-          .catch(err => {
-            console.log('Test: ' + test.name + ' failed.');
+          .catch((err) => {
+            console.log("Test: " + test.name + " failed.");
             setTimeout(
               () =>
-                setActiveTests(p => ({
+                setActiveTests((p) => ({
                   ...p!,
-                  tests: updateTestState(test, 'failure', p!.tests),
+                  tests: updateTestState(test, "failure", p!.tests),
                   output: addOutputStateLine(
-                    '    ' + (typeof err === 'string' ? err : err.message),
-                    updateOutputStateLastLine(
-                      test.name + ' failed.',
-                      p!.output,
-                    ),
+                    "    " + (typeof err === "string" ? err : err.message),
+                    updateOutputStateLastLine(test.name + " failed.", p!.output)
                   ),
                 })),
-              100,
+              100
             );
           })
           .finally(() => {
             setTimeout(
               () =>
-                setActiveTests(p => {
+                setActiveTests((p) => {
                   if (p === undefined) {
                     return undefined;
                   }
@@ -96,16 +93,16 @@ export const useTestRunner = () => {
                       ...p,
                       index: -1,
                       output: addOutputStateLine(
-                        'Done running tests',
-                        p.output,
+                        "Done running tests",
+                        p.output
                       ),
                     };
                   }
                 }),
-              100,
+              100
             );
           }),
-      100,
+      100
     );
   }, []);
 
@@ -116,12 +113,13 @@ export const useTestRunner = () => {
     }
 
     if (
+      activeTests &&
       activeTests.index > -1 &&
-      activeTests.tests[activeTests.index].state === 'notrun'
+      activeTests.tests[activeTests.index]?.state === "notrun"
     ) {
       // Start the test
-      console.log('Starting test with index', activeTests.index + 1);
-      runTest(activeTests.tests[activeTests.index]);
+      console.log("Starting test with index", activeTests.index + 1);
+      runTest(activeTests.tests[activeTests.index]!);
     }
   }, [activeTests, runTest]);
 
@@ -132,24 +130,24 @@ export const useTestRunner = () => {
       runAllTests,
       isRunning: activeTests !== undefined && activeTests.index !== -1,
       tests: tests.map(
-        t =>
+        (t) =>
           activeTests?.tests.find(
-            t2 => t2.name === t.name && t2.category === t.category,
-          ) ?? t,
+            (t2) => t2.name === t.name && t2.category === t.category
+          ) ?? t
       ),
       categories,
       output: activeTests?.output ?? [],
     }),
-    [activeTests, categories, runAllTests, tests],
+    [activeTests, categories, runAllTests, tests]
   );
 };
 
 const updateTestState = (
   test: TestInfo,
   newState: TestState,
-  tests: TestInfo[],
+  tests: TestInfo[]
 ): TestInfo[] => {
-  return tests.map(t => ({
+  return tests.map((t) => ({
     ...t,
     state: t.name === test.name ? newState : t.state,
   }));

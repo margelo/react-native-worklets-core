@@ -1,7 +1,7 @@
 "use strict";
 
 const generate = require("@babel/generator").default;
-const { transformSync } = require("@babel/core");
+//const { transformSync } = require("@babel/core");
 const traverse = require("@babel/traverse").default;
 const parse = require("@babel/parser").parse;
 
@@ -122,10 +122,10 @@ function processWorkletFunction(t, fun, state) {
     },
   });
 
-  const codeObject = generate(fun.node, {
-    sourceMaps: true,
-    sourceFileName: state.file.opts.filename,
-  });
+  // const codeObject = generate(fun.node, {
+  //   sourceMaps: true,
+  //   sourceFileName: state.file.opts.filename,
+  // });
 
   const variables = Array.from(closure.values());
   const privateFunctionId = t.identifier("_" + functionName);

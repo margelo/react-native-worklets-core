@@ -1,6 +1,6 @@
-import {useMemo} from 'react';
-import {Tests} from './tests';
-import {TestInfo} from './types';
+import { useMemo } from "react";
+import { Tests } from "./tests";
+import type { TestInfo } from "./types";
 
 export const useTests = () => {
   // All tests flattened
@@ -9,21 +9,21 @@ export const useTests = () => {
       Object.keys(Tests).reduce(
         (acc, category) =>
           acc.concat(
-            Object.keys(Tests[category]).map(testName => ({
-              run: Tests[category][testName],
+            Object.keys(Tests[category]!).map((testName) => ({
+              run: Tests[category]![testName]!,
               name: testName,
-              state: 'notrun',
+              state: "notrun",
               category: category,
-            })),
+            }))
           ),
-        [] as TestInfo[],
+        [] as TestInfo[]
       ),
-    [],
+    []
   );
 
   const categories = useMemo(() => {
     const retVal = new Set<string>();
-    tests.forEach(test => retVal.add(test.category));
+    tests.forEach((test) => retVal.add(test.category));
     return Array.from(retVal);
   }, [tests]);
 
@@ -32,6 +32,6 @@ export const useTests = () => {
       tests,
       categories,
     }),
-    [categories, tests],
+    [categories, tests]
   );
 };
