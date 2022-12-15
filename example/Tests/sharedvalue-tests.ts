@@ -152,9 +152,6 @@ export const sharedvalue_tests = {
       "worklet";
       sharedValue.addListener(() => {});
     });
-    return ExpectException(
-      worklet,
-      "addListener can only be called from the main Javascript context and not from a worklet."
-    );
+    return ExpectException(worklet);
   },
 };
