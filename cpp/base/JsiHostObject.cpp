@@ -42,11 +42,6 @@ void JsiHostObject::set(jsi::Runtime &rt, const jsi::PropNameID &name,
                                 std::placeholders::_2);
     return dispatcher(rt, value);
   }
-
-  if (_propMap.count(nameStr) > 0) {
-    auto prop = _propMap.at(nameStr);
-    (prop.set)(rt, value);
-  }
 }
 
 jsi::Value JsiHostObject::get(jsi::Runtime &runtime,
@@ -86,16 +81,6 @@ jsi::Value JsiHostObject::get(jsi::Runtime &runtime,
         .first->second.asFunction(runtime);
   }
 
-  if (_funcMap.count(nameStr) > 0) {
-    return jsi::Function::createFromHostFunction(runtime, name, 0,
-                                                 _funcMap.at(nameStr));
-  }
-
-  if (_propMap.count(nameStr) > 0) {
-    auto prop = _propMap.at(nameStr);
-    return (prop.get)(runtime);
-  }
-
   return jsi::Value::undefined();
 }
 
@@ -111,8 +96,7 @@ JsiHostObject::getPropertyNames(jsi::Runtime &runtime) {
   const auto &setters = getExportedPropertySettersMap();
 
   std::vector<jsi::PropNameID> propNames;
-  propNames.reserve(funcs.size() + getters.size() + setters.size() +
-                    _funcMap.size() + _propMap.size());
+  propNames.reserve(funcs.size() + getters.size() + setters.size());
 
   for (auto it = funcs.cbegin(); it != funcs.cend(); ++it) {
     propNames.push_back(jsi::PropNameID::forAscii(runtime, it->first));
@@ -126,15 +110,6 @@ JsiHostObject::getPropertyNames(jsi::Runtime &runtime) {
     if (getters.count(it->first) == 0) {
       propNames.push_back(jsi::PropNameID::forUtf8(runtime, it->first));
     }
-  }
-
-  // functions
-  for (auto it = _funcMap.cbegin(); it != _funcMap.cend(); ++it) {
-    propNames.push_back(jsi::PropNameID::forAscii(runtime, it->first));
-  }
-  // props
-  for (auto it = _propMap.cbegin(); it != _propMap.cend(); ++it) {
-    propNames.push_back(jsi::PropNameID::forAscii(runtime, it->first));
   }
   return propNames;
 }
