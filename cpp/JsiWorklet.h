@@ -3,7 +3,6 @@
 #include <jsi/jsi.h>
 
 #include "JsiHostObject.h"
-#include "JsiWorkletContext.h"
 #include "JsiWrapper.h"
 
 namespace RNWorklet {
@@ -167,32 +166,9 @@ public:
    */
   jsi::Value call(jsi::Runtime &runtime, const jsi::Value *arguments,
                   size_t count) {
-    // Wrap the arguments
-    std::vector<std::shared_ptr<JsiWrapper>> argsWrapper;
-    argsWrapper.reserve(count);
-    for (size_t i = 0; i < count; i++) {
-      argsWrapper.push_back(JsiWrapper::wrap(runtime, arguments[i]));
-    }
 
-    return call(runtime, argsWrapper);
-  }
-
-  /**
-     Calls the worklet in the provided runtime
-     */
-  jsi::Value call(jsi::Runtime &runtime,
-                  const std::vector<std::shared_ptr<JsiWrapper>> &argsWrapper) {
     // Unwrap closure
     auto unwrappedClosure = JsiWrapper::unwrap(runtime, _closureWrapper);
-
-    // Create arguments
-    size_t size = argsWrapper.size();
-    std::vector<jsi::Value> args(size);
-
-    // Add the rest of the arguments
-    for (size_t i = 0; i < size; i++) {
-      args[i] = JsiWrapper::unwrap(runtime, argsWrapper.at(i));
-    }
 
     // Get the worklet function - the js function wrapping a call to
     // the js code.
@@ -204,18 +180,14 @@ public:
     // Prepare jsThis - we don't use it in our plugin, but REA uses it
     // when decorating worklet functions. TODO: We need to solve this,
     // should we do as REA or just use this like we do?
-    auto thisWrapper =
-        std::make_unique<JsThisWrapper>(runtime, unwrappedClosure);
+    JsThisWrapper thisWrapper(runtime, unwrappedClosure);
 
     // Call the unwrapped function
     if (!unwrappedClosure.isObject()) {
-      retVal = workletFunction->call(
-          runtime, static_cast<const jsi::Value *>(args.data()),
-          argsWrapper.size());
+      retVal = workletFunction->call(runtime, arguments, count);
     } else {
       retVal = workletFunction->callWithThis(
-          runtime, unwrappedClosure.asObject(runtime),
-          static_cast<const jsi::Value *>(args.data()), argsWrapper.size());
+          runtime, unwrappedClosure.asObject(runtime), arguments, count);
     }
 
     return retVal;

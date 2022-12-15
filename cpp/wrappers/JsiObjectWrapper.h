@@ -191,9 +191,9 @@ private:
   }
 
   void setFunctionValue(jsi::Runtime &runtime, const jsi::Value &value) {
+    setType(JsiWrapperType::HostFunction);
     // Check if the function is decorated as a worklet
     if (JsiWorklet::isDecoratedAsWorklet(runtime, value)) {
-      setType(JsiWrapperType::HostFunction);
       // Create worklet
       auto worklet = std::make_shared<JsiWorklet>(runtime, value);
       // Create wrapping host function
@@ -205,10 +205,13 @@ private:
     }
     auto func = value.asObject(runtime).asFunction(runtime);
     if (func.isHostFunction(runtime)) {
-      setType(JsiWrapperType::HostFunction);
+      // Host functions should just be called
       _hostFunction = std::make_shared<jsi::HostFunctionType>(
           func.getHostFunction(runtime));
     } else {
+      // Create a host function throwing an the error when the
+      // function is called - not when it is created. This way
+      // we can accept any function as long as it is not used.
       _hostFunction =
           std::make_shared<jsi::HostFunctionType>(JSI_HOST_FUNCTION_LAMBDA {
             throw jsi::JSError(

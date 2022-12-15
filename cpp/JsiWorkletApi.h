@@ -325,7 +325,20 @@ public:
 
                   // Prepare result
                   try {
-                    auto retVal = worklet->call(*workletRuntime, argsWrapper);
+                    // Create arguments
+                    size_t size = argsWrapper.size();
+                    std::vector<jsi::Value> args(size);
+
+                    // Add the rest of the arguments
+                    for (size_t i = 0; i < size; i++) {
+                      args[i] = JsiWrapper::unwrap(*workletRuntime,
+                                                   argsWrapper.at(i));
+                    }
+
+                    auto retVal = worklet->call(
+                        *workletRuntime,
+                        static_cast<const jsi::Value *>(args.data()),
+                        argsWrapper.size());
 
                     // Since we are returning this on another context, we need
                     // to wrap/unwrap the value

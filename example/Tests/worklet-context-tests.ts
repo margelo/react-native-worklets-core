@@ -197,4 +197,25 @@ export const worklet_context_tests = {
     });
     return ExpectException(workletA, "Test error");
   },
+
+  call_worklet_to_worklet_without_wrapping_args: () => {
+    const workletB = (a: { current: number }) => {
+      "worklet";
+      return a.current;
+    };
+    const workletA = Worklets.createRunInContextFn(function () {
+      "worklet";
+      return workletB({ current: 100 });
+    });
+    return ExpectValue(workletA(), 100);
+  },
+
+  fail_when_calling_a_regular_function_from_a_worklet: () => {
+    const func = (a: number) => a;
+    const worklet = Worklets.createRunInContextFn(function () {
+      "worklet";
+      return func(100);
+    });
+    return ExpectException(worklet);
+  },
 };
