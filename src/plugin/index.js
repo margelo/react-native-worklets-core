@@ -1,9 +1,11 @@
 "use strict";
 
 const generate = require("@babel/generator").default;
-//const { transformSync } = require("@babel/core");
 const traverse = require("@babel/traverse").default;
 const parse = require("@babel/parser").parse;
+
+const globals = new Set();
+const functionsToWorkletize = new Map();
 
 function buildWorkletString(t, fun, closureVariables, name, state) {
   fun.traverse({
@@ -71,6 +73,12 @@ function processWorkletFunction(t, fun, state) {
   traverse(astWorkletCopy, {
     ReferencedIdentifier(path) {
       const name = path.node.name;
+
+      // Check if it exists on global object or is a user provided global.
+      if (global.hasOwnProperty(name) || globals.has(name)) {
+        return;
+      }
+
       const parentNode = path.parent;
 
       if (
@@ -96,10 +104,8 @@ function processWorkletFunction(t, fun, state) {
         }
         currentScope = currentScope.parent;
       }
-      // Check if it exists on global object
-      if (!global.hasOwnProperty(name)) {
-        closure.set(name, path.node);
-      }
+
+      closure.set(name, path.node);
     },
     AssignmentExpression(path) {
       // test for <somethin>.value = <something> expressions
@@ -257,9 +263,41 @@ function processIfWorkletNode(t, p, state) {
   });
 }
 
+function processFunctionsToWorkletize(t, path, state) {
+  const name =
+    path.node.callee.type === "MemberExpression"
+      ? path.node.callee.property.name
+      : path.node.callee.name;
+
+  const indexes = functionsToWorkletize.get(name);
+  if (Array.isArray(indexes)) {
+    indexes.forEach((index) => {
+      processWorkletFunction(t, path.get(`arguments.${index}`), state);
+    });
+  }
+}
+
 module.exports = function ({ types: t }) {
   return {
+    pre() {
+      // Extra globals.
+      this.opts?.globals?.forEach((name) => {
+        globals.add(name);
+      });
+      // Function arguments that will be automatically transformed to worklets.
+      // The format is [{ name: functionName, args: [argumentIndex1, argumentIndex2, ...]}, ...]
+      // For example, [{ name: 'useWorklet', args: [0] }] will transform the first argument of functions called useWorklet
+      // to a worklet automatically without needed to add the "worklet" directive.
+      this.opts?.functionsToWorkletize?.forEach(({ name, args }) => {
+        functionsToWorkletize.set(name, args);
+      });
+    },
     visitor: {
+      "CallExpression": {
+        exit(path, state) {
+          processFunctionsToWorkletize(t, path, state);
+        },
+      },
       "FunctionDeclaration|FunctionExpression|ArrowFunctionExpression": {
         exit(path, state) {
           processIfWorkletNode(t, path, state);
