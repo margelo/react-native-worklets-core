@@ -2,7 +2,7 @@ const { transform } = require("@babel/core");
 const prettier = require("prettier");
 
 const conf = {
-  filename: "test.js",
+  filename: "test.ts",
 };
 
 describe("babel-plugin-preserve-jscontext-function-to-string", () => {
@@ -17,7 +17,7 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
     const f = runPluginAndEval('function run() {"worklet"; return 1000;}');
     expect(f._closure).toEqual({});
     expect(f.asString).toEqual("function run(){return 1000;}");
-    expect(f.__location).toContain("test.js (1:0)");
+    expect(f.__location).toContain("test.ts (1:0)");
   });
 
   it("should work with typescript types", () => {
@@ -39,7 +39,7 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
         }
       };`
     );
-    expect(output).toContain(`_run.asString = "function run(){this.stop();}"`);
+    expect(output).toContain(`_f.asString = "function run(){this.stop();}"`);
   });
 
   it("should redeclare code with dependencies", () => {
@@ -112,7 +112,7 @@ describe("babel-plugin-preserve-jscontext-function-to-string", () => {
     const [, output] = transformCode(`useWorklet(() => 1);`, undefined, {
       functionsToWorkletize: [{ name: "useWorklet", args: [0] }],
     });
-    expect(output).toContain(`__f.asString = "function _f(){return 1;}"`);
+    expect(output).toContain(`_f.asString = "function anonymous(){return 1;}"`);
   });
 });
 
