@@ -76,36 +76,6 @@ public:
     return jsi::Value::undefined();
   }
 
-  JSI_HOST_FUNCTION(createWorklet) {
-    // Make sure this one is only called from the js runtime
-    if (_context->isWorkletRuntime(runtime)) {
-      throw jsi::JSError(runtime, "createWorklet should only be called "
-                                  "from the javascript runtime.");
-    }
-
-    if (count > 2) {
-      throw jsi::JSError(
-          runtime,
-          "createWorklet expects a Javascript function as the first parameter, "
-          "and an optional worklet context as the second parameter.");
-    }
-
-    // Get the active context
-    auto activeContext =
-        count == 2 && arguments[1].isObject()
-            ? arguments[1].asObject(runtime).getHostObject<JsiWorkletContext>(
-                  runtime)
-            : _context;
-
-    if (activeContext == nullptr) {
-      throw jsi::JSError(runtime, "createWorklet called with invalid context.");
-    }
-
-    // Create the worklet host object and return to JS caller
-    return jsi::Object::createFromHostObject(
-        runtime, std::make_shared<JsiWorklet>(runtime, arguments[0]));
-  };
-
   JSI_HOST_FUNCTION(createContext) {
     if (count == 0) {
       throw jsi::JSError(
@@ -379,8 +349,7 @@ public:
         });
   }
 
-  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletApi, createWorklet),
-                       JSI_EXPORT_FUNC(JsiWorkletApi, createSharedValue),
+  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletApi, createSharedValue),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createContext),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createRunInContextFn),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createRunInJsFn),

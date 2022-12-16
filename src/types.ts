@@ -51,18 +51,6 @@ export interface IWorkletNativeApi {
    */
   createSharedValue: <T>(value: T) => ISharedValue<T>;
   /**
-   * Creates a worklet that can be executed on either then main thread or on
-   * the worklet thread in the context given by the context name (or empty to run
-   * in the default context)
-   * @param fn Decorated function that will be used as the worklet
-   * @param context Worklet context to run the worklet in. Optional.
-   * @param returns an @see(IWorklet) object
-   */
-  createWorklet: <C extends ContextType, T, A extends Array<unknown>>(
-    fn: (this: C, ...args: A) => T,
-    context?: IWorkletContext
-  ) => IWorklet;
-  /**
    * Creates a function that will be executed in the worklet context. The function
    * will return a promise that will be resolved when the function has been
    * executed on the worklet thread.
