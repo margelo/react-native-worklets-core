@@ -14,6 +14,8 @@
 namespace RNWorklet {
 
 const char *WorkletRuntimeFlag = "__rn_worklets_runtime_flag";
+const char *GlobalPropertyName = "global";
+
 std::vector<std::shared_ptr<JsiBaseDecorator>> JsiWorkletContext::_decorators;
 
 namespace jsi = facebook::jsi;
@@ -48,11 +50,6 @@ void JsiWorkletContext::initialize(
   _jsRuntime = jsRuntime;
   _jsCallInvoker = jsCallInvoker;
   _workletCallInvoker = workletCallInvoker;
-
-  // Run decorators if we're not the singleton main context
-  if (JsiWorkletContext::getInstance().get() != this) {
-    applyDecorators(_decorators);
-  }
 }
 
 void JsiWorkletContext::initialize(
@@ -71,9 +68,23 @@ void JsiWorkletContext::initialize(
 
 jsi::Runtime &JsiWorkletContext::getWorkletRuntime() {
   if (!_workletRuntime) {
+    // Lazy initialization of the worklet runtime
     _workletRuntime = makeJSIRuntime();
     _workletRuntime->global().setProperty(*_workletRuntime, WorkletRuntimeFlag,
                                           true);
+    
+    // Copy global which is expected to be found instead of the globalThis object.
+    _workletRuntime->global().setProperty(*_workletRuntime, GlobalPropertyName,
+                                          _workletRuntime->global());
+    
+    // Run decorators if we're not the singleton main context - no need to
+    // do this in the worklet thread because we should already be in the
+    // worklet thread now.
+    if (JsiWorkletContext::getInstance().get() != this) {
+      for (size_t i = 0; i < _decorators.size(); ++i) {
+        _decorators[i]->decorateRuntime(getWorkletRuntime());
+      }
+    }
   }
 
   return *_workletRuntime;
