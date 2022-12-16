@@ -164,8 +164,8 @@ public:
   /**
    Calls the
    */
-  jsi::Value call(jsi::Runtime &runtime, const jsi::Value *arguments,
-                  size_t count) {
+  jsi::Value call(jsi::Runtime &runtime, const jsi::Value &thisValue,
+                  const jsi::Value *arguments, size_t count) {
 
     // Unwrap closure
     auto unwrappedClosure = JsiWrapper::unwrap(runtime, _closureWrapper);
@@ -177,17 +177,15 @@ public:
     // Prepare return value
     jsi::Value retVal;
 
-    // Prepare jsThis - we don't use it in our plugin, but REA uses it
-    // when decorating worklet functions. TODO: We need to solve this,
-    // should we do as REA or just use this like we do?
+    // Prepare jsThis
     JsThisWrapper thisWrapper(runtime, unwrappedClosure);
 
     // Call the unwrapped function
-    if (!unwrappedClosure.isObject()) {
+    if (!thisValue.isObject()) {
       retVal = workletFunction->call(runtime, arguments, count);
     } else {
       retVal = workletFunction->callWithThis(
-          runtime, unwrappedClosure.asObject(runtime), arguments, count);
+          runtime, thisValue.asObject(runtime), arguments, count);
     }
 
     return retVal;

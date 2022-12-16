@@ -336,7 +336,7 @@ public:
                     }
 
                     auto retVal = worklet->call(
-                        *workletRuntime,
+                        *workletRuntime, jsi::Value::undefined(),
                         static_cast<const jsi::Value *>(args.data()),
                         argsWrapper.size());
 

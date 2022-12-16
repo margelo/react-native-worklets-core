@@ -199,7 +199,7 @@ private:
       // Create wrapping host function
       _hostFunction =
           std::make_shared<jsi::HostFunctionType>(JSI_HOST_FUNCTION_LAMBDA {
-            return worklet->call(runtime, arguments, count);
+            return worklet->call(runtime, thisValue, arguments, count);
           });
       return;
     }

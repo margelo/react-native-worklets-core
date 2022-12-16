@@ -32,7 +32,7 @@ function buildWorkletString(t, fun, closureVariables, name, state) {
                 )
               )
             ),
-            t.identifier("this")
+            t.identifier("jsThis")
           ),
         ]),
         fun.get("body").node,
