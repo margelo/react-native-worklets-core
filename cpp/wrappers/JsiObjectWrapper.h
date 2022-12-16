@@ -209,16 +209,19 @@ private:
       _hostFunction = std::make_shared<jsi::HostFunctionType>(
           func.getHostFunction(runtime));
     } else {
+      auto nameProp = func.getProperty(runtime, "name");
+      auto name = nameProp.isString() ? nameProp.asString(runtime).utf8(runtime)
+                                      : "<unknown>";
       // Create a host function throwing an the error when the
       // function is called - not when it is created. This way
       // we can accept any function as long as it is not used.
       _hostFunction =
           std::make_shared<jsi::HostFunctionType>(JSI_HOST_FUNCTION_LAMBDA {
             throw jsi::JSError(
-                runtime,
-                "Regular javascript functions cannot be shared. Try "
-                "decorating the function with the 'worklet' keyword to allow "
-                "the javascript function to be used as a worklet.");
+                runtime, "Regular javascript function '" + name +
+                             "' cannot be shared. Try decorating the function "
+                             "with the 'worklet' keyword to allow the "
+                             "javascript function to be used as a worklet.");
           });
     }
   }
