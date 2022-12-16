@@ -25,14 +25,14 @@ RCT_EXPORT_MODULE()
 
 void installApi(std::shared_ptr<facebook::react::CallInvoker> callInvoker,
                 facebook::jsi::Runtime *runtime) {
-  // Initialize the default worklet context
-  RNWorklet::JsiWorkletContext::getInstance()->initialize(
+  // Create the worklet context
+  auto workletContext = std::make_shared<RNWorklet::JsiWorkletContext>(
       "default", runtime, [=](std::function<void()> &&f) {
         callInvoker->invokeAsync(std::move(f));
       });
 
   // Install the worklet API
-  RNWorklet::JsiWorkletApi::installApi();
+  RNWorklet::JsiWorkletApi::installApi(workletContext);
 }
 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(install) {

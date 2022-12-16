@@ -2,6 +2,7 @@
 #pragma once
 
 #include "DispatchQueue.h"
+#include "JsRuntimeFactory.h"
 #include "JsiBaseDecorator.h"
 #include "JsiHostObject.h"
 
@@ -13,66 +14,63 @@
 
 namespace RNWorklet {
 
+const char *WorkletRuntimeFlag = "__rn_worklets_runtime_flag";
+
 namespace jsi = facebook::jsi;
 
 class JsiWorkletContext : public JsiHostObject {
 public:
   /**
    * Creates a new worklet context that can be used to run javascript functions
-   * as worklets in a separate threads / js runtimes. After construction the
-   * context needs to be initialized.
-   */
-  explicit JsiWorkletContext(){};
-
-  /**
-   Constructs a new worklet context using the same values and configuration as
-   the default context. No need to run initialize on the runtime. The only thing
-   not copied from the default context is the worklet invoker which will be a
-   default queue.
-   @param name Name of the context
-   */
-  JsiWorkletContext(const std::string &name);
-
-  /**
-   Constructs a new worklet context using the same values and configuration as
-   the default context. No need to run initialize on the runtime.
-   @param name Name of the context
-   @param workletCallInvoker Callback for running a function on the worklet
-   thread
-   */
-  JsiWorkletContext(
-      const std::string &name,
-      std::function<void(std::function<void()> &&)> workletCallInvoker);
-
-  /**
-   * Initialializes the worklet context
+   * as worklets in a separate threads / js runtimes.
    * @param name Name of the context
    * @param jsRuntime Main javascript runtime.
    * @param jsCallInvoker Callback for running a function on the JS thread.
    * @param workletCallInvoker Callback for running a function on the worklet
    * thread
    */
-  void
-  initialize(const std::string &name, jsi::Runtime *jsRuntime,
-             std::function<void(std::function<void()> &&)> jsCallInvoker,
-             std::function<void(std::function<void()> &&)> workletCallInvoker);
+  JsiWorkletContext(
+      const std::string &name, jsi::Runtime *jsRuntime,
+      std::function<void(std::function<void()> &&)> jsCallInvoker,
+      std::function<void(std::function<void()> &&)> workletCallInvoker)
+      : _name(name), _jsRuntime(jsRuntime), _jsCallInvoker(jsCallInvoker),
+        _workletCallInvoker(workletCallInvoker) {}
 
   /**
-   * Initialializes the worklet context
+   * Ctor for the JsiWorkletContext
    * @param name Name of the context
    * @param jsRuntime Runtime for the main javascript runtime.
    * @param jsCallInvoker Callback for running a function on the JS thread.
    */
-  void initialize(const std::string &name, jsi::Runtime *jsRuntime,
-                  std::function<void(std::function<void()> &&)> jsCallInvoker);
+  JsiWorkletContext(const std::string &name, jsi::Runtime *jsRuntime,
+                    std::function<void(std::function<void()> &&)> jsCallInvoker)
+      : _name(name), _jsRuntime(jsRuntime), _jsCallInvoker(jsCallInvoker) {
+    // Create queue
+    auto dispatchQueue =
+        std::make_shared<DispatchQueue>(name + "_worklet_dispatch_queue", 1);
+
+    // Create invoker
+    _workletCallInvoker = [dispatchQueue](std::function<void()> &&f) {
+      dispatchQueue->dispatch(std::move(f));
+    };
+  }
 
   /**
-   Static / singleton default context
+   * Creates a new worklet context from a parent context. The new worklet
+   * context will inherit from the parent context, but will create its own
+   * worklet runtime and worklet executor thread.
+   * @param name Name of the context
+   * @param parentContext parent worklet context
    */
-  static std::shared_ptr<JsiWorkletContext> getInstance() {
-    static auto instance = std::make_shared<JsiWorkletContext>();
-    return instance;
-  }
+  JsiWorkletContext(const std::string &name,
+                    std::shared_ptr<JsiWorkletContext> parentContext)
+      : JsiWorkletContext(name, parentContext->_jsRuntime,
+                          parentContext->_jsCallInvoker) {}
+
+  /**
+   * Destructor
+   */
+  virtual ~JsiWorkletContext() {}
 
   JSI_PROPERTY_GET(name) {
     return jsi::String::createFromUtf8(runtime, getName());
@@ -93,52 +91,54 @@ public:
   /**
    Returns the worklet runtime. Lazy evaluated
    */
-  jsi::Runtime &getWorkletRuntime();
+  jsi::Runtime &getWorkletRuntime() {
+    if (!_workletRuntime) {
+      _workletRuntime = makeJSIRuntime();
+      _workletRuntime->global().setProperty(*_workletRuntime,
+                                            WorkletRuntimeFlag, true);
+    }
+
+    return *_workletRuntime;
+  }
 
   /**
    Executes a function in the JS thread
    */
-  void invokeOnJsThread(std::function<void()> &&fp);
+  void invokeOnJsThread(std::function<void()> &&fp) {
+    if (_jsCallInvoker == nullptr) {
+      throw std::runtime_error(
+          "Expected Worklet context to have a JS call invoker.");
+    }
+    _jsCallInvoker(std::move(fp));
+  }
 
   /**
    Executes a function in the worklet thread
    */
-  void invokeOnWorkletThread(std::function<void()> &&fp);
+  void invokeOnWorkletThread(std::function<void()> &&fp) {
+    if (_workletCallInvoker == nullptr) {
+      throw std::runtime_error(
+          "Expected Worklet context to have a worklet call invoker.");
+    }
+    _workletCallInvoker(std::move(fp));
+  }
 
   /**
    * Returns true if the runtime provided is the worklet runtime
    * @param runtime Runtime to check
    * @return True if the runtime is the worklet runtime
    */
-  bool isWorkletRuntime(jsi::Runtime &runtime);
-
-  /**
-   Returns the list of decorators
-   */
-  static const std::vector<std::shared_ptr<JsiBaseDecorator>> &getDecorators() {
-    return _decorators;
+  bool isWorkletRuntime(jsi::Runtime &runtime) {
+    auto isWorklet = runtime.global().getProperty(runtime, WorkletRuntimeFlag);
+    return isWorklet.isBool() && isWorklet.getBool();
   }
 
   /**
-   Adds a global decorator. The decorator will be installed in the default
-   context.
+   Decorates the worklet runtime.
    */
-  static void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator);
-
-  /**
-   Decorates the worklet runtime. The decorator is run in the worklet runtime
-   and on the worklet thread, since it is not legal to access the worklet
-   runtime from the javascript thread.
-   */
-  template <typename... Args> void decorate(Args &&...args);
-
-  /**
-   Decorates the worklet runtime. The decorator is run in the worklet runtime
-   and on the worklet thread, since it is not legal to access the worklet
-   runtime from the javascript thread.
-   */
-  void applyDecorators(
-      const std::vector<std::shared_ptr<JsiBaseDecorator>> &decorators);
+  void decorate(JsiBaseDecorator *decorator) {
+    decorator->decorateRuntime(getWorkletRuntime());
+  }
 
 private:
   jsi::Runtime *_jsRuntime;
@@ -146,8 +146,6 @@ private:
   std::string _name;
   std::function<void(std::function<void()> &&)> _jsCallInvoker;
   std::function<void(std::function<void()> &&)> _workletCallInvoker;
-
-  static std::vector<std::shared_ptr<JsiBaseDecorator>> _decorators;
 };
 
 } // namespace RNWorklet

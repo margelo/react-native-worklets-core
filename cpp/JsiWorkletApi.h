@@ -22,22 +22,27 @@ class JsiWorkletApi : public JsiHostObject {
 public:
   /**
    * Create the worklet API
+   * @param context Worklet context
    * make sure only the runOnJsThread method is available.
    */
-  JsiWorkletApi(){};
+  JsiWorkletApi(std::shared_ptr<JsiWorkletContext> context)
+      : _context(context){
+            // TODO:Add default decorators
+            // Here we want some console objects at least
+        };
 
   /**
    * Installs the worklet API into the provided runtime
+   * @param context Worklet context to install API for
    */
-  static void installApi() {
-    auto context = JsiWorkletContext::getInstance();
+  static void installApi(std::shared_ptr<JsiWorkletContext> context) {
     auto existingApi = (context->getJsRuntime()->global().getProperty(
         *context->getJsRuntime(), WorkletsApiName));
     if (existingApi.isObject()) {
       return;
     }
 
-    auto workletApi = std::make_shared<JsiWorkletApi>();
+    auto workletApi = std::make_shared<JsiWorkletApi>(context);
     context->getJsRuntime()->global().setProperty(
         *context->getJsRuntime(), WorkletsApiName,
         jsi::Object::createFromHostObject(*context->getJsRuntime(),
@@ -45,7 +50,7 @@ public:
   }
 
   JSI_HOST_FUNCTION(addDecorator) {
-    if (JsiWorkletContext::getInstance()->isWorkletRuntime(runtime)) {
+    if (_context->isWorkletRuntime(runtime)) {
       throw jsi::JSError(runtime, "addDecorator should only be called "
                                   "from the javascript runtime.");
     }
@@ -89,20 +94,19 @@ public:
   };
 
   JSI_HOST_FUNCTION(createSharedValue) {
-    if (JsiWorkletContext::getInstance()->isWorkletRuntime(runtime)) {
+    if (_context->isWorkletRuntime(runtime)) {
       throw jsi::JSError(runtime, "createSharedValue should only be called "
                                   "from the javascript runtime.");
     }
 
     return jsi::Object::createFromHostObject(
-        *JsiWorkletContext::getInstance()->getJsRuntime(),
-        std::make_shared<JsiSharedValue>(arguments[0],
-                                         JsiWorkletContext::getInstance()));
+        *_context->getJsRuntime(),
+        std::make_shared<JsiSharedValue>(arguments[0], _context));
   };
 
   JSI_HOST_FUNCTION(createRunInJsFn) {
     // Make sure this one is only called from the js runtime
-    if (JsiWorkletContext::getInstance()->isWorkletRuntime(runtime)) {
+    if (_context->isWorkletRuntime(runtime)) {
       throw jsi::JSError(runtime, "createRunInJsFn should only be called "
                                   "from the javascript runtime.");
     }
@@ -134,7 +138,7 @@ public:
         count == 2 && arguments[1].isObject()
             ? arguments[1].asObject(runtime).getHostObject<JsiWorkletContext>(
                   runtime)
-            : JsiWorkletContext::getInstance();
+            : _context;
 
     if (activeContext == nullptr) {
       throw jsi::JSError(runtime,
@@ -224,7 +228,7 @@ public:
 
   JSI_HOST_FUNCTION(createRunInContextFn) {
     // Make sure this one is only called from the js runtime
-    if (JsiWorkletContext::getInstance()->isWorkletRuntime(runtime)) {
+    if (_context->isWorkletRuntime(runtime)) {
       throw jsi::JSError(runtime, "createRunInContextFn should only be called "
                                   "from the javascript runtime.");
     }
@@ -254,7 +258,7 @@ public:
         count == 2 && arguments[1].isObject()
             ? arguments[1].asObject(runtime).getHostObject<JsiWorkletContext>(
                   runtime)
-            : JsiWorkletContext::getInstance();
+            : _context;
 
     if (activeContext == nullptr) {
       throw jsi::JSError(runtime,
@@ -358,7 +362,11 @@ public:
    */
   std::shared_ptr<JsiWorkletContext>
   createWorkletContext(const std::string &name) {
-    return std::make_shared<JsiWorkletContext>(name);
+    auto newContext = std::make_shared<JsiWorkletContext>(name, _context);
+    for (auto &decorator : _decorators) {
+      newContext->decorate(decorator.get());
+    }
+    return newContext;
   }
 
   /**
@@ -366,8 +374,14 @@ public:
    @decorator The decorator to add
    */
   void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator) {
+    _decorators.push_back(decorator);
+
     // Decorate default context
-    JsiWorkletContext::addDecorator(decorator);
+    _context->decorate(decorator.get());
   }
+
+private:
+  std::shared_ptr<JsiWorkletContext> _context;
+  std::vector<std::shared_ptr<JsiBaseDecorator>> _decorators;
 };
 } // namespace RNWorklet
