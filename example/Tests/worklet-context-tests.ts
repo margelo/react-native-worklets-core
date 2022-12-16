@@ -218,4 +218,20 @@ export const worklet_context_tests = {
     });
     return ExpectException(worklet);
   },
+  call_worklet_with_this: () => {
+    const obj = {
+      a: 100,
+      b: 100,
+      f: function () {
+        "worklet";
+        return this.a + this.b;
+      },
+    };
+    const sharedValue = Worklets.createSharedValue(obj);
+    const worklet = Worklets.createRunInContextFn(function () {
+      "worklet";
+      return sharedValue.value.f();
+    });
+    return ExpectValue(worklet(), 200);
+  },
 };
