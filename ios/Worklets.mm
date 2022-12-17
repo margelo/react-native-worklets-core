@@ -12,6 +12,7 @@
 RCT_EXPORT_MODULE()
 
 - (void)invalidate {
+  RNWorklet::JsiWorkletContext::invalidateInstance();
   _bridge = nil;
 }
 
