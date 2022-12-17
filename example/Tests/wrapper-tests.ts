@@ -1,10 +1,13 @@
 import { Worklets } from "react-native-worklets";
-import { ExpectException, ExpectValue } from "./utils";
+import { ExpectValue } from "./utils";
 
 const convert =
   <T>(value: T): (() => Promise<void>) =>
-  () =>
-    ExpectValue(Worklets.createSharedValue(value).value, value);
+  () => {
+    const a = Worklets.createSharedValue(value).value;
+    const b = value;
+    return ExpectValue(a, b);
+  };
 
 export const wrapper_tests = {
   convert_undefined: convert(undefined),
@@ -22,18 +25,16 @@ export const wrapper_tests = {
       { x: 5, y: 23 },
     ],
   }),
-  convert_function_throws_exception: () => {
-    return ExpectException(() => {
-      return Promise.resolve(Worklets.createSharedValue(() => {}));
-    }, "Regular javascript functions cannot be shared.");
-  },
 
   array_is_array: () => {
     return ExpectValue(Array.isArray(Worklets.createSharedValue([])), true);
   },
 
   array_instanceof_array: () => {
-    return ExpectValue(Worklets.createSharedValue([]) instanceof Array, true);
+    return ExpectValue(
+      Worklets.createSharedValue([]).value instanceof Array,
+      true
+    );
   },
 
   array_get: () => ExpectValue(Worklets.createSharedValue([100]).value[0], 100),
@@ -177,10 +178,7 @@ export const wrapper_tests = {
     const array = Worklets.createSharedValue([100, 200]);
     return ExpectValue(
       array.value.reduce((acc, cur, index) => {
-        console.log("before", acc, index, cur);
-        console.log({ ...acc });
         const retVal = { ...acc, [index]: cur };
-        console.log("after", retVal);
         return retVal;
       }, {}),
       { 0: 100, 1: 200 }

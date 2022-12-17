@@ -39,6 +39,21 @@ export const sharedvalue_tests = {
     );
   },
 
+  is_object: () => {
+    const sharedValue = Worklets.createSharedValue({ a: 100, b: 200 });
+    return ExpectValue(typeof sharedValue.value === "object", true);
+  },
+
+  object_keys: () => {
+    const sharedValue = Worklets.createSharedValue({ a: 100, b: 200 });
+    return ExpectValue(Object.keys(sharedValue.value), ["a", "b"]);
+  },
+
+  object_values: () => {
+    const sharedValue = Worklets.createSharedValue({ a: 100, b: 200 });
+    return ExpectValue(Object.values(sharedValue.value), [100, 200]);
+  },
+
   box_number_to_string: () => {
     const sharedValue = Worklets.createSharedValue(100);
     // @ts-ignore
@@ -81,6 +96,20 @@ export const sharedvalue_tests = {
     return ExpectValue(sharedValue.value, [100.34, 200]);
   },
 
+  array_object_keys: () => {
+    return ExpectValue(
+      Object.keys(Worklets.createSharedValue([50, 21, 32]).value),
+      ["0", "1", "2"]
+    );
+  },
+
+  array_object_values: () => {
+    return ExpectValue(
+      Object.values(Worklets.createSharedValue([50, 21, 32]).value),
+      [50, 21, 32]
+    );
+  },
+
   array_spread: () => {
     const sharedValue = Worklets.createSharedValue([100, 200]);
     const p = [...sharedValue.value];
@@ -107,7 +136,7 @@ export const sharedvalue_tests = {
   object_value_destructure: () => {
     const sharedValue = Worklets.createSharedValue({ a: 100, b: 200 });
     const { a, b } = { ...sharedValue.value };
-    return ExpectValue({ a, b }, { a: 100, b: 100 });
+    return ExpectValue({ a, b }, { a: 100, b: 200 });
   },
 
   object_value_spread: () => {
@@ -130,10 +159,10 @@ export const sharedvalue_tests = {
     );
   },
 
-  set_function_with_error: () => {
+  set_function_fails_when_calling_function: () => {
     return ExpectException(() => {
-      Worklets.createSharedValue(() => {});
-    }, "Regular javascript functions cannot be shared.");
+      Worklets.createSharedValue(() => {}).value();
+    });
   },
 
   add_listener: () => {

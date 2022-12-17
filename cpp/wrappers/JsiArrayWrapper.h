@@ -9,6 +9,8 @@ namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
 
+const char *WorkletArrayProxyName = "__createWorkletArrayProxy";
+
 class JsiWrapper;
 
 class JsiArrayWrapper : public JsiHostObject,
@@ -25,15 +27,8 @@ public:
                   JsiWrapper *parent)
       : JsiWrapper(runtime, value, parent, JsiWrapperType::Array) {}
 
-  JSI_PROPERTY_GET(prototype) {
-    auto retVal = runtime.global()
-                      .getPropertyAsObject(runtime, "Array")
-                      .getProperty(runtime, "prototype");
-    return retVal;
-  }
-
-  JSI_PROPERTY_GET(toStringTag) {
-    return jsi::String::createFromUtf8(runtime, "Array");
+  JSI_HOST_FUNCTION(toStringImpl) {
+    return jsi::String::createFromUtf8(runtime, toString(runtime));
   }
 
   JSI_PROPERTY_GET(length) { return (double)_array.size(); }
@@ -269,36 +264,27 @@ public:
     return JsiWrapper::unwrap(runtime, acc);
   }
 
-  JSI_HOST_FUNCTION(toString) {
-    return jsi::String::createFromUtf8(runtime, toString(runtime));
-  };
+  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiArrayWrapper, length))
 
-  JSI_HOST_FUNCTION(toJSON) {
-    return jsi::String::createFromUtf8(runtime, toString(runtime));
-  }
+  JSI_EXPORT_FUNCTIONS(
+      JSI_EXPORT_FUNC(JsiArrayWrapper, push),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, pop),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, forEach),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, map),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, filter),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, concat),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, find),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, every),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, findIndex),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, flat),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, includes),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, indexOf),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, join),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, reduce),
+      JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, toStringImpl, toString),
+      JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, toStringImpl, Symbol.toStringTag),
 
-  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiArrayWrapper, length),
-                              JSI_EXPORT_PROP_GET(JsiArrayWrapper, prototype),
-                              JSI_EXPORT_PROP_GET(JsiArrayWrapper, toStringTag))
-
-  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiArrayWrapper, push),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, pop),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, forEach),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, map),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, filter),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, concat),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, find),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, every),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, findIndex),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, flat),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, includes),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, indexOf),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, join),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, reduce),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, toString),
-                       JSI_EXPORT_FUNC(JsiArrayWrapper, toJSON),
-                       JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, iterator,
-                                             Symbol.iterator))
+      JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, iterator, Symbol.iterator))
 
   /**
    * Overridden getValue method
@@ -306,7 +292,7 @@ public:
    * @return jsi::Value representing this array
    */
   jsi::Value getValue(jsi::Runtime &runtime) override {
-    return jsi::Object::createFromHostObject(runtime, shared_from_this());
+    return getArrayProxy(runtime, shared_from_this());
   }
 
   bool canUpdateValue(jsi::Runtime &runtime, const jsi::Value &value) override {
@@ -332,7 +318,7 @@ public:
           JsiWrapper::wrap(runtime, array.getValueAtIndex(runtime, i), this);
     }
 
-    // Update prototype
+    /* / Update prototype
     auto objectCtor = runtime.global().getProperty(runtime, "Object");
     if (!objectCtor.isUndefined()) {
       // Get setPrototypeOf
@@ -349,7 +335,7 @@ public:
               runtime, selfObject, arrayPrototype);
         }
       }
-    }
+    }*/
   }
 
   /**
@@ -422,6 +408,55 @@ public:
   const std::vector<std::shared_ptr<JsiWrapper>> &getArray() { return _array; }
 
 private:
+  /**
+   Creates a proxy for the host object so that we can make the runtime trust
+   that this is a real JS array
+   */
+  jsi::Value getArrayProxy(jsi::Runtime &runtime,
+                           std::shared_ptr<jsi::HostObject> hostObj) {
+    // return jsi::Object::createFromHostObject(runtime, hostObj);
+
+    auto createArrayProxy =
+        runtime.global().getProperty(runtime, WorkletArrayProxyName);
+    if (createArrayProxy.isUndefined()) {
+      // Install worklet proxy helper into runtime
+      static std::string code =
+          "function (obj) {"
+          "return new Proxy(obj, {"
+          "    ownKeys: function (target) {"
+          "      return Reflect.ownKeys(target).concat(['length']);"
+          "    },"
+          "    getPrototypeOf: function () {"
+          "      return Reflect.getPrototypeOf([]);"
+          "    },"
+          "    getOwnPropertyDescriptor: function (_, prop) {"
+          "      return {"
+          "        configurable: true,"
+          "        writable: true,"
+          "        enumerable: prop !== 'length',"
+          "      };"
+          "    },"
+          "    set: function(target, prop, value) { return "
+          "Reflect.set(target,prop,value); },"
+          "    get: function(target, prop) { return Reflect.get(target, prop); "
+          "}"
+          "  })"
+          "}";
+
+      auto codeBuffer =
+          std::make_shared<const jsi::StringBuffer>("(" + code + "\n)");
+      createArrayProxy =
+          runtime.evaluateJavaScript(codeBuffer, WorkletArrayProxyName);
+      runtime.global().setProperty(runtime, WorkletArrayProxyName,
+                                   createArrayProxy);
+    }
+
+    auto createProxyFunc =
+        createArrayProxy.asObject(runtime).asFunction(runtime);
+    return createProxyFunc.call(
+        runtime, jsi::Object::createFromHostObject(runtime, hostObj));
+  }
+
   std::vector<std::shared_ptr<JsiWrapper>> _array;
 };
 } // namespace RNWorklet
