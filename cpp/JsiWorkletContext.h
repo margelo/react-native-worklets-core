@@ -70,9 +70,16 @@ public:
    Static / singleton default context
    */
   static std::shared_ptr<JsiWorkletContext> getInstance() {
-    static auto instance = std::make_shared<JsiWorkletContext>();
+    if (instance == nullptr) {
+      instance = std::make_shared<JsiWorkletContext>();
+    }
     return instance;
   }
+
+  /**
+   Invalidates the instance
+   */
+  static void invalidateInstance() { instance = nullptr; }
 
   JSI_PROPERTY_GET(name) {
     return jsi::String::createFromUtf8(runtime, getName());
@@ -116,7 +123,7 @@ public:
    Returns the list of decorators
    */
   static const std::vector<std::shared_ptr<JsiBaseDecorator>> &getDecorators() {
-    return _decorators;
+    return decorators;
   }
 
   /**
@@ -125,6 +132,7 @@ public:
    */
   static void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator);
 
+private:
   /**
    Decorates the worklet runtime. The decorator is run in the worklet runtime
    and on the worklet thread, since it is not legal to access the worklet
@@ -140,14 +148,14 @@ public:
   void applyDecorators(
       const std::vector<std::shared_ptr<JsiBaseDecorator>> &decorators);
 
-private:
   jsi::Runtime *_jsRuntime;
   std::unique_ptr<jsi::Runtime> _workletRuntime;
   std::string _name;
   std::function<void(std::function<void()> &&)> _jsCallInvoker;
   std::function<void(std::function<void()> &&)> _workletCallInvoker;
 
-  static std::vector<std::shared_ptr<JsiBaseDecorator>> _decorators;
+  static std::vector<std::shared_ptr<JsiBaseDecorator>> decorators;
+  static std::shared_ptr<JsiWorkletContext> instance;
 };
 
 } // namespace RNWorklet
