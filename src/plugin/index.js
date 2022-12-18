@@ -14,14 +14,19 @@ function buildWorkletString(t, fun, closureVariables, name, inputMap) {
     const closureDeclaration = t.variableDeclaration("const", [
       t.variableDeclarator(
         t.objectPattern(
-          closureVariables.map((variable) =>
-            t.objectProperty(
-              t.identifier(variable.name),
-              t.identifier(variable.name),
-              false,
-              true
+          closureVariables
+            // We shouldn't copy the worklets API to the closure -
+            // it will be installed in each worklet runtime separately.
+            // https://github.com/chrfalch/react-native-worklets/issues/24
+            .filter((v) => v.name !== "Worklets")
+            .map((variable) =>
+              t.objectProperty(
+                t.identifier(variable.name),
+                t.identifier(variable.name),
+                false,
+                true
+              )
             )
-          )
         ),
         t.identifier("jsThis")
       ),

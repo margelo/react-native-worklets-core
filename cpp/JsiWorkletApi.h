@@ -2,47 +2,37 @@
 
 #include <jsi/jsi.h>
 
-#include <vector>
-
-#include "JsiBaseDecorator.h"
 #include "JsiHostObject.h"
 #include "JsiJsDecorator.h"
 #include "JsiPromise.h"
 #include "JsiSharedValue.h"
 #include "JsiWorklet.h"
 #include "JsiWorkletContext.h"
+#include "JsiWrapper.h"
 
 namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
 
-static const char *WorkletsApiName = "Worklets";
-
 class JsiWorkletApi : public JsiHostObject {
 public:
-  /**
-   * Create the worklet API
-   * make sure only the runOnJsThread method is available.
-   */
-  JsiWorkletApi(){};
+  // Name of the Worklet API member (where to install on global)
+  static const char *WorkletsApiName;
 
   /**
    * Installs the worklet API into the provided runtime
    */
-  static void installApi() {
-    auto context = JsiWorkletContext::getInstance();
-    auto existingApi = (context->getJsRuntime()->global().getProperty(
-        *context->getJsRuntime(), WorkletsApiName));
-    if (existingApi.isObject()) {
-      return;
-    }
+  static void installApi(jsi::Runtime &runtime);
 
-    auto workletApi = std::make_shared<JsiWorkletApi>();
-    context->getJsRuntime()->global().setProperty(
-        *context->getJsRuntime(), WorkletsApiName,
-        jsi::Object::createFromHostObject(*context->getJsRuntime(),
-                                          std::move(workletApi)));
-  }
+  /**
+   Returns the worklet API
+   */
+  static std::shared_ptr<JsiWorkletApi> getInstance();
+
+  /**
+   Invalidate the api instance.
+   */
+  static void invalidateInstance();
 
   JSI_HOST_FUNCTION(addDecorator) {
     if (JsiWorkletContext::getInstance()->isWorkletRuntime(runtime)) {
@@ -101,12 +91,6 @@ public:
   };
 
   JSI_HOST_FUNCTION(createRunInJsFn) {
-    // Make sure this one is only called from the js runtime
-    if (JsiWorkletContext::getInstance()->isWorkletRuntime(runtime)) {
-      throw jsi::JSError(runtime, "createRunInJsFn should only be called "
-                                  "from the javascript runtime.");
-    }
-
     if (count == 0) {
       throw jsi::JSError(runtime,
                          "createRunInJsFn expects at least one parameter.");
@@ -145,7 +129,7 @@ public:
         runtime, jsi::PropNameID::forAscii(runtime, "runInJsFn"), 0,
         JSI_HOST_FUNCTION_LAMBDA {
           // Ensure that the function is called in the worklet context
-          if (&runtime == activeContext->getJsRuntime()) {
+          if (!activeContext->isWorkletRuntime(runtime)) {
             throw jsi::JSError(runtime, "createRunInJsFn must be called "
                                         "from a worklet runtime / thread.");
           }
@@ -357,17 +341,15 @@ public:
    @returns A new worklet context that has been initialized and decorated.
    */
   std::shared_ptr<JsiWorkletContext>
-  createWorkletContext(const std::string &name) {
-    return std::make_shared<JsiWorkletContext>(name);
-  }
+  createWorkletContext(const std::string &name);
 
   /**
    Adds a decorator that will be used to decorate all contexts.
    @decorator The decorator to add
    */
-  void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator) {
-    // Decorate default context
-    JsiWorkletContext::addDecorator(decorator);
-  }
+  void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator);
+
+  // Instance/singletong
+  static std::shared_ptr<JsiWorkletApi> instance;
 };
 } // namespace RNWorklet
