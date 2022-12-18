@@ -49,13 +49,6 @@ public:
   }
 
   JSI_HOST_FUNCTION(addListener) {
-    // This functionPtr should only be callable from the js runtime
-    if (_context->isWorkletRuntime(runtime)) {
-      throw jsi::JSError(runtime,
-                         "addListener can only be called from the main "
-                         "Javascript context and not from a worklet.");
-    }
-
     // Verify arguments
     if (arguments[0].isUndefined() || arguments[0].isNull() ||
         arguments[0].isObject() == false ||

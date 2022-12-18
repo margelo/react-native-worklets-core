@@ -234,4 +234,17 @@ export const worklet_context_tests = {
     });
     return ExpectValue(worklet(), 200);
   },
+  call_createRunInJsFn_inside_worklet: () => {
+    const fn = function (b: number) {
+      "worklet";
+      return b * 2;
+    };
+    const f = function (a: number) {
+      "worklet";
+      const wjs = Worklets.createRunInJsFn(fn);
+      return wjs(a);
+    };
+    const worklet_in_context = Worklets.createRunInContextFn(f);
+    return ExpectValue(worklet_in_context(100), 200);
+  },
 };

@@ -68,7 +68,7 @@ export const sharedvalue_tests = {
     return ExpectValue(sharedValue.value, 100);
   },
 
-  box_string_to_array: () => {
+  box_string_to_array_FAILS: () => {
     const sharedValue = Worklets.createSharedValue("100");
     // @ts-ignore
     sharedValue.value = [100, 200];
@@ -89,7 +89,7 @@ export const sharedvalue_tests = {
     return ExpectValue(sharedValue.value, { a: 100, b: 200 });
   },
 
-  box_object_to_array: () => {
+  box_object_to_array_FAILS: () => {
     const sharedValue = Worklets.createSharedValue({ a: 100, b: 200 });
     // @ts-ignore
     sharedValue.value = [100.34, 200];
@@ -171,16 +171,21 @@ export const sharedvalue_tests = {
     const unsubscribe = sharedValue.addListener(() => (didChange.value = true));
     sharedValue.value = 50;
     unsubscribe();
-    console.log(didChange.value);
     return ExpectValue(didChange.value, true);
   },
 
-  add_listener_from_worklet_should_fail: () => {
+  add_listener_from_worklet: () => {
     const sharedValue = Worklets.createSharedValue(100);
-    const worklet = Worklets.createRunInContextFn(function () {
+    const didChange = Worklets.createSharedValue(false);
+    const w = Worklets.createRunInContextFn(function () {
       "worklet";
-      sharedValue.addListener(() => {});
+      const unsubscribe = sharedValue.addListener(
+        () => (didChange.value = true)
+      );
+      sharedValue.value = 50;
+      unsubscribe();
+      return didChange.value;
     });
-    return ExpectException(worklet);
+    return ExpectValue(w(), true);
   },
 };
