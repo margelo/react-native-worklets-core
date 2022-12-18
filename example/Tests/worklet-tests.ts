@@ -33,7 +33,7 @@ export const worklet_tests = {
       return a;
     };
     const { code } = getWorkletInfo(w);
-    return ExpectValue(code, "function _f(a){return a;}");
+    return ExpectValue(code, "function anonymous(a){return a;}");
   },
   check_share_object_with_js_function_fails_on_call: () => {
     const api = {
