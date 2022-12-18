@@ -13,6 +13,7 @@ RCT_EXPORT_MODULE()
 
 - (void)invalidate {
   RNWorklet::JsiWorkletContext::invalidateInstance();
+  RNWorklet::JsiWorkletApi::invalidateInstance();
   _bridge = nil;
 }
 
@@ -33,7 +34,7 @@ void installApi(std::shared_ptr<facebook::react::CallInvoker> callInvoker,
       });
 
   // Install the worklet API
-  RNWorklet::JsiWorkletApi::installApi();
+  RNWorklet::JsiWorkletApi::installApi(*runtime);
 }
 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(install) {

@@ -1,5 +1,6 @@
 
 #include "JsiWorkletContext.h"
+#include "JsiWorkletApi.h"
 
 #include "DispatchQueue.h"
 #include "JsRuntimeFactory.h"
@@ -78,6 +79,9 @@ jsi::Runtime &JsiWorkletContext::getWorkletRuntime() {
     // object.
     _workletRuntime->global().setProperty(*_workletRuntime, GlobalPropertyName,
                                           _workletRuntime->global());
+
+    // Install the WorkletAPI into the new runtime
+    JsiWorkletApi::installApi(*_workletRuntime);
 
     // Run decorators if we're not the singleton main context - no need to
     // do this in the worklet thread because we should already be in the
