@@ -112,12 +112,6 @@ void JsiWorkletContext::invokeOnWorkletThread(std::function<void()> &&fp) {
   _workletCallInvoker(std::move(fp));
 }
 
-bool JsiWorkletContext::isWorkletRuntime(jsi::Runtime &runtime) {
-  auto isWorkletRuntime =
-      runtime.global().getProperty(runtime, WorkletRuntimeFlag);
-  return isWorkletRuntime.isBool() && isWorkletRuntime.getBool();
-}
-
 void JsiWorkletContext::addDecorator(
     std::shared_ptr<JsiBaseDecorator> decorator) {
   decorators.push_back(decorator);

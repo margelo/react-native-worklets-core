@@ -113,13 +113,6 @@ public:
   void invokeOnWorkletThread(std::function<void()> &&fp);
 
   /**
-   * Returns true if the runtime provided is the worklet runtime
-   * @param runtime Runtime to check
-   * @return True if the runtime is the worklet runtime
-   */
-  bool isWorkletRuntime(jsi::Runtime &runtime);
-
-  /**
    Returns the list of decorators
    */
   static const std::vector<std::shared_ptr<JsiBaseDecorator>> &getDecorators() {

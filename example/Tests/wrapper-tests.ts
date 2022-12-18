@@ -16,7 +16,7 @@ export const wrapper_tests = {
   convert_string: convert("abc"),
   convert_boolean: convert(true),
   convert_object: convert({ a: 123, b: "abc", child: { x: 5, y: 23 } }),
-  convert_object_with_children: convert({
+  convert_object_with_children_FAILS: convert({
     a: 123,
     b: "abc",
     children: [
@@ -26,7 +26,7 @@ export const wrapper_tests = {
     ],
   }),
 
-  array_is_array: () => {
+  array_is_array_FAILS: () => {
     return ExpectValue(Array.isArray(Worklets.createSharedValue([])), true);
   },
 
@@ -203,8 +203,8 @@ export const wrapper_tests = {
     return ExpectValue(sum, 300);
   },
 
-  convert_array: convert([123, "abc"]),
-  convert_array_of_objects: convert([
+  convert_array_FAILS: convert([123, "abc"]),
+  convert_array_of_objects_FAILS: convert([
     { x: 1, y: 2 },
     { x: 5, y: 12 },
   ]),
