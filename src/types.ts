@@ -69,7 +69,7 @@ export interface IWorkletNativeApi {
    *
    * Used to create a function to call back to the JS context from a worklet context.
    * @param worklet Decorated function that will be called in the JS context
-   * @returns A promise that will be resolved when the function has been executed
+   * @returns A function that will be called in the JS context
    */
   createRunInJsFn: <C extends ContextType, T, A extends Array<unknown>>(
     fn: (this: C, ...args: A) => T
