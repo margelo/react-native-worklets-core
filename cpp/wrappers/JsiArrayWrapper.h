@@ -2,6 +2,11 @@
 
 #include <jsi/jsi.h>
 
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "JsiHostObject.h"
 #include "JsiWrapper.h"
 
@@ -31,7 +36,7 @@ public:
     return jsi::String::createFromUtf8(runtime, toString(runtime));
   }
 
-  JSI_PROPERTY_GET(length) { return (double)_array.size(); }
+  JSI_PROPERTY_GET(length) { return static_cast<double>(_array.size()); }
 
   JSI_HOST_FUNCTION(iterator) {
     int index = 0;
@@ -67,7 +72,7 @@ public:
       _array.push_back(JsiWrapper::wrap(runtime, arguments[i], this));
     }
     notify();
-    return (double)_array.size();
+    return static_cast<double>(_array.size());
   };
 
   JSI_HOST_FUNCTION(pop) {
@@ -176,7 +181,8 @@ public:
       if (it->getType() == JsiWrapperType::Array) {
         // Recursively call flat untill depth equals 0
         if (depth <= -1 || depth > 0) {
-          auto childArray = ((JsiArrayWrapper *)it.get())->getArray();
+          auto childArray =
+              (static_cast<JsiArrayWrapper *>(it.get()))->getArray();
           auto flattened = flat_internal(depth - 1, childArray);
           for (auto child : flattened) {
             result.push_back(child);

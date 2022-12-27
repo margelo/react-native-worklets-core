@@ -3,6 +3,9 @@
 #include <jsi/jsi.h>
 
 #include <functional>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "JsiHostObject.h"
 #include "JsiPromise.h"
@@ -74,9 +77,10 @@ protected:
                                       const jsi::Value *arguments, size_t)) &
         JsiPromiseWrapper::handlePromiseResolved;
 
-    auto dispatcher = std::bind(thisThenHandler, (JsiPromiseWrapper *)this,
-                                std::placeholders::_1, std::placeholders::_2,
-                                std::placeholders::_3, std::placeholders::_4);
+    auto dispatcher =
+        std::bind(thisThenHandler, static_cast<JsiPromiseWrapper *>(this),
+                  std::placeholders::_1, std::placeholders::_2,
+                  std::placeholders::_3, std::placeholders::_4);
 
     thenFunc.callWithThis(
         runtime, obj,
@@ -93,7 +97,7 @@ protected:
             JsiPromiseWrapper::handlePromiseRejected;
 
         auto dispatcher =
-            std::bind(thisCatchHandler, (JsiPromiseWrapper *)this,
+            std::bind(thisCatchHandler, static_cast<JsiPromiseWrapper *>(this),
                       std::placeholders::_1, std::placeholders::_2,
                       std::placeholders::_3, std::placeholders::_4);
 

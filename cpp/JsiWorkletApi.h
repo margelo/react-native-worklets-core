@@ -2,6 +2,10 @@
 
 #include <jsi/jsi.h>
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "JsiHostObject.h"
 #include "JsiJsDecorator.h"
 #include "JsiPromise.h"
@@ -82,8 +86,7 @@ public:
 
   JSI_HOST_FUNCTION(createRunInJsFn) {
     if (count == 0) {
-      throw jsi::JSError(runtime,
-                         "createRunInJsFn expects one parameter.");
+      throw jsi::JSError(runtime, "createRunInJsFn expects one parameter.");
     }
 
     // Get the worklet function
@@ -128,7 +131,8 @@ public:
           JsiWorkletContext::getInstance()->invokeOnJsThread([&]() {
             std::lock_guard<std::mutex> lock(mu);
 
-            jsi::Runtime &runtime = *JsiWorkletContext::getInstance()->getJsRuntime();
+            jsi::Runtime &runtime =
+                *JsiWorkletContext::getInstance()->getJsRuntime();
 
             try {
               size_t size = argsWrapper.size();
@@ -311,9 +315,7 @@ public:
   void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator);
 
 private:
-  
   // Instance/singletong
   static std::shared_ptr<JsiWorkletApi> instance;
-  
 };
 } // namespace RNWorklet

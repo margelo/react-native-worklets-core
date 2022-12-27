@@ -8,6 +8,8 @@
 #include <exception>
 #include <functional>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include <jsi/jsi.h>
 
@@ -22,7 +24,7 @@ public:
    * as worklets in a separate threads / js runtimes. After construction the
    * context needs to be initialized.
    */
-  explicit JsiWorkletContext(){};
+  JsiWorkletContext() {}
 
   /**
    Constructs a new worklet context using the same values and configuration as
@@ -31,7 +33,7 @@ public:
    default queue.
    @param name Name of the context
    */
-  JsiWorkletContext(const std::string &name);
+  explicit JsiWorkletContext(const std::string &name);
 
   /**
    Constructs a new worklet context using the same values and configuration as
