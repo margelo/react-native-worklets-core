@@ -1,6 +1,9 @@
 
 #pragma once
 
+#include <memory>
+#include <string>
+
 #include "JsiBaseDecorator.h"
 #include "JsiWrapper.h"
 #include <jsi/jsi.h>

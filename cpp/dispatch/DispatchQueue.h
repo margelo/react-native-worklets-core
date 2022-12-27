@@ -17,7 +17,7 @@ class DispatchQueue {
   typedef std::function<void(void)> fp_t;
 
 public:
-  DispatchQueue(std::string name, size_t thread_cnt = 1);
+  explicit DispatchQueue(std::string name, size_t thread_cnt = 1);
 
   ~DispatchQueue();
 

@@ -15,9 +15,9 @@ jsi::Value JsiWrapper::getValue(jsi::Runtime &runtime) {
   case JsiWrapperType::Null:
     return jsi::Value::null();
   case JsiWrapperType::Bool:
-    return jsi::Value((bool)_boolValue);
+    return jsi::Value(_boolValue);
   case JsiWrapperType::Number:
-    return jsi::Value((double)_numberValue);
+    return jsi::Value(static_cast<double>(_numberValue));
   case JsiWrapperType::String:
     return jsi::String::createFromUtf8(runtime, _stringValue);
   default:

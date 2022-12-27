@@ -2,6 +2,11 @@
 
 #include <jsi/jsi.h>
 
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 namespace RNWorklet {
 
 namespace jsi = facebook::jsi;

@@ -9,6 +9,9 @@
 #include <exception>
 #include <functional>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include <jsi/jsi.h>
 
@@ -33,7 +36,7 @@ JsiWorkletContext::JsiWorkletContext(const std::string &name) {
              [dispatchQueue](std::function<void()> &&f) {
                dispatchQueue->dispatch(std::move(f));
              });
-};
+}
 
 JsiWorkletContext::JsiWorkletContext(
     const std::string &name,
@@ -42,7 +45,7 @@ JsiWorkletContext::JsiWorkletContext(
   initialize(name, JsiWorkletContext::getInstance()->_jsRuntime,
              JsiWorkletContext::getInstance()->_jsCallInvoker,
              workletCallInvoker);
-};
+}
 
 void JsiWorkletContext::initialize(
     const std::string &name, jsi::Runtime *jsRuntime,

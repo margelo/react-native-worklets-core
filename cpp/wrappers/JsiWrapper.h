@@ -3,7 +3,9 @@
 #include "JsiWorkletContext.h"
 
 #include <map>
+#include <memory>
 #include <mutex>
+#include <string>
 #include <vector>
 
 #include <jsi/jsi.h>
@@ -179,7 +181,7 @@ private:
    * Base Constructor
    * @param parent Parent wrapper
    */
-  JsiWrapper(JsiWrapper *parent) : _parent(parent) {
+  explicit JsiWrapper(JsiWrapper *parent) : _parent(parent) {
     _readWriteMutex = new std::mutex();
   }
 

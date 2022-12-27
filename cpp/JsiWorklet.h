@@ -2,9 +2,13 @@
 
 #include <jsi/jsi.h>
 
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "JsiHostObject.h"
 #include "JsiWrapper.h"
-
 namespace RNWorklet {
 
 static const char *PropHiddenWorkletName = "__worklet";
@@ -41,7 +45,7 @@ private:
 class JsErrorWrapper : public std::exception {
 public:
   JsErrorWrapper(std::string message, std::string stack)
-      : _message(std::move(message)), _stack(std::move(stack)){};
+      : _message(std::move(message)), _stack(std::move(stack)) {}
   const std::string &getStack() const { return _stack; }
   const std::string &getMessage() const { return _message; }
   const char *what() const noexcept override { return _message.c_str(); }

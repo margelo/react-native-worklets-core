@@ -2,6 +2,9 @@
 
 #include <cxxabi.h>
 
+#include <memory>
+#include <vector>
+
 #include <jsi/jsi.h>
 
 #include "JsiWrapper.h"
@@ -85,7 +88,6 @@ public:
         if (onSuccess != nullptr) {
           onSuccess(JsiWrapper::wrap(runtime, retVal));
         }
-
       } catch (const jsi::JSError &err) {
         if (onError != nullptr)
           onError(err.getMessage().c_str());

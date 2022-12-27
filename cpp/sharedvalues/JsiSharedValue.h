@@ -3,6 +3,8 @@
 #include <jsi/jsi.h>
 #include <map>
 
+#include <memory>
+
 #include "JsiDispatcher.h"
 #include "JsiHostObject.h"
 #include "JsiWorkletContext.h"

@@ -2,6 +2,11 @@
 
 #include <jsi/jsi.h>
 
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "JsiPromiseWrapper.h"
 #include "JsiWorklet.h"
 #include "JsiWrapper.h"

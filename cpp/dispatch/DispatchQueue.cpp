@@ -1,5 +1,7 @@
 #include "DispatchQueue.h"
 
+#include <utility>
+
 namespace RNWorklet {
 
 DispatchQueue::~DispatchQueue() {
