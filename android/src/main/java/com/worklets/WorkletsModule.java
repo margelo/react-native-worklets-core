@@ -8,6 +8,7 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.turbomodule.core.CallInvokerHolderImpl;
+import com.facebook.react.turbomodule.core.interfaces.CallInvokerHolder;
 
 import java.lang.ref.WeakReference;
 
@@ -20,13 +21,17 @@ public class WorkletsModule extends com.worklets.WorkletsSpec {
     this.weakReactContext = new WeakReference<>(context);
   }
 
+  static {
+    System.loadLibrary("rnworklets");
+  }
+
   @Override
   @NonNull
   public String getName() {
     return NAME;
   }
 
-  public static native boolean nativeInstall(long ptr);
+  public static native boolean nativeInstall(long jsiRuntimeRef, CallInvokerHolder jsCallInvokerHolder);
 
   @ReactMethod
   public boolean install() {
@@ -38,9 +43,9 @@ public class WorkletsModule extends com.worklets.WorkletsSpec {
         return false;
       }
 
-      CallInvokerHolderImpl holder = (CallInvokerHolderImpl) context.getCatalystInstance().getJSCallInvokerHolder();
-      long ptrJsContextHolder = context.getJavaScriptContextHolder().get();
-      return nativeInstall(ptrJsContextHolder);
+      long jsiRuntimeRef = context.getJavaScriptContextHolder().get();
+      CallInvokerHolder jsCallInvokerHolder = context.getCatalystInstance().getJSCallInvokerHolder();
+      return nativeInstall(jsiRuntimeRef, jsCallInvokerHolder);
     } catch (Exception exception) {
       Log.e(NAME, "Failed to initialize react-native-worklets!", exception);
       return false;
