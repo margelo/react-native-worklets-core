@@ -12,18 +12,13 @@ DispatchQueue::~DispatchQueue() {
   cv_.notify_all();
 
   // Wait for threads to finish before we exit
-  for (size_t i = 0; i < threads_.size(); i++) {
-    if (threads_[i].joinable()) {
-      threads_[i].join();
-    }
+  if (thread_.joinable()) {
+    thread_.join();
   }
 }
 
-DispatchQueue::DispatchQueue(std::string name, size_t thread_cnt)
-    : name_{std::move(name)}, threads_(thread_cnt) {
-  for (size_t i = 0; i < threads_.size(); i++) {
-    threads_[i] = std::thread(&DispatchQueue::dispatch_thread_handler, this);
-  }
+DispatchQueue::DispatchQueue(std::string name) : name_{std::move(name)} {
+  thread_ = std::thread(&DispatchQueue::dispatch_thread_handler, this);
 }
 
 void DispatchQueue::dispatch(const fp_t &op) {
