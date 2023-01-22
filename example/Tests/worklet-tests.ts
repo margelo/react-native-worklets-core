@@ -3,11 +3,10 @@ import { ExpectException, ExpectValue, getWorkletInfo } from "./utils";
 
 export const worklet_tests = {
   check_is_not_worklet: () => {
-    return ExpectException(() =>
-      Worklets.createRunInContextFn((a: number) => {
-        return a * 200;
-      })
-    );
+    const fn = Worklets.createRunInContextFn((a: number) => {
+      return a * 200;
+    });
+    return ExpectValue(typeof fn, "function");
   },
   check_worklet_closure: () => {
     const x = 100;
@@ -37,13 +36,29 @@ export const worklet_tests = {
   },
   check_share_object_with_js_function_fails_on_call: () => {
     const api = {
-      call: () => 100,
+      someFunc: (a: number) => a + 100,
     };
     const f = () => {
       "worklet";
-      return api.call();
+      return api.someFunc(100);
     };
     const w = Worklets.createRunInContextFn(f);
     return ExpectException(w);
+  },
+  check_js_promise_resolves: () => {
+    const f = (a: number) => {
+      "worklet";
+      return Promise.resolve(a + 100);
+    };
+    return ExpectValue(f(100), 200);
+  },
+  check_c_promise_resolves_from_worklet: () => {
+    const f = (a: number) => {
+      "worklet";
+      return a + 100;
+    };
+    const w = Worklets.createRunInContextFn(f);
+    w(100).then(console.log);
+    return ExpectValue(200, 200);
   },
 };

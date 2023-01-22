@@ -244,7 +244,68 @@ export const worklet_context_tests = {
       const wjs = Worklets.createRunInJsFn(fn);
       return wjs(a);
     };
-    const worklet_in_context = Worklets.createRunInContextFn(f);
-    return ExpectValue(worklet_in_context(100), 200);
+    const w = Worklets.createRunInContextFn(f);
+    return ExpectValue(w(100), 200);
+  },
+  call_worklet_in_same_context: () => {
+    const workletInTest = Worklets.createRunInContextFn(function (a: number) {
+      "worklet";
+      console.log("ctx: workletInTest: returning 100 + ", a);
+      return 100 + a;
+    });
+
+    const worklet = Worklets.createRunInContextFn(function () {
+      "worklet";
+      console.log("ctx: worklet: calling workletInTest(100)");
+      const a = workletInTest(100);
+      console.log("ctx: worklet: ", a);
+      return a;
+    });
+    console.log("ctx: Calling worklet()");
+    return ExpectValue(worklet(), 200);
+  },
+  call_worklet_in_other_context: () => {
+    const ctx = Worklets.createContext("test");
+    function calcInCtx(a: number) {
+      "worklet";
+      //console.log("Worklet called 100 + a");
+      return 100 + a;
+    }
+    calcInCtx.name = "calcInCtx";
+    const workletInCtx = Worklets.createRunInContextFn(calcInCtx, ctx);
+
+    function calcInDefaultCtx() {
+      "worklet";
+      //console.log("Worklet called 100");
+      return workletInCtx(100);
+    }
+    calcInDefaultCtx.name = "calcInDefaultCtx";
+    const worklet = Worklets.createRunInContextFn(calcInDefaultCtx);
+
+    return ExpectValue(worklet(), 200);
+  },
+  call_createRunInContextFn_from_context_FAILS: () => {
+    const worklet = Worklets.createRunInContextFn(function () {
+      "worklet";
+      const workletInTest = Worklets.createRunInContextFn(function (a: number) {
+        "worklet";
+        return 100 + a;
+      });
+      return workletInTest(100);
+    });
+    return ExpectValue(worklet(), 200);
+  },
+  call_createRunInContextFn_between_contexts_FAILS: () => {
+    const ctx = Worklets.createContext("test");
+
+    const worklet = Worklets.createRunInContextFn(function () {
+      "worklet";
+      const workletInTest = Worklets.createRunInContextFn(function (a: number) {
+        "worklet";
+        return 100 + a;
+      }, ctx);
+      return workletInTest(100);
+    });
+    return ExpectValue(worklet(), 200);
   },
 };
