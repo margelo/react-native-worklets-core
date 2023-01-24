@@ -16,6 +16,7 @@ static const char *PropClosureName = "_closure";
 static const char *PropAsStringName = "asString";
 static const char *PropLocationName = "__location";
 static const char *PropNameJsThis = "jsThis";
+static const char *PropFunctionName = "name";
 
 namespace jsi = facebook::jsi;
 
@@ -61,7 +62,8 @@ private:
  in the worklet runtime. The worklet object exposes some methods and props
  for handling this. The worklet exists in a given worklet context.
  */
-class JsiWorklet : public JsiHostObject {
+class JsiWorklet : public JsiHostObject,
+                   public std::enable_shared_from_this<JsiWorklet> {
 public:
   JsiWorklet(jsi::Runtime &runtime, const jsi::Value &arg) {
     createWorklet(runtime, arg);
@@ -80,6 +82,16 @@ public:
    Returns true if the function is a worklet
    */
   bool isWorklet() { return _isWorklet; }
+
+  /**
+   Returns the name of the worklet function
+   */
+  const std::string getName(const std::string defaultName = "") {
+    if (_name != "") {
+      return _name;
+    }
+    return defaultName;
+  }
 
   /**
    Returns the source location for the worklet
@@ -146,6 +158,7 @@ public:
     if (_workletJsFunction == nullptr) {
       auto evaluatedFunction =
           evaluteJavascriptInWorkletRuntime(runtime, _code);
+
       if (!evaluatedFunction.isObject()) {
         throw jsi::JSError(
             runtime, std::string("Could not create worklet from function. ") +
@@ -181,7 +194,7 @@ public:
     // Prepare return value
     jsi::Value retVal;
 
-    // Prepare jsThis
+    // Prepare jsThis on the global object
     JsThisWrapper thisWrapper(runtime, unwrappedClosure);
 
     // Call the unwrapped function
@@ -249,6 +262,12 @@ private:
 
     // Let us try to install the function in the worklet context
     _code = asStringProp.asString(runtime).utf8(runtime);
+
+    // Try get the name of the function
+    auto nameProp = _jsFunction->getProperty(runtime, PropFunctionName);
+    if (nameProp.isString()) {
+      _name = nameProp.asString(runtime).utf8(runtime);
+    }
   }
 
   jsi::Value evaluteJavascriptInWorkletRuntime(jsi::Runtime &runtime,
@@ -264,6 +283,7 @@ private:
   std::shared_ptr<JsiWrapper> _closureWrapper;
   std::string _location = "";
   std::string _code = "";
+  std::string _name = "fn";
   double _workletHash = 0;
 };
 } // namespace RNWorklet

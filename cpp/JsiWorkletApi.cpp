@@ -7,9 +7,10 @@
 #include <vector>
 
 #include "JsiBaseDecorator.h"
+#include "JsiConsoleDecorator.h"
 #include "JsiHostObject.h"
 #include "JsiJsDecorator.h"
-#include "JsiPromise.h"
+#include "JsiSetImmediateDecorator.h"
 #include "JsiSharedValue.h"
 #include "JsiWorklet.h"
 #include "JsiWorkletContext.h"
@@ -25,7 +26,7 @@ std::shared_ptr<JsiWorkletApi> JsiWorkletApi::instance;
  * Installs the worklet API into the provided runtime
  */
 void JsiWorkletApi::installApi(jsi::Runtime &runtime) {
-  auto context = JsiWorkletContext::getInstance();
+  auto context = JsiWorkletContext::getDefaultInstance();
   auto existingApi = (runtime.global().getProperty(runtime, WorkletsApiName));
   if (existingApi.isObject()) {
     return;
@@ -49,6 +50,10 @@ void JsiWorkletApi::addDecorator(std::shared_ptr<JsiBaseDecorator> decorator) {
 std::shared_ptr<JsiWorkletApi> JsiWorkletApi::getInstance() {
   if (instance == nullptr) {
     instance = std::make_shared<JsiWorkletApi>();
+    // Add default decorators
+    JsiWorkletContext::addDecorator(
+        std::make_shared<JsiSetImmediateDecorator>());
+    JsiWorkletContext::addDecorator(std::make_shared<JsiConsoleDecorator>());
   }
   return instance;
 }

@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "JsiHostObject.h"
-#include "JsiPromise.h"
+#include "JsiWorklet.h"
 #include "JsiWrapper.h"
 
 namespace RNWorklet {
@@ -17,146 +17,148 @@ namespace jsi = facebook::jsi;
 
 class JsiWrapper;
 
-class JsiPromiseWrapper : public JsiHostObject, public JsiWrapper {
+const char *ThenPropName = "then";
+const char *CatchPropName = "catch";
+
+class JsiPromiseWrapper;
+
+struct PromiseQueueItem {
+  std::shared_ptr<JsiPromiseWrapper> controlledPromise;
+  jsi::HostFunctionType fulfilledFn;
+  jsi::HostFunctionType catchFn;
+};
+
+struct FinallyQueueItem {
+  std::shared_ptr<JsiPromiseWrapper> controlledPromise;
+  std::shared_ptr<jsi::Function> sideEffectFn;
+};
+
+/**
+ Wraps a Promise so that it can be shared between multiple runtimes as arguments
+ or return values.
+ */
+class JsiPromiseWrapper
+    : public JsiHostObject,
+      public JsiWrapper,
+      public std::enable_shared_from_this<JsiPromiseWrapper> {
 public:
+  static size_t Counter;
+  size_t _counter;
   JsiPromiseWrapper(jsi::Runtime &runtime, const jsi::Value &value,
                     JsiWrapper *parent)
-      : JsiWrapper(runtime, value, parent) {}
-
-  static bool isPromise(jsi::Runtime &runtime, jsi::Object &obj) {
-    auto then = obj.getProperty(runtime, "then");
-    if (then.isObject() && then.asObject(runtime).isFunction(runtime)) {
-      return true;
-    }
-    return false;
+      : JsiWrapper(runtime, value, parent) {
+    _counter = ++Counter;
+    setType(JsiWrapperType::Promise);
+    printf("promise: CTOR JsiPromiseWrapper %zu\n", _counter);
   }
 
+  JsiPromiseWrapper(jsi::Runtime &runtime, JsiWrapper *parent)
+      : JsiWrapper(runtime, jsi::Value::undefined(), parent) {
+    setType(JsiWrapperType::Promise);
+    _counter = ++Counter;
+    printf("promise: CTOR JsiPromiseWrapper %zu\n", _counter);
+  }
+
+  JsiPromiseWrapper(
+      jsi::Runtime &runtime,
+      std::function<void(
+          jsi::Runtime &runtime,
+          std::function<void(jsi::Runtime &runtime, const jsi::Value &val)>
+              resolve,
+          std::function<void(jsi::Runtime &runtime, const jsi::Value &reason)>
+              reject)>
+          computation);
+
+  ~JsiPromiseWrapper() {
+    printf("promise: Dtor JsiPromiseWrapper %zu\n", _counter);
+  }
+  /**
+   Returns true if the object is a thenable object - ie. an object with a then
+   function. Which is basically what a promise is.
+   */
+  static bool isThenable(jsi::Runtime &runtime, jsi::Object &obj);
+
+  /**
+   Returns true if the object is a thenable object - ie. an object with a then
+   function. Which is basically what a promise is.
+   */
+  static bool isThenable(jsi::Runtime &runtime, jsi::Value &value);
+
+  JSI_HOST_FUNCTION(then) {
+    auto thenFn = count > 0 ? &arguments[0] : nullptr;
+    auto catchFn = count > 1 ? &arguments[1] : nullptr;
+    return then(runtime, thisValue, thenFn, catchFn);
+  }
+
+  JSI_HOST_FUNCTION(_catch) {
+    auto catchFn = count > 0 ? &arguments[0] : nullptr;
+    return then(runtime, thisValue, nullptr, catchFn);
+  }
+
+  JSI_HOST_FUNCTION(finally) {
+    auto sideEffectsFn = count > 0 ? &arguments[0] : nullptr;
+    return finally(runtime, thisValue, sideEffectsFn);
+  }
+
+  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC_NAMED(JsiPromiseWrapper, _catch,
+                                             "catch"),
+                       JSI_EXPORT_FUNC(JsiPromiseWrapper, then),
+                       JSI_EXPORT_FUNC(JsiPromiseWrapper, finally))
+
+  /**
+   Creates a wrapped promise that is resolved with the given value
+   */
+  static std::shared_ptr<JsiPromiseWrapper>
+  resolve(jsi::Runtime &runtime, std::shared_ptr<JsiWrapper> value);
+
+  /**
+   Creates a wrapped promise that is rejected with the given reason
+   */
+  static std::shared_ptr<JsiPromiseWrapper>
+  reject(jsi::Runtime &runtime, std::shared_ptr<JsiWrapper> reason);
+  void onFulfilled(jsi::Runtime &runtime, const jsi::Value &val);
+  void onRejected(jsi::Runtime &runtime, const jsi::Value &reason);
+
 protected:
+  jsi::Value then(jsi::Runtime &runtime, const jsi::Value &thisValue,
+                  const jsi::Value *thenFn, const jsi::Value *catchFn);
+
+  std::shared_ptr<JsiPromiseWrapper> then(jsi::Runtime &runtime,
+                                          std::shared_ptr<JsiWrapper> thisValue,
+                                          const jsi::HostFunctionType &thenFn,
+                                          const jsi::HostFunctionType &catchFn);
+
+  // TODO: Same pattern as for then!
+  jsi::Value finally(jsi::Runtime &runtime, const jsi::Value &thisValue,
+                     const jsi::Value *sideEffectFn);
+
+  /**
+   Basically makes the promise wrapper readonly (which it should be)
+   */
   bool canUpdateValue(jsi::Runtime &runtime, const jsi::Value &value) override {
     return false;
   }
 
-  jsi::Value getValue(jsi::Runtime &runtime) override {
-    return JsiPromise::createPromiseAsJSIValue(
-        runtime,
-        [this](jsi::Runtime &runtime, std::shared_ptr<JsiPromise> promise) {
-          // First of all, check if the promise is resolved
-          if (_resultSet) {
-            // resolve
-            promise->resolve(JsiWrapper::unwrap(runtime, _result));
-            return;
-          }
+  /*
+   Converts to a promise
+   */
+  jsi::Value getValue(jsi::Runtime &runtime) override;
 
-          // Or if it failed
-          if (_errorSet) {
-            promise->reject(_error, "");
-            return;
-          }
-
-          // Now we need to add ourselves as a listener to the original promise
-          _resolveListeners.push_back([this, &runtime, promise]() {
-            promise->resolve(JsiWrapper::unwrap(runtime, _result));
-          });
-
-          _rejectListeners.push_back(
-              [this, &runtime, promise]() { promise->reject(_error, ""); });
-        });
-  }
-
-  void setValue(jsi::Runtime &runtime, const jsi::Value &value) override {
-    setType(JsiWrapperType::Promise);
-
-    auto obj = value.asObject(runtime);
-
-    auto thenFunc = obj.getPropertyAsFunction(runtime, "then");
-    auto catchFunc = obj.getProperty(runtime, "catch");
-    // Set then
-    auto thisThenHandler =
-        (jsi::Value(JsiHostObject::*)(jsi::Runtime & runtime,
-                                      const jsi::Value &thisValue,
-                                      const jsi::Value *arguments, size_t)) &
-        JsiPromiseWrapper::handlePromiseResolved;
-
-    auto dispatcher =
-        std::bind(thisThenHandler, static_cast<JsiPromiseWrapper *>(this),
-                  std::placeholders::_1, std::placeholders::_2,
-                  std::placeholders::_3, std::placeholders::_4);
-
-    thenFunc.callWithThis(
-        runtime, obj,
-        jsi::Function::createFromHostFunction(
-            runtime, jsi::PropNameID::forUtf8(runtime, "then"), 1, dispatcher));
-
-    if (catchFunc.isObject()) {
-      auto catchFuncObj = catchFunc.asObject(runtime);
-      if (catchFuncObj.isFunction(runtime)) {
-        auto thisCatchHandler =
-            (jsi::Value(JsiHostObject::*)(
-                jsi::Runtime & runtime, const jsi::Value &thisValue,
-                const jsi::Value *arguments, size_t)) &
-            JsiPromiseWrapper::handlePromiseRejected;
-
-        auto dispatcher =
-            std::bind(thisCatchHandler, static_cast<JsiPromiseWrapper *>(this),
-                      std::placeholders::_1, std::placeholders::_2,
-                      std::placeholders::_3, std::placeholders::_4);
-
-        catchFuncObj.asFunction(runtime).callWithThis(
-            runtime, obj,
-            jsi::Function::createFromHostFunction(
-                runtime, jsi::PropNameID::forUtf8(runtime, "catch"), 1,
-                dispatcher));
-      }
-    }
-  }
+  /**
+   Converts from a promise
+   */
+  void setValue(jsi::Runtime &runtime, const jsi::Value &value) override;
 
 private:
-  jsi::Value handlePromiseResolved(jsi::Runtime &runtime,
-                                   const jsi::Value &thisValue,
-                                   const jsi::Value *arguments, size_t count) {
-    if (_resultSet) {
-      throw jsi::JSError(runtime, "Promise is already resolved");
-    }
-    _resultSet = true;
-    _result = JsiWrapper::wrap(runtime, arguments[0]);
-    for (auto listener : _resolveListeners) {
-      listener();
-    }
-    _rejectListeners.clear();
-    _resolveListeners.clear();
+  typedef enum { Pending = 0, Fulfilled = 1, Rejected = 2 } PromiseState;
 
-    return jsi::Value::undefined();
-  }
+  void propagateFulfilled(jsi::Runtime &runtime);
+  void propagateRejected(jsi::Runtime &runtime);
 
-  jsi::Value handlePromiseRejected(jsi::Runtime &runtime,
-                                   const jsi::Value &thisValue,
-                                   const jsi::Value *arguments, size_t count) {
-    if (_errorSet) {
-      throw jsi::JSError(runtime, "Promise is already resolved");
-    }
-    _errorSet = true;
-    // Error can be a string or an error objcet
-    if (arguments[0].isObject()) {
-      auto err = arguments[0].asObject(runtime);
-      _error =
-          err.getProperty(runtime, "message").asString(runtime).utf8(runtime);
-    } else {
-      _error = arguments[0].asString(runtime).utf8(runtime);
-    }
-    for (auto listener : _rejectListeners) {
-      listener();
-    }
-    _rejectListeners.clear();
-    _resolveListeners.clear();
-
-    return jsi::Value::undefined();
-  }
-
-  std::vector<std::function<void()>> _resolveListeners;
-  std::vector<std::function<void()>> _rejectListeners;
-  bool _resultSet = false;
-  bool _errorSet = false;
-  std::shared_ptr<JsiWrapper> _result;
-  std::string _error;
+  PromiseState _state;
+  std::shared_ptr<JsiWrapper> _value;
+  std::shared_ptr<JsiWrapper> _reason;
+  std::vector<PromiseQueueItem> _thenQueue;
+  std::vector<FinallyQueueItem> _finallyQueue;
 };
 } // namespace RNWorklet

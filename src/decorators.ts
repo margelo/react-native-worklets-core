@@ -1,4 +1,4 @@
-const consoleDecorator = () => {
+/*const consoleDecorator = () => {
   console.log("Adding console decorator");
   const obj = {
     log: Worklets.createRunInJsFn((...args: any[]) => {
@@ -19,10 +19,10 @@ const consoleDecorator = () => {
     }),
   };
   Worklets.addDecorator("console", obj);
-};
+};*/
 
 export const addDecorators = () => {
-  console.log("Adding decorators...");
-  consoleDecorator();
-  console.log("Done decorating.");
+  //console.log("Adding decorators...");
+  //consoleDecorator();
+  //console.log("Done decorating.");
 };

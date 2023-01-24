@@ -8,7 +8,7 @@
 
 #include "JsiHostObject.h"
 #include "JsiJsDecorator.h"
-#include "JsiPromise.h"
+#include "JsiPromiseWrapper.h"
 #include "JsiSharedValue.h"
 #include "JsiWorklet.h"
 #include "JsiWorkletContext.h"
@@ -79,9 +79,9 @@ public:
 
   JSI_HOST_FUNCTION(createSharedValue) {
     return jsi::Object::createFromHostObject(
-        *JsiWorkletContext::getInstance()->getJsRuntime(),
-        std::make_shared<JsiSharedValue>(arguments[0],
-                                         JsiWorkletContext::getInstance()));
+        *JsiWorkletContext::getDefaultInstance()->getJsRuntime(),
+        std::make_shared<JsiSharedValue>(
+            arguments[0], JsiWorkletContext::getDefaultInstance()));
   };
 
   JSI_HOST_FUNCTION(createRunInJsFn) {
@@ -102,83 +102,13 @@ public:
           "createRunInJsFn expects a function as its first parameter.");
     }
 
-    // Now let's get the function
-    auto func = std::make_shared<jsi::Function>(
-        arguments[0].asObject(runtime).asFunction(runtime));
+    auto caller = JsiWorkletContext::createCallInContext(runtime, arguments[0], nullptr);
 
+    // Now let us create the caller function.
     return jsi::Function::createFromHostFunction(
         runtime, jsi::PropNameID::forAscii(runtime, "runInJsFn"), 0,
         JSI_HOST_FUNCTION_LAMBDA {
-          std::vector<std::shared_ptr<JsiWrapper>> argsWrapper;
-          argsWrapper.reserve(count);
-
-          for (size_t i = 0; i < count; i++) {
-            argsWrapper.push_back(JsiWrapper::wrap(runtime, arguments[i]));
-          }
-
-          // Create simple dispatcher without promise since we don't support
-          // promises on Android in the Javascript runtime. This will then run
-          // blocking
-          std::mutex mu;
-          std::condition_variable cond;
-          std::exception_ptr ex;
-          std::shared_ptr<JsiWrapper> retVal;
-          bool isFinished = false;
-          std::unique_lock<std::mutex> lock(mu);
-
-          // Now lets go back and into the safety of the good ol' javascript
-          // thread.
-          JsiWorkletContext::getInstance()->invokeOnJsThread([&]() {
-            std::lock_guard<std::mutex> lock(mu);
-
-            jsi::Runtime &runtime =
-                *JsiWorkletContext::getInstance()->getJsRuntime();
-
-            try {
-              size_t size = argsWrapper.size();
-              std::vector<jsi::Value> args(size);
-
-              // Add the rest of the arguments
-              for (size_t i = 0; i < size; i++) {
-                args[i] = JsiWrapper::unwrap(runtime, argsWrapper.at(i));
-              }
-
-              auto result = func->call(
-                  runtime, static_cast<const jsi::Value *>(args.data()), size);
-              retVal = JsiWrapper::wrap(runtime, result);
-            } catch (const jsi::JSError &err) {
-              // When rethrowing we need to make sure that any jsi errors are
-              // transferred to the correct runtime.
-              try {
-                throw JsErrorWrapper(err.getMessage(), err.getStack());
-              } catch (...) {
-                ex = std::current_exception();
-              }
-            } catch (const std::exception &err) {
-              std::string a = typeid(err).name();
-              std::string b = typeid(jsi::JSError).name();
-              if (a == b) {
-                const auto *jsError = static_cast<const jsi::JSError *>(&err);
-                ex = std::make_exception_ptr(
-                    JsErrorWrapper(jsError->getMessage(), jsError->getStack()));
-              } else {
-                ex = std::make_exception_ptr(err);
-              }
-            }
-
-            isFinished = true;
-            cond.notify_one();
-          });
-
-          // Wait untill the blocking code as finished
-          cond.wait(lock, [&]() { return isFinished; });
-
-          // Check for errors
-          if (ex != nullptr) {
-            std::rethrow_exception(ex);
-          } else {
-            return JsiWrapper::unwrap(runtime, retVal);
-          }
+          return caller(runtime, thisValue, arguments, count);
         });
   }
 
@@ -188,109 +118,26 @@ public:
           runtime, "createRunInContextFn expects at least one parameter.");
     }
 
-    // Get the worklet function
-    if (!arguments[0].isObject()) {
-      throw jsi::JSError(
-          runtime,
-          "createRunInContextFn expects a function as its first parameter.");
-    }
-
-    if (!JsiWorklet::isDecoratedAsWorklet(runtime, arguments[0])) {
-      throw jsi::JSError(runtime, "createRunInContextFn expects a worklet "
-                                  "decorated function as its first parameter.");
-    }
-
-    // Now let's get the worklet
-    auto worklet = std::make_shared<JsiWorklet>(runtime, arguments[0]);
-
     // Get the active context
     auto activeContext =
         count == 2 && arguments[1].isObject()
             ? arguments[1].asObject(runtime).getHostObject<JsiWorkletContext>(
                   runtime)
-            : JsiWorkletContext::getInstance();
+            : JsiWorkletContext::getDefaultInstance();
 
     if (activeContext == nullptr) {
       throw jsi::JSError(runtime,
                          "createRunInContextFn called with invalid context.");
     }
 
-    // Now let us create the caller function / return value. This is a function
-    // that can be called FROM the JS thead / runtime and that will execute the
-    // worklet on the context thread / runtime.
+    auto caller = JsiWorkletContext::createCallInContext(runtime, arguments[0],
+                                                         activeContext.get());
+
+    // Now let us create the caller function.
     return jsi::Function::createFromHostFunction(
         runtime, jsi::PropNameID::forAscii(runtime, "runInContextFn"), 0,
         JSI_HOST_FUNCTION_LAMBDA {
-          // Wrap the arguments
-          std::vector<std::shared_ptr<JsiWrapper>> argsWrapper;
-          argsWrapper.reserve(count);
-          for (size_t i = 0; i < count; i++) {
-            argsWrapper.push_back(JsiWrapper::wrap(runtime, arguments[i]));
-          }
-
-          // Create promise as return value when running on the worklet runtime
-          return JsiPromise::createPromiseAsJSIValue(
-              runtime,
-              [this, argsWrapper, activeContext, worklet, count](
-                  jsi::Runtime &runtime, std::shared_ptr<JsiPromise> promise) {
-                // Run on the Worklet thread
-                activeContext->invokeOnWorkletThread([=]() {
-                  // Dispatch and resolve / reject promise
-                  auto workletRuntime = &activeContext->getWorkletRuntime();
-
-                  // Prepare result
-                  try {
-                    // Create arguments
-                    size_t size = argsWrapper.size();
-                    std::vector<jsi::Value> args(size);
-
-                    // Add the rest of the arguments
-                    for (size_t i = 0; i < size; i++) {
-                      args[i] = JsiWrapper::unwrap(*workletRuntime,
-                                                   argsWrapper.at(i));
-                    }
-
-                    auto retVal = worklet->call(
-                        *workletRuntime, jsi::Value::undefined(),
-                        static_cast<const jsi::Value *>(args.data()),
-                        argsWrapper.size());
-
-                    // Since we are returning this on another context, we need
-                    // to wrap/unwrap the value
-                    auto retValWrapper =
-                        JsiWrapper::wrap(*workletRuntime, retVal);
-
-                    // Resolve on main thread
-                    activeContext->invokeOnJsThread([=]() {
-                      promise->resolve(JsiWrapper::unwrap(
-                          *activeContext->getJsRuntime(), retValWrapper));
-                    });
-
-                  } catch (...) {
-                    auto err = std::current_exception();
-                    activeContext->invokeOnJsThread([promise, err]() {
-                      try {
-                        std::rethrow_exception(err);
-                      } catch (const std::exception &e) {
-                        // A little trick to find out if the exception is a js
-                        // error, comparing the typeid name and then doing a
-                        // static_cast
-                        std::string a = typeid(e).name();
-                        std::string b = typeid(jsi::JSError).name();
-                        if (a == b) {
-                          const auto *jsError =
-                              static_cast<const jsi::JSError *>(&e);
-                          // Javascript error, pass message
-                          promise->reject(jsError->getMessage(),
-                                          jsError->getStack());
-                        } else {
-                          promise->reject(e.what(), "(unknown stack frame)");
-                        }
-                      }
-                    });
-                  }
-                });
-              });
+          return caller(runtime, thisValue, arguments, count);
         });
   }
 

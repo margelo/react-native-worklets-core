@@ -36,10 +36,7 @@ public:
   }
 
   JSI_PROPERTY_GET(value) {
-    // Arrays and objects are handled specifically to
-    // support settings values and getting notifications in
-    // child values
-    return JsiWrapper::unwrap(runtime, _valueWrapper);
+    return _valueWrapper->unwrapAsProxyOrValue(runtime);
   }
 
   JSI_PROPERTY_SET(value) {
@@ -82,8 +79,9 @@ public:
     auto dispatcher = JsiDispatcher::createDispatcher(
         runtime, thisValuePtr, functionPtr, nullptr,
         [&runtime, this](const char *err) {
-          _context->invokeOnJsThread(
-              [err, &runtime]() { throw jsi::JSError(runtime, err); });
+          _context->invokeOnJsThread([err](jsi::Runtime &runtime) {
+            throw jsi::JSError(runtime, err);
+          });
         });
 
     // Set up the callback to run on the correct runtime thread.

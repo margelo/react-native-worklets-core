@@ -2,7 +2,7 @@ import { Worklets } from "react-native-worklets";
 import { Expect, ExpectException, ExpectValue } from "./utils";
 
 export const worklet_context_tests = {
-  call_sync_on_js_thread: () => {
+  call_async_on_js_thread: () => {
     const worklet = (a: number) => {
       "worklet";
       return a;
@@ -10,7 +10,7 @@ export const worklet_context_tests = {
     return ExpectValue(worklet(100), 100);
   },
 
-  call_sync_on_js_thread_with_error: () => {
+  call_async_on_js_thread_with_error: () => {
     const worklet = () => {
       "worklet";
       throw new Error("Test error");
@@ -77,7 +77,7 @@ export const worklet_context_tests = {
     });
   },
 
-  call_sync_to_js_from_worklet: () => {
+  call_async_to_js_from_worklet: () => {
     const sharedValue = Worklets.createSharedValue(0);
     const setSharedValue = function (a: number) {
       "worklet";
@@ -88,7 +88,7 @@ export const worklet_context_tests = {
 
     const w1 = function (a: number) {
       "worklet";
-      js1(a);
+      return js1(a);
     };
 
     const w = Worklets.createRunInContextFn(w1);
@@ -99,7 +99,7 @@ export const worklet_context_tests = {
     });
   },
 
-  call_sync_to_js_from_worklet_with_retval: () => {
+  call_async_to_js_from_worklet_with_retval: () => {
     const workletB = Worklets.createRunInJsFn(function (a: number) {
       "worklet";
       return a;
@@ -112,7 +112,7 @@ export const worklet_context_tests = {
     return ExpectValue(workletA(200), 200);
   },
 
-  call_sync_to_js_from_worklet_with_error: () => {
+  call_async_to_js_from_worklet_with_error: () => {
     const callback = Worklets.createRunInJsFn(() => {
       "worklet";
       throw new Error("Test error");
@@ -120,9 +120,9 @@ export const worklet_context_tests = {
 
     const workletA = Worklets.createRunInContextFn(function () {
       "worklet";
-      callback();
+      return callback();
     });
-    return ExpectException(workletA, "Exception in HostFunction: Test error");
+    return ExpectException(workletA, "Test error");
   },
 
   call_decorated_js_function_from_worklet: () => {

@@ -15,8 +15,6 @@ namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
 
-const char *WorkletObjectProxyName = "__createWorkletObjectProxy";
-
 class JsiObjectWrapper : public JsiHostObject,
                          public std::enable_shared_from_this<JsiObjectWrapper>,
                          public JsiWrapper {
@@ -75,13 +73,13 @@ public:
   jsi::Value getValue(jsi::Runtime &runtime) override {
     switch (getType()) {
     case JsiWrapperType::HostObject:
-      return getObjectProxy(runtime, _hostObject);
+      return jsi::Object::createFromHostObject(runtime, _hostObject);
     case JsiWrapperType::HostFunction:
       return jsi::Function::createFromHostFunction(
           runtime, jsi::PropNameID::forUtf8(runtime, "fn"), 0,
           *_hostFunction.get());
     case JsiWrapperType::Object:
-      return getObjectProxy(runtime, shared_from_this());
+      return jsi::Object::createFromHostObject(runtime, shared_from_this());
     case JsiWrapperType::Promise:
       throw jsi::JSError(runtime, "Promise type not supported.");
     default:
@@ -130,6 +128,7 @@ public:
   std::vector<jsi::PropNameID>
   getPropertyNames(jsi::Runtime &runtime) override {
     std::vector<jsi::PropNameID> retVal;
+    retVal.reserve(_properties.size());
     for (auto it = _properties.begin(); it != _properties.end(); it++) {
       retVal.push_back(jsi::PropNameID::forUtf8(runtime, it->first));
     }
@@ -143,6 +142,8 @@ public:
    */
   std::string toString(jsi::Runtime &runtime) override {
     switch (getType()) {
+    case JsiWrapperType::Promise:
+      return "[Promise]";
     case JsiWrapperType::HostObject:
       return "[Object hostObject]";
     case JsiWrapperType::HostFunction:
@@ -155,44 +156,17 @@ public:
     }
   }
 
-private:
-  /**
-   Creates a proxy for the host object so that we can make the runtime trust
-   that this is a real JS object
-   */
-  jsi::Value getObjectProxy(jsi::Runtime &runtime,
-                            std::shared_ptr<jsi::HostObject> hostObj) {
-
-    auto createObjProxy =
-        runtime.global().getProperty(runtime, WorkletObjectProxyName);
-    if (createObjProxy.isUndefined()) {
-      // Install worklet proxy helper into runtime
-      static std::string code =
-          "function (obj) {"
-          "  return new Proxy(obj, {"
-          "    getOwnPropertyDescriptor: function () {"
-          "      return { configurable: true, enumerable: true, writable: true "
-          "};"
-          "    },"
-          " set: function(target, prop, value) { return Reflect.set(target, "
-          "prop, value); },"
-          " get: function(target, prop) { return Reflect.get(target, prop); }"
-          "  });"
-          "}";
-
-      auto codeBuffer =
-          std::make_shared<const jsi::StringBuffer>("(" + code + "\n)");
-      createObjProxy =
-          runtime.evaluateJavaScript(codeBuffer, WorkletObjectProxyName);
-      runtime.global().setProperty(runtime, WorkletObjectProxyName,
-                                   createObjProxy);
+protected:
+  jsi::Value getAsProxyOrValue(jsi::Runtime &runtime) override {
+    if (getType() == JsiWrapperType::Object) {
+      return getObjectAsProxy(runtime, shared_from_this());
+    } else if (getType() == JsiWrapperType::HostObject) {
+      return getObjectAsProxy(runtime, _hostObject);
     }
-
-    auto createProxyFunc = createObjProxy.asObject(runtime).asFunction(runtime);
-    return createProxyFunc.call(
-        runtime, jsi::Object::createFromHostObject(runtime, hostObj));
+    return JsiWrapper::getAsProxyOrValue(runtime);
   }
 
+private:
   void setArrayBufferValue(jsi::Runtime &runtime, jsi::Object &obj) {
     throw jsi::JSError(runtime,
                        "Array buffers are not supported as shared values.");

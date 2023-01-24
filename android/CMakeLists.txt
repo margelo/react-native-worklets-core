@@ -28,6 +28,7 @@ add_library(worklets
             ../cpp/base/JsiHostObject.cpp
             ../cpp/dispatch/DispatchQueue.cpp
             ../cpp/wrappers/JsiWrapper.cpp
+            ../cpp/wrappers/JsiPromiseWrapper.cpp
 )
 
 target_include_directories(worklets

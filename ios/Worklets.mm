@@ -12,7 +12,7 @@
 RCT_EXPORT_MODULE()
 
 - (void)invalidate {
-  RNWorklet::JsiWorkletContext::invalidateInstance();
+  RNWorklet::JsiWorkletContext::invalidateDefaultInstance();
   RNWorklet::JsiWorkletApi::invalidateInstance();
   _bridge = nil;
 }
@@ -28,7 +28,7 @@ RCT_EXPORT_MODULE()
 void installApi(std::shared_ptr<facebook::react::CallInvoker> callInvoker,
                 facebook::jsi::Runtime *runtime) {
   // Initialize the default worklet context
-  RNWorklet::JsiWorkletContext::getInstance()->initialize(
+  RNWorklet::JsiWorkletContext::getDefaultInstance()->initialize(
       "default", runtime, [=](std::function<void()> &&f) {
         callInvoker->invokeAsync(std::move(f));
       });
