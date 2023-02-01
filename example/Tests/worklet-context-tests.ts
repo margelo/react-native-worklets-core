@@ -268,7 +268,6 @@ export const worklet_context_tests = {
     const ctx = Worklets.createContext("test");
     function calcInCtx(a: number) {
       "worklet";
-      //console.log("Worklet called 100 + a");
       return 100 + a;
     }
     calcInCtx.name = "calcInCtx";
@@ -276,7 +275,6 @@ export const worklet_context_tests = {
 
     function calcInDefaultCtx() {
       "worklet";
-      //console.log("Worklet called 100");
       return workletInCtx(100);
     }
     calcInDefaultCtx.name = "calcInDefaultCtx";

@@ -43,13 +43,11 @@ export const ExpectValue = <V, T>(value: V | Promise<V>, expected: T) => {
     console.log("ExpectValue, resolved:", resolvedValue);
 
     if (JSON.stringify(resolvedValue) !== JSON.stringify(expected)) {
-      reject(
-        new Error(
-          `Expected ${JSON.stringify(expected)}, got ${JSON.stringify(
-            resolvedValue
-          )}.`
-        )
-      );
+      const message = `Expected ${JSON.stringify(
+        expected
+      )}, got ${JSON.stringify(resolvedValue)}.`;
+      console.log("ExpectValue, failed:", message);
+      reject(new Error(message));
     } else {
       resolve();
     }
@@ -93,5 +91,5 @@ export const getWorkletInfo = <T extends Array<unknown>, R>(
   worklet: (...args: T) => R
 ) => {
   // @ts-ignore
-  return { closure: worklet._closure, code: worklet.asString };
+  return { closure: worklet._closure, code: worklet.__initData.code };
 };

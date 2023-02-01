@@ -211,12 +211,12 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
   // Create a worklet of the function if the function is a worklet - it should
   // be allowed to create a caller function and call inside the same JS or ctx
   // without having to pass a worklet
-  auto worklet = JsiWorklet::isDecoratedAsWorklet(runtime, maybeFunc)
-                     ? std::make_shared<JsiWorklet>(runtime, maybeFunc)
+  std::shared_ptr<JsiWorklet> worklet = JsiWorklet::isDecoratedAsWorklet(runtime, func)
+                     ? std::make_shared<JsiWorklet>(runtime, func)
                      : nullptr;
 
   // Now return the caller function as a hostfunction type.
-  return [worklet, func,
+  return [worklet, func, 
           ctx](jsi::Runtime &runtime, const jsi::Value &thisValue,
                const jsi::Value *arguments, size_t count) -> jsi::Value {
     auto callingCtx = getCurrent();
@@ -310,9 +310,9 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
     // Ensure that the function is a worklet
     if (worklet == nullptr) {
       throw jsi::JSError(runtime, "In callInContext the function parameter "
-                                  "is not a valid worklet and "
-                                  "cannot be called between contexts or "
-                                  "from/to JS from/to a context.");
+                         "is not a valid worklet and "
+                         "cannot be called between contexts or "
+                         "from/to JS from/to a context.");
     }
 
     auto callIntoCorrectContext =
@@ -341,6 +341,11 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
       if (callingCtx == nullptr) {
         JsiWorkletContext::getDefaultInstance()->invokeOnJsThread([func](jsi::Runtime &rt) { func(rt); });
       } else {
+        auto caller = callingCtx->getName();
+        if (ctx) {
+          auto callInto = ctx->getName();
+          if (callInto == "") {}
+        }
         callingCtx->invokeOnWorkletThread([func](JsiWorkletContext *, jsi::Runtime &rt) { func(rt); });
       }
       /*switch (convention) {

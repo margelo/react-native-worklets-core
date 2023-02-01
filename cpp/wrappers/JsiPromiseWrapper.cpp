@@ -120,8 +120,7 @@ jsi::Value JsiPromiseWrapper::then(jsi::Runtime &runtime,
                          thenFn->asObject(runtime).asFunction(runtime))](
                         jsi::Runtime &runtime, const jsi::Value &thisValue,
                         const jsi::Value *arguments, size_t count) {
-    auto thisRtPtr = &runtime;
-    assert(thisRtPtr == rtPtr && "Expected same runtime ptr!");
+    assert(&runtime == rtPtr && "Expected same runtime ptr!");
     return func->call(runtime, arguments, count);
   };
 
