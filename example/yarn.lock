@@ -3495,11 +3495,6 @@ pkg-up@^3.1.0:
   dependencies:
     find-up "^3.0.0"
 
-pod-install@^0.1.38:
-  version "0.1.38"
-  resolved "https://registry.yarnpkg.com/pod-install/-/pod-install-0.1.38.tgz#1c16a800a5fc1abea0cafcc0e190f376368c76ab"
-  integrity sha512-NeDWGigjJRriOIKBOvpW2/tK2tYLfyUT7ia6C6L+oarCAhBNP+IGODWdU+GEAqvfsseqOApcFclpXAJTL0UPzA==
-
 posix-character-classes@^0.1.0:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/posix-character-classes/-/posix-character-classes-0.1.1.tgz#01eac0fe3b5af71a2a6c02feabb8c1fef7e00eab"
@@ -3603,6 +3598,10 @@ react-native-gradle-plugin@^0.71.14:
   version "0.71.14"
   resolved "https://registry.yarnpkg.com/react-native-gradle-plugin/-/react-native-gradle-plugin-0.71.14.tgz#cc399662f04fbfcc0e352d03eae1d3efbd5f635a"
   integrity sha512-nnLawTZEPPRAKq92UqDkzoGgCBl9aa9zAihFHMwmwzn4WRVdK4O6Cd4XYiyoNOiQzx3Hh9k5WOckHE80C92ivQ==
+
+"react-native-worklets@link:..":
+  version "0.0.0"
+  uid ""
 
 react-native@0.71.2:
   version "0.71.2"
