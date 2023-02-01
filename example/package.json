@@ -17,7 +17,8 @@
     "@babel/core": "^7.20.0",
     "@babel/runtime": "^7.20.0",
     "babel-plugin-module-resolver": "^5.0.0",
-    "metro-react-native-babel-preset": "0.73.7"
+    "metro-react-native-babel-preset": "0.73.7",
+    "react-native-worklets": "link:../"
   },
   "jest": {
     "preset": "react-native"

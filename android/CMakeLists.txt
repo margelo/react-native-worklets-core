@@ -1,90 +1,96 @@
-cmake_minimum_required(VERSION 3.4.1)
+project("rnworklets")
+cmake_minimum_required(VERSION 3.8)
 
-project("worklets")
+set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_CXX_STANDARD 17)
 
-set (CMAKE_VERBOSE_MAKEFILE ON)
-set (CMAKE_CXX_STANDARD 17)
+include("${REACT_NATIVE_DIR}/ReactAndroid/cmake-utils/folly-flags.cmake")
+add_compile_options(${folly_FLAGS})
 
-file(GLOB LIBRN_DIR "${PREBUILT_DIR}/${ANDROID_ABI}")
-
-message("-- ABI     : " ${ANDROID_ABI})
-message("-- BUILD   : " ${build_DIR})
-message("-- PREBLD  : " ${PREBUILT_DIR})
-message("-- HERMES  : " ${FOR_HERMES})
-
-link_directories(../libs/android/${ANDROID_ABI}/)
-
-if(${REACT_NATIVE_VERSION} LESS 66)
-  file(
-          TO_CMAKE_PATH
-          "${NODE_MODULES_DIR}/react-native/ReactCommon/jsi/jsi/jsi.cpp"
-          INCLUDE_JSI_CPP
-  )
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+  string(APPEND CMAKE_CXX_FLAGS " -DDEBUG")
 endif()
 
-add_library(worklets
-            SHARED
-            cpp-adapter.cpp
-            ../cpp/base/JsiHostObject.cpp
-            ../cpp/dispatch/DispatchQueue.cpp
-            ../cpp/wrappers/JsiWrapper.cpp
-)
+set(PACKAGE_NAME "rnworklets")
 
-target_include_directories(worklets
-        PRIVATE
-        ../cpp
-        ../cpp/base
-        ../cpp/dispatch
-        ../cpp/decorators
-        ../cpp/sharedvalues
-        ../cpp/wrappers
-        "${NODE_MODULES_DIR}/react-native/React"
-        "${NODE_MODULES_DIR}/react-native/React/Base"
-        "${NODE_MODULES_DIR}/react-native/ReactAndroid/src/main/jni"
-        "${NODE_MODULES_DIR}/react-native/ReactAndroid/src/main/java/com/facebook/react/turbomodule/core/jni"
-        "${NODE_MODULES_DIR}/react-native/ReactCommon"
-        "${NODE_MODULES_DIR}/react-native/ReactCommon/callinvoker"
-        "${NODE_MODULES_DIR}/react-native/ReactCommon/jsi"
-        "${NODE_MODULES_DIR}/react-native/ReactCommon/turbomodule/core"
-        "${NODE_MODULES_DIR}/react-native/ReactCommon/react/nativemodule/core"
-        "${NODE_MODULES_DIR}/hermes-engine/android/include"
-)
+# Consume shared libraries and headers from prefabs
+find_package(fbjni REQUIRED CONFIG)
+find_package(ReactAndroid REQUIRED CONFIG)
 
-
-find_library(
-        LOG_LIB
-        log
-)
-
-message("-- LOG     : " ${LOG_LIB})
-
-if(${REACT_NATIVE_VERSION} LESS 66)
-  # JSI lib didn't exist on RN 0.65 and before. Simply omit it.
-  set (JSI_LIB "")
-else()
-  # RN 0.66 distributes libjsi.so, can be used instead of compiling jsi.cpp manually.
-  find_library(
-          JSI_LIB
-          jsi
-          PATHS ${LIBRN_DIR}
-          NO_CMAKE_FIND_ROOT_PATH
-  )
+if(${JS_RUNTIME} STREQUAL "hermes")
+  find_package(hermes-engine REQUIRED CONFIG)
 endif()
 
-message("-- JSI     : " ${JSI_LIB})
-
-find_library(
-        FBJNI_LIBRARY
-        fbjni
-        PATHS ${libfbjni_link_DIRS}
-        NO_CMAKE_FIND_ROOT_PATH
+add_library(
+  ${PACKAGE_NAME}
+  SHARED
+  cpp-adapter.cpp
+  ../cpp/JsiWorkletApi.cpp
+  ../cpp/JsiWorkletContext.cpp
+  ../cpp/base/JsiHostObject.cpp
+  ../cpp/dispatch/DispatchQueue.cpp
+  ../cpp/wrappers/JsiWrapper.cpp
 )
 
-message("-- FBJNI   : " ${FBJNI_LIBRARY})
+# includes
+target_include_directories(
+  ${PACKAGE_NAME}
+  PRIVATE
+  ../cpp
+  ../cpp/base
+  ../cpp/decorators
+  ../cpp/dispatch
+  ../cpp/sharedvalues
+  ../cpp/wrappers
+  "${REACT_NATIVE_DIR}/ReactAndroid/src/main/jni/react/turbomodule"
+  "${REACT_NATIVE_DIR}/ReactCommon"
+  "${REACT_NATIVE_DIR}/ReactCommon/callinvoker"
+  "${REACT_NATIVE_DIR}/ReactCommon/runtimeexecutor"
+)
+
+# build shared lib
+set_target_properties(${PACKAGE_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 
 target_link_libraries(
-        worklets
-        ${LOG_LIB}
-        ${JSI_LIB}
-        -landroid
+  ${PACKAGE_NAME}
+  log
+  android
 )
+
+target_link_libraries(
+  ${PACKAGE_NAME}
+  ReactAndroid::folly_runtime
+  ReactAndroid::glog
+  ReactAndroid::jsi
+  ReactAndroid::reactnativejni
+  fbjni::fbjni
+)
+
+if(${JS_RUNTIME} STREQUAL "hermes")
+  string(APPEND CMAKE_CXX_FLAGS " -DJS_RUNTIME_HERMES=1")
+
+  # From prefab from module `com.facebook.react:hermes-android`
+  set(HERMES_LIB hermes-engine::libhermes)
+
+  target_link_libraries(
+    ${PACKAGE_NAME}
+    ${HERMES_LIB}
+  )
+
+  if(${HERMES_ENABLE_DEBUGGER})
+    set(HERMES_EXECUTOR_LIB ReactAndroid::hermes_executor)
+
+    target_link_libraries(
+      ${PACKAGE_NAME}
+      ${HERMES_EXECUTOR_LIB}
+    )
+  endif()
+elseif(${JS_RUNTIME} STREQUAL "jsc")
+  string(APPEND CMAKE_CXX_FLAGS " -DJS_RUNTIME_JSC=1")
+
+  set(JSEXECUTOR_LIB ReactAndroid::jscexecutor)
+
+  target_link_libraries(${PACKAGE_NAME} ${JSEXECUTOR_LIB})
+else()
+  message(FATAL_ERROR "Unknown JS runtime ${JS_RUNTIME}.")
+endif()
