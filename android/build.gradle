@@ -1,36 +1,16 @@
 import java.nio.file.Paths
 
-buildscript {
-  repositories {
-    google()
-    mavenCentral()
-  }
-
-  dependencies {
-    classpath "com.android.tools.build:gradle:7.2.1"
-  }
-}
-
-def isNewArchitectureEnabled() {
-  return rootProject.hasProperty("newArchEnabled") && rootProject.getProperty("newArchEnabled") == "true"
-}
-
-apply plugin: "com.android.library"
-
-if (isNewArchitectureEnabled()) {
-  apply plugin: "com.facebook.react"
-}
-
 def getExtOrDefault(name) {
   return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties["Worklets_" + name]
 }
 
 def getExtOrIntegerDefault(name) {
-  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["Worklets_" + name]).toInteger()
+  return getExtOrDefault(name).toInteger()
 }
 
-def forHermes = project(':app').ext.react.enableHermes
-
+def isNewArchitectureEnabled() {
+  return rootProject.hasProperty("newArchEnabled") && rootProject.getProperty("newArchEnabled") == "true"
+}
 
 static def findNodeModules(baseDir) {
   def basePath = baseDir.toPath().normalize()
@@ -44,85 +24,58 @@ static def findNodeModules(baseDir) {
     }
     basePath = basePath.getParent()
   }
-  throw new GradleException("React-Native-Skia: Failed to find node_modules/ path!")
+  throw new GradleException("react-native-worklets: Failed to find node_modules/ path!")
 }
+
+def JS_RUNTIME = {
+  // Override JS runtime with environment variable
+  if (System.getenv("JS_RUNTIME")) {
+    return System.getenv("JS_RUNTIME")
+  }
+
+  // Check if Hermes is enabled in app setup
+  def appProject = rootProject.allprojects.find { it.plugins.hasPlugin('com.android.application') }
+  if (appProject?.hermesEnabled?.toBoolean()) {
+    return "hermes"
+  }
+
+  // Use JavaScriptCore (JSC) by default
+  return "jsc"
+}.call()
 
 def nodeModules = findNodeModules(projectDir)
-logger.warn("react-native-skia: node_modules/ found at: ${nodeModules}")
 
-def sourceBuild = false
-def defaultDir = null
-
-if (rootProject.ext.has('reactNativeAndroidRoot')) {
-  defaultDir = rootProject.ext.get('reactNativeAndroidRoot')
-} else if (findProject(':ReactAndroid') != null) {
-  sourceBuild = true
-  defaultDir = project(':ReactAndroid').projectDir
-} else {
-  defaultDir = file("$nodeModules/react-native/android")
+def reactNativeArchitectures() {
+  def value = project.getProperties().get("reactNativeArchitectures")
+  return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
 }
 
-if (!defaultDir.exists()) {
-  throw new GradleException(
-    "${project.name}: React Native android directory (node_modules/react-native/android) does not exist! Resolved node_modules to: ${nodeModules}"
-  )
+apply plugin: "com.android.library"
+
+if (isNewArchitectureEnabled()) {
+    apply plugin: "com.facebook.react"
 }
-
-def buildType = "debug"
-if (gradle.startParameter.taskRequests.args[0].toString().contains("Release")) {
-  buildType = "release"
-} else if (gradle.startParameter.taskRequests.args[0].toString().contains("Debug")) {
-  buildType = "debug"
-}
-
-def prebuiltDir = sourceBuild
-  ? "$nodeModules/react-native/ReactAndroid/src/main/jni/prebuilt/lib"
-  : "$buildDir/react-native-0*/jni"
-
-def reactProperties = new Properties()
-file("$nodeModules/react-native/ReactAndroid/gradle.properties").withInputStream { reactProperties.load(it) }
-def FULL_RN_VERSION = reactProperties.getProperty("VERSION_NAME")
-def REACT_NATIVE_VERSION = FULL_RN_VERSION.split("\\.")[1].toInteger()
-
-logger.warn("react-native-worklets: RN Version: ${REACT_NATIVE_VERSION} / ${FULL_RN_VERSION}")
-logger.warn("react-native-worklets: isSourceBuild: ${sourceBuild}")
-logger.warn("react-native-worklets: PrebuiltDir: ${prebuiltDir}")
-logger.warn("react-native-worklets: buildType: ${buildType}")
-logger.warn("react-native-worklets: buildDir: ${buildDir}")
-logger.warn("react-native-worklets: node_modules: ${nodeModules}")
 
 android {
-  ndkVersion getExtOrDefault("ndkVersion")
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
-    buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+
     externalNativeBuild {
       cmake {
-        cppFlags "-O2 -frtti -fexceptions -Wall -fstack-protector-all"
-        abiFilters "x86", "x86_64", "armeabi-v7a", "arm64-v8a"
-        arguments "-DNODE_MODULES_DIR=$nodeModules",
-                  "-DFOR_HERMES=$forHermes",
-                  "-DREACT_NATIVE_VERSION=${REACT_NATIVE_VERSION}",
-                  "-DPREBUILT_DIR=${prebuiltDir}"
+        arguments "-DANDROID_STL=c++_shared",
+                "-DANDROID_TOOLCHAIN=clang",
+                "-DREACT_NATIVE_DIR=${nodeModules}/react-native",
+                "-DJS_RUNTIME=${JS_RUNTIME}"
+        abiFilters (*reactNativeArchitectures())
       }
     }
   }
-  externalNativeBuild {
-    cmake {
-      path "CMakeLists.txt"
-    }
-  }
-  buildTypes {
-    release {
-      minifyEnabled false
-    }
-  }
 
-  lintOptions {
-    disable "GradleCompatible"
+  buildFeatures {
+    prefab true
   }
 
   compileOptions {
@@ -130,103 +83,67 @@ android {
     targetCompatibility JavaVersion.VERSION_1_8
   }
 
+  externalNativeBuild {
+    cmake {
+      path "CMakeLists.txt"
+    }
+  }
+
+  buildTypes {
+    debug {
+      externalNativeBuild {
+        cmake {
+          if (JS_RUNTIME == "hermes") {
+            arguments "-DHERMES_ENABLE_DEBUGGER=1"
+          } else {
+            arguments "-DHERMES_ENABLE_DEBUGGER=0"
+          }
+        }
+      }
+    }
+    release {
+      externalNativeBuild {
+        cmake {
+          arguments "-DHERMES_ENABLE_DEBUGGER=0"
+        }
+      }
+    }
+  }
+
   sourceSets {
     main {
       if (isNewArchitectureEnabled()) {
-        java.srcDirs += [
-          "src/newarch",
-          // This is needed to build Kotlin project with NewArch enabled
-          "${project.buildDir}/generated/source/codegen/java"
-        ]
+        java.srcDirs += ["src/newarch"]
       } else {
         java.srcDirs += ["src/oldarch"]
       }
     }
   }
 
-  // Create new configurations that can be referred to in dependencies.
-  // The Android Gradle Plugin 3.* does not allow hooking into existing
-  // configurations like `implementation`.
-  configurations {
-    extractHeaders
-    extractJNI
+  packagingOptions {
+    excludes = [
+      "META-INF",
+      "META-INF/**",
+      "**/libc++_shared.so",
+      "**/libfbjni.so",
+      "**/libjsi.so",
+      "**/libfolly_json.so",
+      "**/libfolly_runtime.so",
+      "**/libglog.so",
+      "**/libhermes.so",
+      "**/libhermes-executor-debug.so",
+      "**/libhermes_executor.so",
+      "**/libreactnativejni.so",
+      "**/libturbomodulejsijni.so",
+      "**/libreact_nativemodule_core.so",
+      "**/libjscexecutor.so",
+    ]
   }
 }
-
-repositories {
-  mavenCentral()
-  google()
-}
-
 
 dependencies {
-  // For < 0.71, this will be from the local maven repo
-  // For > 0.71, this will be replaced by `com.facebook.react:react-android:$version` by react gradle plugin
-  //noinspection GradleDynamicVersion
-  implementation "com.facebook.react:react-native"
-
-  //noinspection GradleDynamicVersion
-  extractHeaders("com.facebook.fbjni:fbjni:0.2.2:headers")
-  //noinspection GradleDynamicVersion
-  extractJNI("com.facebook.fbjni:fbjni:0.2.2")
-
-  if (!sourceBuild) {
-    def rnAarMatcher = "**/react-native/**/*${buildType}.aar"
-    if (REACT_NATIVE_VERSION < 69) {
-      rnAarMatcher = "**/**/*.aar"
-    }
-    def rnAAR = fileTree("${nodeModules}/react-native/android").matching({ it.include rnAarMatcher }).singleFile
-    extractJNI(files(rnAAR))
+  implementation "com.facebook.react:react-android"
+  if (JS_RUNTIME == "hermes") {
+    implementation "com.facebook.react:hermes-android"
   }
-}
-
-if (isNewArchitectureEnabled()) {
-  react {
-    jsRootDir = file("../src/")
-    libraryName = "Worklets"
-    codegenJavaPackageName = "com.worklets"
-  }
-}
-
-
-task extractAARHeaders {
-  doLast {
-    configurations.extractHeaders.files.each {
-      def file = it.absoluteFile
-      copy {
-        from zipTree(file)
-        into "$buildDir/$file.name"
-        include "**/*.h"
-      }
-    }
-  }
-}
-
-task extractJNIFiles {
-  doLast {
-    configurations.extractJNI.files.each {
-      def file = it.absoluteFile
-      copy {
-        from zipTree(file)
-        into "$buildDir/$file.name"
-        include "jni/**/*"
-      }
-    }
-  }
-}
-
-extractJNIFiles.mustRunAfter extractAARHeaders
-
-def nativeBuildDependsOn(dependsOnTask, variant) {
-  def buildTasks = tasks.findAll({ task ->
-    !task.name.contains("Clean") && (task.name.contains("externalNative") || task.name.contains("CMake")) })
-  if (variant != null) {
-    buildTasks = buildTasks.findAll({ task -> task.name.contains(variant) })
-  }
-  buildTasks.forEach { task -> task.dependsOn(dependsOnTask) }
-}
-
-afterEvaluate {
-  nativeBuildDependsOn(extractAARHeaders, null)
-  nativeBuildDependsOn(extractJNIFiles, null)
 }
