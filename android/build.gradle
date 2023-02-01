@@ -52,6 +52,10 @@ def reactNativeArchitectures() {
 
 apply plugin: "com.android.library"
 
+if (isNewArchitectureEnabled()) {
+    apply plugin: "com.facebook.react"
+}
+
 android {
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 

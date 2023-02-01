@@ -166,6 +166,9 @@
   "codegenConfig": {
     "name": "RNWorkletsSpec",
     "type": "modules",
-    "jsSrcsDir": "src"
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.worklets"
+    }
   }
 }
