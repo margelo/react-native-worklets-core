@@ -258,108 +258,6 @@ describe("babel plugin", () => {
     expect(code).toMatchSnapshot();
   });
 
-  // object hooks
-
-  it("workletizes object hook wrapped ArrowFunctionExpression automatically", () => {
-    const input = `
-      useAnimatedGestureHandler({
-        onStart: (event) => {
-          console.log(event);
-        },
-      });
-    `;
-
-    const { code } = runPlugin(input);
-    expect(code).toContain("_f.__workletHash");
-    expect(code).toMatchSnapshot();
-  });
-
-  it("workletizes object hook wrapped unnamed FunctionExpression automatically", () => {
-    const input = `
-      useAnimatedGestureHandler({
-        onStart: function (event) {
-          console.log(event);
-        },
-      });
-    `;
-
-    const { code } = runPlugin(input);
-    expect(code).toContain("_f.__workletHash");
-    expect(code).toMatchSnapshot();
-  });
-
-  it("workletizes object hook wrapped named FunctionExpression automatically", () => {
-    const input = `
-      useAnimatedGestureHandler({
-        onStart: function onStart(event) {
-          console.log(event);
-        },
-      });
-    `;
-
-    const { code } = runPlugin(input);
-    expect(code).toContain("_f.__workletHash");
-    expect(code).toMatchSnapshot();
-  });
-
-  it("workletizes object hook wrapped ObjectMethod automatically", () => {
-    const input = `
-      useAnimatedGestureHandler({
-        onStart(event) {
-          console.log(event);
-        },
-      });
-    `;
-
-    const { code } = runPlugin(input);
-    expect(code).toContain("_f.__workletHash");
-    expect(code).toMatchSnapshot();
-  });
-
-  it("supports empty object in hooks", () => {
-    const input = `
-      useAnimatedGestureHandler({});
-    `;
-
-    runPlugin(input);
-  });
-
-  it("transforms each object property in hooks", () => {
-    const input = `
-      useAnimatedGestureHandler({
-        onStart: () => {},
-        onUpdate: () => {},
-        onEnd: () => {},
-      });
-    `;
-
-    const { code } = runPlugin(input);
-    expect(code).toMatch(/^(.*)(_f\.__workletHash(.*)){3}$/s);
-  });
-
-  // React Native Gesture Handler
-
-  it("workletizes possibly chained gesture object callback functions automatically", () => {
-    const input = `
-      import { Gesture } from 'react-native-gesture-handler';
-
-      const foo = Gesture.Tap()
-        .numberOfTaps(2)
-        .onBegin(() => {
-          console.log('onBegin');
-        })
-        .onStart((_event) => {
-          console.log('onStart');
-        })
-        .onEnd((_event, _success) => {
-          console.log('onEnd');
-        });
-    `;
-
-    const { code } = runPlugin(input);
-    expect(code).toMatchSnapshot();
-  });
-
   it("doesn't transform standard callback functions", () => {
     const input = `
       const foo = Something.Tap().onEnd((_event, _success) => {
@@ -440,17 +338,6 @@ describe("babel plugin", () => {
     const input = `
     function App(){
       (0, fun)({ onStart() {} }, []);
-    }
-    `;
-
-    const { code } = runPlugin(input);
-    expect(code).toMatchSnapshot();
-  });
-
-  it("supports SequenceExpression, with objectHook", () => {
-    const input = `
-    function App(){
-      (0, useAnimatedGestureHandler)({ onStart() {} }, []);
     }
     `;
 

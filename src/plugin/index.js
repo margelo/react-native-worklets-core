@@ -76,60 +76,7 @@ const globals = new Set([
 ]);
 
 // leaving way to avoid deep capturing by adding 'stopCapturing' to the blacklist
-const blacklistedFunctions = new Set([
-  "stopCapturing",
-  "toString",
-  "map",
-  "filter",
-  "findIndex",
-  "forEach",
-  "valueOf",
-  "toPrecision",
-  "toExponential",
-  "constructor",
-  "toFixed",
-  "toLocaleString",
-  "toSource",
-  "charAt",
-  "charCodeAt",
-  "concat",
-  "indexOf",
-  "lastIndexOf",
-  "localeCompare",
-  "length",
-  "match",
-  "replace",
-  "search",
-  "slice",
-  "split",
-  "substr",
-  "substring",
-  "toLocaleLowerCase",
-  "toLocaleUpperCase",
-  "toLowerCase",
-  "toUpperCase",
-  "every",
-  "join",
-  "pop",
-  "push",
-  "reduce",
-  "reduceRight",
-  "reverse",
-  "shift",
-  "slice",
-  "some",
-  "sort",
-  "splice",
-  "unshift",
-  "hasOwnProperty",
-  "isPrototypeOf",
-  "propertyIsEnumerable",
-  "bind",
-  "apply",
-  "call",
-  "__callAsync",
-  "includes",
-]);
+const blacklistedFunctions = new Set([]);
 
 class ClosureGenerator {
   constructor() {
@@ -807,12 +754,17 @@ function processWorklets(t, path, state) {
 module.exports = function ({ types: t }) {
   return {
     pre() {
-      // allows adding custom globals such as host-functions
-      if (this.opts != null && Array.isArray(this.opts.globals)) {
-        this.opts.globals.forEach((name) => {
-          globals.add(name);
-        });
-      }
+      // Extra globals.
+      this.opts?.globals?.forEach((name) => {
+        globals.add(name);
+      });
+      // Function arguments that will be automatically transformed to worklets.
+      // The format is [{ name: functionName, args: [argumentIndex1, argumentIndex2, ...]}, ...]
+      // For example, [{ name: 'useWorklet', args: [0] }] will transform the first argument of functions called useWorklet
+      // to a worklet automatically without needed to add the "worklet" directive.
+      this.opts?.functionsToWorkletize?.forEach(({ name, args }) => {
+        functionArgsToWorkletize.set(name, args);
+      });
     },
     visitor: {
       "CallExpression": {
