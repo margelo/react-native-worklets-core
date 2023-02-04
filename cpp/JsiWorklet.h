@@ -51,9 +51,9 @@ public:
   JsiWorklet(jsi::Runtime &runtime, const jsi::Value &arg) {
     createWorklet(runtime, arg);
   }
-                     
+
   JsiWorklet(jsi::Runtime &runtime, std::shared_ptr<jsi::Function> func) {
-   createWorklet(runtime, func);
+    createWorklet(runtime, func);
   }
 
   JSI_HOST_FUNCTION(isWorklet) { return isWorklet(); }
@@ -102,9 +102,11 @@ public:
       return false;
     }
 
-    return isDecoratedAsWorklet(runtime, std::make_shared<jsi::Function>(value.asObject(runtime).asFunction(runtime)));
+    return isDecoratedAsWorklet(
+        runtime, std::make_shared<jsi::Function>(
+                     value.asObject(runtime).asFunction(runtime)));
   }
-                     
+
   /**
    Returns true if the provided function is decorated with worklet info
    @runtime Runtime
@@ -127,8 +129,7 @@ public:
 
     // Try to get the asString function
     jsi::Value initData = func->getProperty(runtime, PropNameWorkletInitData);
-    if (initData.isUndefined() || initData.isNull() ||
-        !initData.isObject()) {
+    if (initData.isUndefined() || initData.isNull() || !initData.isObject()) {
       return false;
     }
 
@@ -159,7 +160,6 @@ public:
       _workletJsFunction = std::make_shared<jsi::Function>(
           evaluatedFunction.asObject(runtime).asFunction(runtime));
     }
-
     return _workletJsFunction;
   }
 
@@ -178,21 +178,23 @@ public:
 
     // Prepare return value
     jsi::Value retVal;
-    
+
     // Resolve this Value
     std::unique_ptr<jsi::Object> resolvedThisValue;
     if (!thisValue.isObject()) {
       resolvedThisValue = std::make_unique<jsi::Object>(runtime);
     } else {
-      resolvedThisValue = std::make_unique<jsi::Object>(thisValue.asObject(runtime));
+      resolvedThisValue =
+          std::make_unique<jsi::Object>(thisValue.asObject(runtime));
     }
-    
-    resolvedThisValue->setProperty(runtime, PropNameWorkletClosure, unwrappedClosure);
+
+    resolvedThisValue->setProperty(runtime, PropNameWorkletClosure,
+                                   unwrappedClosure);
 
     // Call the unwrapped function
-    retVal = workletFunction->callWithThis(
-        runtime, *resolvedThisValue, arguments, count);
-  
+    retVal = workletFunction->callWithThis(runtime, *resolvedThisValue,
+                                           arguments, count);
+
     return retVal;
   }
 
@@ -206,14 +208,16 @@ private:
       throw jsi::JSError(runtime,
                          "Worklets must be initialized from a valid function.");
     }
-    
-    createWorklet(runtime, std::make_shared<jsi::Function>(arg.asObject(runtime).asFunction(runtime)));
+
+    createWorklet(runtime, std::make_shared<jsi::Function>(
+                               arg.asObject(runtime).asFunction(runtime)));
   }
-                     
+
   /**
    Installs the worklet function into the worklet runtime
    */
-  void createWorklet(jsi::Runtime &runtime, std::shared_ptr<jsi::Function> func) {
+  void createWorklet(jsi::Runtime &runtime,
+                     std::shared_ptr<jsi::Function> func) {
 
     // This is a worklet
     _isWorklet = false;
@@ -222,7 +226,8 @@ private:
     _jsFunction = func;
 
     // Try to get the closure
-    jsi::Value closure = _jsFunction->getProperty(runtime, PropNameWorkletClosure);
+    jsi::Value closure =
+        _jsFunction->getProperty(runtime, PropNameWorkletClosure);
 
     // Return if this is not a worklet
     if (closure.isUndefined() || closure.isNull()) {
@@ -238,9 +243,9 @@ private:
     }
 
     // Get location
-    jsi::Value locationProp =
-        initDataProp.asObject(runtime).getProperty(runtime, PropNameWorkletInitDataLocation);
-    
+    jsi::Value locationProp = initDataProp.asObject(runtime).getProperty(
+        runtime, PropNameWorkletInitDataLocation);
+
     if (locationProp.isUndefined() || locationProp.isNull() ||
         !locationProp.isString()) {
       return;
@@ -256,7 +261,10 @@ private:
     _closureWrapper = JsiWrapper::wrap(runtime, closure);
 
     // Let us try to install the function in the worklet context
-    _code = initDataProp.asObject(runtime).getProperty(runtime, PropNameWorkletInitDataCode).asString(runtime).utf8(runtime);
+    _code = initDataProp.asObject(runtime)
+                .getProperty(runtime, PropNameWorkletInitDataCode)
+                .asString(runtime)
+                .utf8(runtime);
 
     // Try get the name of the function
     auto nameProp = _jsFunction->getProperty(runtime, PropFunctionName);

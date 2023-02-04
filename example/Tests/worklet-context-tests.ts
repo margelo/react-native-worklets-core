@@ -306,4 +306,14 @@ export const worklet_context_tests = {
     });
     return ExpectValue(worklet(), 200);
   },
+  call_fire_and_forget: () => {
+    const f = (a: number) => {
+      "worklet";
+      return a * 2;
+    };
+    let wf: any = Worklets.createRunInContextFn(f);
+    wf(100);
+    wf = undefined;
+    return ExpectValue(true, true);
+  },
 };

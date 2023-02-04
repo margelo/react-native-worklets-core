@@ -30,8 +30,14 @@ struct PromiseQueueItem {
 
 struct FinallyQueueItem {
   std::shared_ptr<JsiPromiseWrapper> controlledPromise;
-  std::shared_ptr<jsi::Function> sideEffectFn;
+  jsi::HostFunctionType sideEffectFn;
 };
+
+using PromiseComputationFunction = std::function<void(
+    jsi::Runtime &runtime,
+    std::function<void(jsi::Runtime &runtime, const jsi::Value &val)> resolve,
+    std::function<void(jsi::Runtime &runtime, const jsi::Value &reason)>
+        reject)>;
 
 /**
  Wraps a Promise so that it can be shared between multiple runtimes as arguments
@@ -59,15 +65,8 @@ public:
     printf("promise: CTOR JsiPromiseWrapper %zu\n", _counter);
   }
 
-  JsiPromiseWrapper(
-      jsi::Runtime &runtime,
-      std::function<void(
-          jsi::Runtime &runtime,
-          std::function<void(jsi::Runtime &runtime, const jsi::Value &val)>
-              resolve,
-          std::function<void(jsi::Runtime &runtime, const jsi::Value &reason)>
-              reject)>
-          computation);
+  JsiPromiseWrapper(jsi::Runtime &runtime,
+                    PromiseComputationFunction computation);
 
   ~JsiPromiseWrapper() {
     printf("promise: Dtor JsiPromiseWrapper %zu\n", _counter);

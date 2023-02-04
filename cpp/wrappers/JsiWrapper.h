@@ -166,7 +166,7 @@ protected:
    */
   virtual jsi::Value getAsProxyOrValue(jsi::Runtime &runtime) {
     return getValue(runtime);
-  };
+  }
 
   /**
    * Update the type

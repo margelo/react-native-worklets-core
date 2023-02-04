@@ -1,5 +1,6 @@
 #include "JsiPromiseWrapper.h"
 
+#include "ArgumentsWrapper.h"
 #include "JsiObjectWrapper.h"
 #include "JsiWorkletContext.h"
 
@@ -11,15 +12,8 @@ namespace jsi = facebook::jsi;
 
 size_t JsiPromiseWrapper::Counter = 1000;
 
-JsiPromiseWrapper::JsiPromiseWrapper(
-    jsi::Runtime &runtime,
-    std::function<void(
-        jsi::Runtime &runtime,
-        std::function<void(jsi::Runtime &runtime, const jsi::Value &val)>
-            resolve,
-        std::function<void(jsi::Runtime &runtime, const jsi::Value &reason)>
-            reject)>
-        computation)
+JsiPromiseWrapper::JsiPromiseWrapper(jsi::Runtime &runtime,
+                                     PromiseComputationFunction computation)
     : JsiWrapper(runtime, jsi::Value::undefined(), nullptr) {
 
   _counter = ++Counter;
@@ -114,27 +108,24 @@ jsi::Value JsiPromiseWrapper::then(jsi::Runtime &runtime,
                                    const jsi::Value &thisValue,
                                    const jsi::Value *thenFn,
                                    const jsi::Value *catchFn) {
-  auto rtPtr = &runtime;
-  auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
-  auto thenHostFn = [rtPtr, func = std::make_shared<jsi::Function>(
-                         thenFn->asObject(runtime).asFunction(runtime))](
-                        jsi::Runtime &runtime, const jsi::Value &thisValue,
-                        const jsi::Value *arguments, size_t count) {
-    assert(&runtime == rtPtr && "Expected same runtime ptr!");
-    return func->call(runtime, arguments, count);
-  };
 
+  jsi::HostFunctionType thenHostFn;
+  if (thenFn && thenFn->isObject() &&
+      thenFn->asObject(runtime).isFunction(runtime)) {
+    thenHostFn = JsiWorkletContext::createInvoker(runtime, thenFn);
+  } else {
+    thenHostFn = JSI_HOST_FUNCTION_LAMBDA {
+      return JsiWrapper::wrap(runtime, arguments[0])->unwrap(runtime);
+    };
+  }
+    
   jsi::HostFunctionType catchHostFn;
   if (catchFn && catchFn->isObject() &&
       catchFn->asObject(runtime).isFunction(runtime)) {
-    catchHostFn = [func = std::make_shared<jsi::Function>(
-                       catchFn->asObject(runtime).asFunction(runtime))](
-                      jsi::Runtime &runtime, const jsi::Value &thisValue,
-                      const jsi::Value *arguments, size_t count) {
-      return func->call(runtime, arguments, count);
-    };
+    catchHostFn = JsiWorkletContext::createInvoker(runtime, catchFn);
   }
 
+  auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
   return jsi::Object::createFromHostObject(
       runtime, then(runtime, std::move(thisWrapper), std::move(thenHostFn),
                     std::move(catchHostFn)));
@@ -164,16 +155,18 @@ std::shared_ptr<JsiPromiseWrapper> JsiPromiseWrapper::then(
 jsi::Value JsiPromiseWrapper::finally(jsi::Runtime &runtime,
                                       const jsi::Value &thisValue,
                                       const jsi::Value *sideEffectFn) {
-  // FIXME: Align with then()
+  
+  jsi::HostFunctionType sideEffectHostFn = nullptr;
+  
+  if (sideEffectFn && sideEffectFn->isObject() &&
+      sideEffectFn->asObject(runtime).isFunction(runtime)) {
+    sideEffectHostFn = JsiWorkletContext::createInvoker(runtime, sideEffectFn);
+  }
+  
+  
   if (_state != PromiseState::Pending) {
-    if (sideEffectFn && sideEffectFn->isObject() &&
-        sideEffectFn->asObject(runtime).isFunction(runtime)) {
-      auto fn = sideEffectFn->asObject(runtime).asFunction(runtime);
-      if (thisValue.isObject()) {
-        fn.callWithThis(runtime, thisValue.asObject(runtime));
-      } else {
-        fn.call(runtime);
-      }
+    if (sideEffectHostFn) {
+      sideEffectHostFn(runtime, thisValue, nullptr, 0);
     }
 
     return _state == PromiseState::Fulfilled
@@ -185,11 +178,7 @@ jsi::Value JsiPromiseWrapper::finally(jsi::Runtime &runtime,
 
   _finallyQueue.push_back({
       .controlledPromise = controlledPromise,
-      .sideEffectFn =
-          sideEffectFn
-              ? std::make_shared<jsi::Function>(
-                    sideEffectFn->asObject(runtime).asFunction(runtime))
-              : nullptr,
+      .sideEffectFn = sideEffectHostFn,
   });
 
   return jsi::Object::createFromHostObject(runtime, controlledPromise);
@@ -279,7 +268,7 @@ void JsiPromiseWrapper::propagateFulfilled(jsi::Runtime &runtime) {
   }
 
   for (auto &item : _finallyQueue) {
-    item.sideEffectFn->call(runtime);
+    item.sideEffectFn(runtime, nullptr, nullptr, 0);
     item.controlledPromise->onFulfilled(runtime,
                                         std::move(_value->unwrap(runtime)));
   }
@@ -333,7 +322,7 @@ void JsiPromiseWrapper::propagateRejected(jsi::Runtime &runtime) {
   }
 
   for (auto &item : _finallyQueue) {
-    item.sideEffectFn->call(runtime);
+    item.sideEffectFn(runtime, nullptr, nullptr, 0);
     item.controlledPromise->onRejected(runtime,
                                        std::move(_reason->unwrap(runtime)));
   }

@@ -102,7 +102,8 @@ public:
           "createRunInJsFn expects a function as its first parameter.");
     }
 
-    auto caller = JsiWorkletContext::createCallInContext(runtime, arguments[0], nullptr);
+    auto caller =
+        JsiWorkletContext::createCallInContext(runtime, arguments[0], nullptr);
 
     // Now let us create the caller function.
     return jsi::Function::createFromHostFunction(

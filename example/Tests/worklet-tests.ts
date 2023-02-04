@@ -52,32 +52,43 @@ export const worklet_tests = {
     };
     return ExpectValue(f(100), 200);
   },
-  check_c_promise_resolves_from_worklet: () => {
+  check_c_promise_resolves_from_context: () => {
     const f = (a: number) => {
       "worklet";
       return a + 100;
     };
     const w = Worklets.createRunInContextFn(f);
-    w(100).then(console.log);
-    return ExpectValue(200, 200);
+    return ExpectValue(
+      new Promise((resolve) => {
+        w(100).then(resolve);
+      }),
+      200
+    );
+  },
+  check_finally_is_called: () => {
+    const f = (a: number) => {
+      "worklet";
+      return a + 100;
+    };
+    const w = Worklets.createRunInContextFn(f);
+    return ExpectValue(
+      new Promise<void>((resolve) => {
+        w(100).finally(resolve);
+      }),
+      undefined
+    );
+  },
+  check_then_with_empty_args: () => {
+    const f = (a: number) => {
+      "worklet";
+      return a + 100;
+    };
+    const w = Worklets.createRunInContextFn(f);
+    return ExpectValue(
+      new Promise<void>((resolve) => {
+        w(100).then().finally(resolve);
+      }),
+      undefined
+    );
   },
 };
-
-// const print = (fn: Function) => {
-//   console.log("name", fn.name);
-//   Object.keys(fn).forEach((key) => console.log(key, fn[key]));
-// };
-
-// const test = { a: 100 };
-// const fn = (b: number) => {
-//   "worklet";
-//   const fn = (c: number) => {
-//     "worklet";
-//     return test.a + c;
-//   };
-//   print(fn);
-//   return b + test.a;
-// };
-
-// // print(fn);
-// fn(2);

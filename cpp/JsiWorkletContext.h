@@ -137,6 +137,9 @@ public:
   void invokeOnWorkletThread(std::function<void(JsiWorkletContext *context,
                                                 jsi::Runtime &runtime)> &&fp);
 
+  static jsi::HostFunctionType createInvoker(jsi::Runtime &runtime,
+                                             const jsi::Value *maybeFunc);
+
   /**
    Returns the list of decorators
    */
@@ -194,19 +197,23 @@ public:
                                                 JsiWorkletContext *toContext);
 
   /**
-   Verifies that the runtime is the correct runtime for the current context (worklet context or js context).
-   NOTE: Only verifies in debug mode
+   Verifies that the runtime is the correct runtime for the current context
+   (worklet context or js context). NOTE: Only verifies in debug mode
    */
   static void verifyRuntime(jsi::Runtime &runtime) {
 #if DEBUG
     auto ctx = JsiWorkletContext::getCurrent();
     if (ctx) {
-      assert(&ctx->getWorkletRuntime() == &runtime && "Worklet runtime is not the same as the provided runtime");
+      assert(&ctx->getWorkletRuntime() == &runtime &&
+             "Worklet runtime is not the same as the provided runtime");
     } else {
-      assert(JsiWorkletContext::getDefaultInstance()->getJsRuntime() == &runtime && "Expected JS runtime, got other runtime");
+      assert(JsiWorkletContext::getDefaultInstance()->getJsRuntime() ==
+                 &runtime &&
+             "Expected JS runtime, got other runtime");
     }
 #endif
   }
+
 private:
   /**
    Decorates the worklet runtime. The decorator is run in the worklet runtime
