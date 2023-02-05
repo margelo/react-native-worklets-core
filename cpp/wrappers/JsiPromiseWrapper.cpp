@@ -118,7 +118,7 @@ jsi::Value JsiPromiseWrapper::then(jsi::Runtime &runtime,
       return JsiWrapper::wrap(runtime, arguments[0])->unwrap(runtime);
     };
   }
-    
+
   jsi::HostFunctionType catchHostFn;
   if (catchFn && catchFn->isObject() &&
       catchFn->asObject(runtime).isFunction(runtime)) {
@@ -155,15 +155,14 @@ std::shared_ptr<JsiPromiseWrapper> JsiPromiseWrapper::then(
 jsi::Value JsiPromiseWrapper::finally(jsi::Runtime &runtime,
                                       const jsi::Value &thisValue,
                                       const jsi::Value *sideEffectFn) {
-  
+
   jsi::HostFunctionType sideEffectHostFn = nullptr;
-  
+
   if (sideEffectFn && sideEffectFn->isObject() &&
       sideEffectFn->asObject(runtime).isFunction(runtime)) {
     sideEffectHostFn = JsiWorkletContext::createInvoker(runtime, sideEffectFn);
   }
-  
-  
+
   if (_state != PromiseState::Pending) {
     if (sideEffectHostFn) {
       sideEffectHostFn(runtime, thisValue, nullptr, 0);

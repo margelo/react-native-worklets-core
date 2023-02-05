@@ -33,11 +33,14 @@ struct FinallyQueueItem {
   jsi::HostFunctionType sideEffectFn;
 };
 
-using PromiseComputationFunction = std::function<void(
-    jsi::Runtime &runtime,
-    std::function<void(jsi::Runtime &runtime, const jsi::Value &val)> resolve,
-    std::function<void(jsi::Runtime &runtime, const jsi::Value &reason)>
-        reject)>;
+using PromiseResolveFunction =
+    std::function<void(jsi::Runtime &runtime, const jsi::Value &val)>;
+using PromiseRejectFunction =
+    std::function<void(jsi::Runtime &runtime, const jsi::Value &reason)>;
+
+using PromiseComputationFunction =
+    std::function<void(jsi::Runtime &runtime, PromiseResolveFunction resolve,
+                       PromiseRejectFunction reject)>;
 
 /**
  Wraps a Promise so that it can be shared between multiple runtimes as arguments

@@ -238,13 +238,8 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
       auto promise = std::make_shared<JsiPromiseWrapper>(
           runtime,
           [ctx, convention, worklet, callingCtx, thisWrapper, argsWrapper,
-           func](
-              jsi::Runtime &runtime,
-              std::function<void(jsi::Runtime & runtime, const jsi::Value &val)>
-                  resolve,
-              std::function<void(jsi::Runtime & runtime,
-                                 const jsi::Value &reason)>
-                  reject) {
+           func](jsi::Runtime &runtime, PromiseResolveFunction resolve,
+                 PromiseRejectFunction reject) {
             auto unwrappedThis = thisWrapper->unwrap(runtime);
             auto args = argsWrapper.getArguments(runtime);
 
@@ -345,15 +340,10 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
     // Let's create a promise that can initialize and resolve / reject in the
     // correct contexts
     auto promise = std::make_shared<JsiPromiseWrapper>(
-        runtime,
-        [ctx, worklet, convention, callingCtx, thisWrapper, argsWrapper,
-         callIntoCorrectContext, callback, func](
-            jsi::Runtime &runtime,
-            std::function<void(jsi::Runtime & runtime, const jsi::Value &val)>
-                resolve,
-            std::function<void(jsi::Runtime & runtime,
-                               const jsi::Value &reason)>
-                reject) {
+        runtime, [ctx, worklet, convention, callingCtx, thisWrapper,
+                  argsWrapper, callIntoCorrectContext, callback,
+                  func](jsi::Runtime &runtime, PromiseResolveFunction resolve,
+                        PromiseRejectFunction reject) {
           // Create callback wrapper
           callIntoCorrectContext([callback, worklet, thisWrapper, argsWrapper,
                                   resolve, reject](jsi::Runtime &runtime) {
@@ -418,8 +408,9 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
   auto ctx = JsiWorkletContext::getCurrent();
 
   // Create host function
-  return [rtPtr, ctx, func = std::make_shared<jsi::Function>(
-                     maybeFunc->asObject(runtime).asFunction(runtime))](
+  return [rtPtr, ctx,
+          func = std::make_shared<jsi::Function>(
+              maybeFunc->asObject(runtime).asFunction(runtime))](
              jsi::Runtime &runtime, const jsi::Value &thisValue,
              const jsi::Value *arguments, size_t count) {
     // If we are in the same context let's just call the function directly
