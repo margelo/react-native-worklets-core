@@ -212,12 +212,13 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
   // Create a worklet of the function if the function is a worklet - it should
   // be allowed to create a caller function and call inside the same JS or ctx
   // without having to pass a worklet
-  auto worklet = JsiWorklet::isDecoratedAsWorklet(runtime, func)
-                     ? std::make_shared<JsiWorklet>(runtime, func)
-                     : nullptr;
+  auto workletInvoker =
+      JsiWorklet::isDecoratedAsWorklet(runtime, func)
+          ? std::make_shared<WorkletInvoker>(runtime, maybeFunc)
+          : nullptr;
 
   // Now return the caller function as a hostfunction type.
-  return [worklet = std::move(worklet), func,
+  return [workletInvoker, func,
           ctx](jsi::Runtime &runtime, const jsi::Value &thisValue,
                const jsi::Value *arguments, size_t count) -> jsi::Value {
     auto callingCtx = getCurrent();
@@ -236,19 +237,19 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
 
       // Create promise
       auto promise = std::make_shared<JsiPromiseWrapper>(
-          runtime,
-          [ctx, convention, worklet, callingCtx, thisWrapper, argsWrapper,
-           func](jsi::Runtime &runtime, PromiseResolveFunction resolve,
-                 PromiseRejectFunction reject) {
+          runtime, [ctx, convention, workletInvoker, callingCtx, thisWrapper,
+                    argsWrapper,
+                    func](jsi::Runtime &runtime, PromiseResolveFunction resolve,
+                          PromiseRejectFunction reject) {
             auto unwrappedThis = thisWrapper->unwrap(runtime);
             auto args = argsWrapper.getArguments(runtime);
 
             // We can resolve the result directly - we're in the same context.
             try {
-              if (worklet) {
-                auto retVal = worklet->call(runtime, unwrappedThis,
-                                            ArgumentsWrapper::toArgs(args),
-                                            argsWrapper.getCount());
+              if (workletInvoker) {
+                auto retVal = workletInvoker->call(
+                    runtime, unwrappedThis, ArgumentsWrapper::toArgs(args),
+                    argsWrapper.getCount());
                 resolve(runtime, retVal);
               } else {
                 if (unwrappedThis.isObject()) {
@@ -297,7 +298,7 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
     // ctx -> ctx, ctx -> js)
 
     // Ensure that the function is a worklet
-    if (worklet == nullptr) {
+    if (workletInvoker == nullptr) {
       throw jsi::JSError(runtime, "In callInContext the function parameter "
                                   "is not a valid worklet and "
                                   "cannot be called between contexts or "
@@ -340,18 +341,20 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
     // Let's create a promise that can initialize and resolve / reject in the
     // correct contexts
     auto promise = std::make_shared<JsiPromiseWrapper>(
-        runtime, [ctx, worklet, convention, callingCtx, thisWrapper,
+        runtime, [ctx, workletInvoker, convention, callingCtx, thisWrapper,
                   argsWrapper, callIntoCorrectContext, callback,
                   func](jsi::Runtime &runtime, PromiseResolveFunction resolve,
                         PromiseRejectFunction reject) {
           // Create callback wrapper
-          callIntoCorrectContext([callback, worklet, thisWrapper, argsWrapper,
-                                  resolve, reject](jsi::Runtime &runtime) {
+          callIntoCorrectContext([callback, workletInvoker, thisWrapper,
+                                  argsWrapper, resolve,
+                                  reject](jsi::Runtime &runtime) {
             try {
 
               auto args = argsWrapper.getArguments(runtime);
+
               // Call the worklet
-              auto results = worklet->call(
+              auto results = workletInvoker->call(
                   runtime, thisWrapper->unwrap(runtime),
                   ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
 

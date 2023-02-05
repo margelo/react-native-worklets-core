@@ -195,11 +195,11 @@ private:
     // Check if the function is decorated as a worklet
     if (JsiWorklet::isDecoratedAsWorklet(runtime, value)) {
       // Create worklet
-      auto worklet = std::make_shared<JsiWorklet>(runtime, value);
+      auto workletInvoker = std::make_shared<WorkletInvoker>(runtime, value);
       // Create wrapping host function
       _hostFunction =
           std::make_shared<jsi::HostFunctionType>(JSI_HOST_FUNCTION_LAMBDA {
-            return worklet->call(runtime, thisValue, arguments, count);
+            return workletInvoker->call(runtime, thisValue, arguments, count);
           });
       return;
     }
