@@ -8,7 +8,7 @@ const convertSourceMap = require("convert-source-map");
 /**
  * holds a map of function names as keys and array of argument indexes as values which should be automatically workletized(they have to be functions)(starting from 0)
  */
-const functionArgsToWorkletize = new Map([]);
+const functionArgsToWorkletize = new Map([["useTemplateValue", [0]]]);
 
 const objectHooks = new Set([]);
 

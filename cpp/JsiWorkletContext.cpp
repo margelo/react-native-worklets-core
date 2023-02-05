@@ -157,7 +157,9 @@ void JsiWorkletContext::addDecorator(
     std::shared_ptr<JsiBaseDecorator> decorator) {
   decorators.push_back(decorator);
   // decorate default context
-  JsiWorkletContext::getDefaultInstance()->decorate(decorator);
+  if (JsiWorkletContext::getDefaultInstance()->_workletCallInvoker) {
+    JsiWorkletContext::getDefaultInstance()->decorate(decorator);
+  }
 }
 
 template <typename... Args> void JsiWorkletContext::decorate(Args &&...args) {
