@@ -238,11 +238,11 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
         convention == CallingConvention::WithinCtx) {
 
       // Create promise
-      auto promise = std::make_shared<JsiPromiseWrapper>(
-          runtime, [ctx, convention, workletInvoker, callingCtx, thisWrapper,
-                    argsWrapper,
-                    func](jsi::Runtime &runtime, PromiseResolveFunction resolve,
-                          PromiseRejectFunction reject) {
+      auto promise = JsiPromiseWrapper::createPromiseWrapper(
+          runtime,
+          [ctx, convention, workletInvoker, callingCtx, thisWrapper,
+           argsWrapper, func](jsi::Runtime &runtime,
+                              std::shared_ptr<PromiseParameter> promise) {
             auto unwrappedThis = thisWrapper->unwrap(runtime);
             auto args = argsWrapper.getArguments(runtime);
 
@@ -252,24 +252,24 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
                 auto retVal = workletInvoker->call(
                     runtime, unwrappedThis, ArgumentsWrapper::toArgs(args),
                     argsWrapper.getCount());
-                resolve(runtime, retVal);
+                promise->resolve(runtime, retVal);
               } else {
                 if (unwrappedThis.isObject()) {
                   auto retVal = func->callWithThis(
                       runtime, unwrappedThis.asObject(runtime),
                       ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
-                  resolve(runtime, retVal);
+                  promise->resolve(runtime, retVal);
                 } else {
                   auto retVal =
                       func->call(runtime, ArgumentsWrapper::toArgs(args),
                                  argsWrapper.getCount());
-                  resolve(runtime, retVal);
+                  promise->resolve(runtime, retVal);
                 }
               }
             } catch (const jsi::JSError &err) {
               // TODO: Handle Stack!!
-              reject(runtime,
-                     jsi::String::createFromUtf8(runtime, err.getMessage()));
+              promise->reject(runtime, jsi::String::createFromUtf8(
+                                           runtime, err.getMessage()));
             } catch (const std::exception &err) {
               std::string a = typeid(err).name();
               std::string b = typeid(jsi::JSError).name();
@@ -278,17 +278,20 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
                 auto message = jsError->getMessage();
                 // auto stack = jsError->getStack();
                 // TODO: JsErrorWrapper reason(message, stack);
-                reject(runtime, jsi::String::createFromUtf8(runtime, message));
+                promise->reject(runtime,
+                                jsi::String::createFromUtf8(runtime, message));
               } else {
                 // TODO: JsErrorWrapper reason("Unknown error in promise",
                 // "[Uknown stack]");
-                reject(runtime, jsi::String::createFromUtf8(
+                promise->reject(runtime,
+                                jsi::String::createFromUtf8(
                                     runtime, "Unknown error in promise"));
               }
             } catch (...) {
               // TODO: JsErrorWrapper reason("Unknown error in promise",
               // "[Uknown stack]");
-              reject(runtime, jsi::String::createFromUtf8(
+              promise->reject(runtime,
+                              jsi::String::createFromUtf8(
                                   runtime, "Unknown error in promise"));
             }
           });
@@ -342,15 +345,14 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
 
     // Let's create a promise that can initialize and resolve / reject in the
     // correct contexts
-    auto promise = std::make_shared<JsiPromiseWrapper>(
+    auto promise = JsiPromiseWrapper::createPromiseWrapper(
         runtime, [ctx, workletInvoker, convention, callingCtx, thisWrapper,
                   argsWrapper, callIntoCorrectContext, callback,
-                  func](jsi::Runtime &runtime, PromiseResolveFunction resolve,
-                        PromiseRejectFunction reject) {
+                  func](jsi::Runtime &runtime,
+                        std::shared_ptr<PromiseParameter> promise) {
           // Create callback wrapper
           callIntoCorrectContext([callback, workletInvoker, thisWrapper,
-                                  argsWrapper, resolve,
-                                  reject](jsi::Runtime &runtime) {
+                                  argsWrapper, promise](jsi::Runtime &runtime) {
             try {
 
               auto args = argsWrapper.getArguments(runtime);
@@ -363,15 +365,16 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
               auto retVal = JsiWrapper::wrap(runtime, results);
 
               // Callback with the results
-              callback([retVal, resolve](jsi::Runtime &runtime) {
-                resolve(runtime, retVal->unwrap(runtime));
+              callback([retVal, promise](jsi::Runtime &runtime) {
+                promise->resolve(runtime, retVal->unwrap(runtime));
               });
             } catch (const jsi::JSError &err) {
               auto message = err.getMessage();
               auto stack = err.getStack();
               // TODO: Stack
-              callback([message, stack, reject](jsi::Runtime &runtime) {
-                reject(runtime, jsi::String::createFromUtf8(runtime, message));
+              callback([message, stack, promise](jsi::Runtime &runtime) {
+                promise->reject(runtime,
+                                jsi::String::createFromUtf8(runtime, message));
               });
             } catch (const std::exception &err) {
               std::string a = typeid(err).name();
@@ -381,21 +384,22 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
                 auto message = jsError->getMessage();
                 auto stack = jsError->getStack();
                 // TODO: Stack
-                callback([message, stack, reject](jsi::Runtime &runtime) {
-                  reject(runtime,
-                         jsi::String::createFromUtf8(runtime, message));
+                callback([message, stack, promise](jsi::Runtime &runtime) {
+                  promise->reject(
+                      runtime, jsi::String::createFromUtf8(runtime, message));
                 });
               } else {
                 // TODO: Stack
-                callback([err, reject](jsi::Runtime &runtime) {
-                  reject(runtime,
-                         jsi::String::createFromUtf8(runtime, err.what()));
+                callback([err, promise](jsi::Runtime &runtime) {
+                  promise->reject(runtime, jsi::String::createFromUtf8(
+                                               runtime, err.what()));
                 });
               }
             } catch (...) {
-              callback([reject](jsi::Runtime &runtime) {
+              callback([promise](jsi::Runtime &runtime) {
                 // TODO: Handle Stack!!
-                reject(runtime, jsi::String::createFromUtf8(
+                promise->reject(runtime,
+                                jsi::String::createFromUtf8(
                                     runtime, "Unknown error in promise."));
               });
             }

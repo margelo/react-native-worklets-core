@@ -33,14 +33,19 @@ struct FinallyQueueItem {
   jsi::HostFunctionType sideEffectFn;
 };
 
+class PromiseParameter {
+public:
+  virtual void resolve(jsi::Runtime &runtime, const jsi::Value &val) = 0;
+  virtual void reject(jsi::Runtime &runtime, const jsi::Value &reason) = 0;
+};
+
 using PromiseResolveFunction =
     std::function<void(jsi::Runtime &runtime, const jsi::Value &val)>;
 using PromiseRejectFunction =
     std::function<void(jsi::Runtime &runtime, const jsi::Value &reason)>;
 
-using PromiseComputationFunction =
-    std::function<void(jsi::Runtime &runtime, PromiseResolveFunction resolve,
-                       PromiseRejectFunction reject)>;
+using PromiseComputationFunction = std::function<void(
+    jsi::Runtime &runtime, std::shared_ptr<PromiseParameter> promise)>;
 
 /**
  Wraps a Promise so that it can be shared between multiple runtimes as arguments
@@ -49,27 +54,29 @@ using PromiseComputationFunction =
 class JsiPromiseWrapper
     : public JsiHostObject,
       public JsiWrapper,
+      public PromiseParameter,
       public std::enable_shared_from_this<JsiPromiseWrapper> {
 public:
-  static size_t Counter;
-  size_t _counter;
+  static std::shared_ptr<JsiPromiseWrapper>
+  createPromiseWrapper(jsi::Runtime &runtime,
+                       PromiseComputationFunction computation);
+
   JsiPromiseWrapper(jsi::Runtime &runtime, const jsi::Value &value,
                     JsiWrapper *parent)
       : JsiWrapper(runtime, value, parent) {
     _counter = ++Counter;
     setType(JsiWrapperType::Promise);
-    printf("promise: CTOR JsiPromiseWrapper %zu\n", _counter);
+    // printf("promise: CTOR JsiPromiseWrapper %zu\n", _counter);
   }
 
   JsiPromiseWrapper(jsi::Runtime &runtime, JsiWrapper *parent)
       : JsiWrapper(runtime, jsi::Value::undefined(), parent) {
     setType(JsiWrapperType::Promise);
     _counter = ++Counter;
-    printf("promise: CTOR JsiPromiseWrapper %zu\n", _counter);
+    // printf("promise: CTOR JsiPromiseWrapper %zu\n", _counter);
   }
 
-  JsiPromiseWrapper(jsi::Runtime &runtime,
-                    PromiseComputationFunction computation);
+  explicit JsiPromiseWrapper(jsi::Runtime &runtime);
 
   ~JsiPromiseWrapper() {
     printf("promise: Dtor JsiPromiseWrapper %zu\n", _counter);
@@ -121,6 +128,17 @@ public:
   void onFulfilled(jsi::Runtime &runtime, const jsi::Value &val);
   void onRejected(jsi::Runtime &runtime, const jsi::Value &reason);
 
+  static size_t Counter;
+  size_t _counter;
+
+  void resolve(jsi::Runtime &runtime, const jsi::Value &value) override {
+    onFulfilled(runtime, value);
+  }
+
+  void reject(jsi::Runtime &runtime, const jsi::Value &reason) override {
+    onRejected(runtime, reason);
+  }
+
 protected:
   jsi::Value then(jsi::Runtime &runtime, const jsi::Value &thisValue,
                   const jsi::Value *thenFn, const jsi::Value *catchFn);
@@ -152,6 +170,9 @@ protected:
   void setValue(jsi::Runtime &runtime, const jsi::Value &value) override;
 
 private:
+  void runComputation(jsi::Runtime &runtime,
+                      PromiseComputationFunction computation);
+
   typedef enum { Pending = 0, Fulfilled = 1, Rejected = 2 } PromiseState;
 
   void propagateFulfilled(jsi::Runtime &runtime);

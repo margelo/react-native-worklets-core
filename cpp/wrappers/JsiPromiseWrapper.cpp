@@ -12,16 +12,17 @@ namespace jsi = facebook::jsi;
 
 size_t JsiPromiseWrapper::Counter = 1000;
 
-JsiPromiseWrapper::JsiPromiseWrapper(jsi::Runtime &runtime,
-                                     PromiseComputationFunction computation)
-    : JsiWrapper(runtime, jsi::Value::undefined(), nullptr) {
+std::shared_ptr<JsiPromiseWrapper> JsiPromiseWrapper::createPromiseWrapper(
+    jsi::Runtime &runtime, PromiseComputationFunction computation) {
 
-  _counter = ++Counter;
-  printf("promise: CTOR JsiPromiseWrapper %zu\n", _counter);
+  // Create promise wrapper
+  auto result = std::make_shared<JsiPromiseWrapper>(runtime);
+  result->runComputation(runtime, computation);
+  return result;
+}
 
-  // Set type
-  setType(JsiWrapperType::Promise);
-
+void JsiPromiseWrapper::runComputation(jsi::Runtime &runtime,
+                                       PromiseComputationFunction computation) {
   // Run the compute function to start resolving the promise
   auto resolve = std::bind(&JsiPromiseWrapper::onFulfilled, this,
                            std::placeholders::_1, std::placeholders::_2);
@@ -29,7 +30,7 @@ JsiPromiseWrapper::JsiPromiseWrapper(jsi::Runtime &runtime,
   auto reject = std::bind(&JsiPromiseWrapper::onRejected, this,
                           std::placeholders::_1, std::placeholders::_2);
   try {
-    computation(runtime, resolve, reject);
+    computation(runtime, shared_from_this());
   } catch (const jsi::JSError &err) {
     // TODO: Handle Stack!!
     reject(runtime, jsi::String::createFromUtf8(runtime, err.getMessage()));
@@ -49,6 +50,16 @@ JsiPromiseWrapper::JsiPromiseWrapper(jsi::Runtime &runtime,
     reject(runtime, jsi::String::createFromUtf8(
                         runtime, "Unknown error in promise constructor."));
   }
+}
+
+JsiPromiseWrapper::JsiPromiseWrapper(jsi::Runtime &runtime)
+    : JsiWrapper(runtime, jsi::Value::undefined(), nullptr) {
+
+  _counter = ++Counter;
+  // printf("promise: CTOR JsiPromiseWrapper %zu\n", _counter);
+
+  // Set type
+  setType(JsiWrapperType::Promise);
 }
 
 /**
@@ -223,8 +234,8 @@ void JsiPromiseWrapper::setValue(jsi::Runtime &runtime,
 }
 
 void JsiPromiseWrapper::propagateFulfilled(jsi::Runtime &runtime) {
-  printf("promise %zu: propagateFulfilled queue: %zu\n", _counter,
-         _thenQueue.size());
+  // printf("promise %zu: propagateFulfilled queue: %zu\n", _counter,
+  //        _thenQueue.size());
 
   for (auto &item : _thenQueue) {
     if (item.fulfilledFn != nullptr) {
@@ -277,8 +288,8 @@ void JsiPromiseWrapper::propagateFulfilled(jsi::Runtime &runtime) {
 }
 
 void JsiPromiseWrapper::propagateRejected(jsi::Runtime &runtime) {
-  printf("promise %zu: propagateRejected queue: %zu\n", _counter,
-         _thenQueue.size());
+  // printf("promise %zu: propagateRejected queue: %zu\n", _counter,
+  //        _thenQueue.size());
 
   for (auto &item : _thenQueue) {
     if (item.catchFn != nullptr) {
@@ -335,8 +346,8 @@ void JsiPromiseWrapper::onFulfilled(jsi::Runtime &runtime,
   if (_state == PromiseState::Pending) {
     _state = PromiseState::Fulfilled;
     _value = JsiWrapper::wrap(runtime, val);
-    printf("promise %zu: onFulfilled: %s\n", _counter,
-           _value->toString(runtime).c_str());
+    // printf("promise %zu: onFulfilled: %s\n", _counter,
+    //        _value->toString(runtime).c_str());
     propagateFulfilled(runtime);
   }
 }
@@ -346,8 +357,8 @@ void JsiPromiseWrapper::onRejected(jsi::Runtime &runtime,
   if (_state == PromiseState::Pending) {
     _state = PromiseState::Rejected;
     _reason = JsiWrapper::wrap(runtime, reason);
-    printf("promise %zu: onRejected: %s\n", _counter,
-           _reason->toString(runtime).c_str());
+    // printf("promise %zu: onRejected: %s\n", _counter,
+    //        _reason->toString(runtime).c_str());
     propagateRejected(runtime);
   }
 }
