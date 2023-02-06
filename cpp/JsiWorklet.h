@@ -300,33 +300,19 @@ public:
       auto tmp = _workletFunction;
       _workletFunction = nullptr;
 
-      // Set up locking / conditions
-      std::mutex mu;
-      std::condition_variable cond;
-      bool isFinished = false;
-      std::unique_lock<std::mutex> lock(mu);
-
       if (_owningContext == nullptr) {
         // Javascript
         JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
-            [tmp = std::move(tmp), &cond, &isFinished](jsi::Runtime &) mutable {
+            [tmp = std::move(tmp)](jsi::Runtime &) mutable {
               tmp = nullptr;
-              isFinished = true;
-              cond.notify_one();
             });
       } else {
         _owningContext->invokeOnWorkletThread(
-            [tmp = std::move(tmp), &cond, &isFinished](JsiWorkletContext *,
+            [tmp = std::move(tmp)](JsiWorkletContext *,
                                                        jsi::Runtime &) mutable {
               tmp = nullptr;
-              isFinished = true;
-              cond.notify_one();
             });
       }
-
-      // Wait untill the blocking code as finished
-      cond.wait(lock, [&]() { return isFinished; });
-      printf("Destroyed");
     }
   }
 
