@@ -17,8 +17,8 @@ namespace jsi = facebook::jsi;
 
 class JsiWrapper;
 
-const char *ThenPropName = "then";
-const char *CatchPropName = "catch";
+static const char *ThenPropName = "then";
+static const char *CatchPropName = "catch";
 
 class JsiPromiseWrapper;
 

@@ -4,9 +4,6 @@ cmake_minimum_required(VERSION 3.8)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 17)
 
-include("${REACT_NATIVE_DIR}/ReactAndroid/cmake-utils/folly-flags.cmake")
-add_compile_options(${folly_FLAGS})
-
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   string(APPEND CMAKE_CXX_FLAGS " -DDEBUG")
 endif()
@@ -21,15 +18,13 @@ if(${JS_RUNTIME} STREQUAL "hermes")
   find_package(hermes-engine REQUIRED CONFIG)
 endif()
 
+file(GLOB_RECURSE SOURCES_COMMON CONFIGURE_DEPENDS "../cpp/**.cpp")
+
 add_library(
   ${PACKAGE_NAME}
   SHARED
+  ${SOURCES_COMMON}
   cpp-adapter.cpp
-  ../cpp/JsiWorkletApi.cpp
-  ../cpp/JsiWorkletContext.cpp
-  ../cpp/base/JsiHostObject.cpp
-  ../cpp/dispatch/DispatchQueue.cpp
-  ../cpp/wrappers/JsiWrapper.cpp
 )
 
 # includes
