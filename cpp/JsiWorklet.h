@@ -281,7 +281,7 @@ private:
 
 class WorkletInvoker {
 public:
-  WorkletInvoker(std::shared_ptr<JsiWorklet> worklet) : _worklet(worklet) {}
+  explicit WorkletInvoker(std::shared_ptr<JsiWorklet> worklet) : _worklet(worklet) {}
   WorkletInvoker(jsi::Runtime &runtime, const jsi::Value &value)
       : WorkletInvoker(std::make_shared<JsiWorklet>(runtime, value)) {}
 
@@ -317,7 +317,7 @@ public:
       } else {
         _owningContext->invokeOnWorkletThread(
             [tmp = std::move(tmp), &cond, &isFinished](JsiWorkletContext *,
-                                      jsi::Runtime &) mutable {
+                                                       jsi::Runtime &) mutable {
               tmp = nullptr;
               isFinished = true;
               cond.notify_one();
