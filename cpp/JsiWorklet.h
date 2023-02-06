@@ -281,7 +281,8 @@ private:
 
 class WorkletInvoker {
 public:
-  explicit WorkletInvoker(std::shared_ptr<JsiWorklet> worklet) : _worklet(worklet) {}
+  explicit WorkletInvoker(std::shared_ptr<JsiWorklet> worklet)
+      : _worklet(worklet) {}
   WorkletInvoker(jsi::Runtime &runtime, const jsi::Value &value)
       : WorkletInvoker(std::make_shared<JsiWorklet>(runtime, value)) {}
 
@@ -303,15 +304,11 @@ public:
       if (_owningContext == nullptr) {
         // Javascript
         JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
-            [tmp = std::move(tmp)](jsi::Runtime &) mutable {
-              tmp = nullptr;
-            });
+            [tmp = std::move(tmp)](jsi::Runtime &) mutable { tmp = nullptr; });
       } else {
         _owningContext->invokeOnWorkletThread(
             [tmp = std::move(tmp)](JsiWorkletContext *,
-                                                       jsi::Runtime &) mutable {
-              tmp = nullptr;
-            });
+                                   jsi::Runtime &) mutable { tmp = nullptr; });
       }
     }
   }
