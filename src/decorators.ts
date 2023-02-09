@@ -18,7 +18,7 @@ const consoleDecorator = () => {
       return console.info(...args);
     }),
   };
-  Worklets.addDecorator("console", obj);
+  Worklets.defaultContext.addDecorator("console", obj);
 };
 
 export const addDecorators = () => {

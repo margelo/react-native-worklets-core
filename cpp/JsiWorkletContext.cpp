@@ -118,17 +118,6 @@ void JsiWorkletContext::invokeOnWorkletThread(std::function<void()> &&fp) {
 void JsiWorkletContext::addDecorator(
     std::shared_ptr<JsiBaseDecorator> decorator) {
   decorators.push_back(decorator);
-  // decorate default context
-  JsiWorkletContext::getInstance()->decorate(decorator);
-}
-
-template <typename... Args> void JsiWorkletContext::decorate(Args &&...args) {
-  std::vector<std::shared_ptr<JsiBaseDecorator>> decorators = {args...};
-  applyDecorators(decorators);
-}
-
-void JsiWorkletContext::applyDecorators(
-    const std::vector<std::shared_ptr<JsiBaseDecorator>> &decorators) {
   std::mutex mu;
   std::condition_variable cond;
   bool isFinished = false;
@@ -137,9 +126,7 @@ void JsiWorkletContext::applyDecorators(
   // Execute decoration in context' worklet thread/runtime
   _workletCallInvoker([&]() {
     std::lock_guard<std::mutex> lock(mu);
-    for (size_t i = 0; i < decorators.size(); ++i) {
-      decorators[i]->decorateRuntime(getWorkletRuntime());
-    }
+    decorator->decorateRuntime(getWorkletRuntime());
     isFinished = true;
     cond.notify_one();
   });
