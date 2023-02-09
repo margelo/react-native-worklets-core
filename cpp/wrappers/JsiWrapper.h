@@ -14,7 +14,7 @@ namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
 
-const char *WorkletObjectProxyName = "__createWorkletObjectProxy";
+static const char *WorkletObjectProxyName = "__createWorkletObjectProxy";
 
 enum JsiWrapperType {
   Undefined,
