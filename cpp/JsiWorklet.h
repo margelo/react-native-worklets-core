@@ -24,7 +24,7 @@ namespace jsi = facebook::jsi;
  */
 class JsThisWrapper {
 public:
-  JsThisWrapper(jsi::Runtime &runtime, const jsi::Value &thisValue) {
+  JsThisWrapper(jsi::Runtime &runtime, const jsi::Object &thisValue) {
     _oldThis = runtime.global().getProperty(runtime, PropNameJsThis);
     runtime.global().setProperty(runtime, PropNameJsThis, thisValue);
     _runtime = &runtime;
@@ -182,7 +182,9 @@ public:
     jsi::Value retVal;
 
     // Prepare jsThis
-    JsThisWrapper thisWrapper(runtime, unwrappedClosure);
+    jsi::Object closureObject(runtime);
+    closureObject.setProperty(runtime, "_closure", unwrappedClosure);
+    JsThisWrapper thisWrapper(runtime, closureObject);
 
     // Call the unwrapped function
     if (!thisValue.isObject()) {
