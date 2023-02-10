@@ -18,6 +18,9 @@ static const char *PropNameWorkletInitDataCode = "code";
 static const char *PropNameWorkletInitDataLocation = "location";
 static const char *PropNameWorkletInitDataSourceMap = "__sourceMap";
 
+static const char *PropNameWorkletLocation = "__location";
+static const char *PropNameWorkletAsString = "asString";
+
 static const char *PropNameWorkletClosure = "_closure";
 static const char *PropFunctionName = "name";
 
@@ -127,10 +130,14 @@ public:
       return false;
     }
 
-    // Try to get the asString function
-    jsi::Value initData = func->getProperty(runtime, PropNameWorkletInitData);
-    if (initData.isUndefined() || initData.isNull() || !initData.isObject()) {
-      return false;
+    // Try to get the code
+    auto initData = func->getProperty(runtime, PropNameWorkletInitData);
+    if (!initData.isObject()) {
+      // Try old way of getting code
+      auto asString = func->getProperty(runtime, PropNameWorkletAsString);
+      if (!asString.isString()) {
+        return false;
+      }
     }
 
     return true;
@@ -227,34 +234,37 @@ private:
     // Try to get the asString function
     jsi::Value initDataProp =
         func->getProperty(runtime, PropNameWorkletInitData);
-    if (initDataProp.isUndefined() || initDataProp.isNull() ||
-        !initDataProp.isObject()) {
-      return;
+
+    if (initDataProp.isObject()) {
+      // Get location
+      jsi::Value locationProp = initDataProp.asObject(runtime).getProperty(
+          runtime, PropNameWorkletInitDataLocation);
+
+      if (locationProp.isUndefined() || locationProp.isNull() ||
+          !locationProp.isString()) {
+        return;
+      }
+
+      // Set location
+      _location = locationProp.asString(runtime).utf8(runtime);
+      
+      // Let us try to install the function in the worklet context
+      _code = initDataProp.asObject(runtime)
+                  .getProperty(runtime, PropNameWorkletInitDataCode)
+                  .asString(runtime)
+                  .utf8(runtime);
+
+    } else {
+      // try old way
+      _code = func->getProperty(runtime, PropNameWorkletAsString).asString(runtime).utf8(runtime);
+      _location = func->getProperty(runtime, PropNameWorkletLocation).asString(runtime).utf8(runtime);
     }
-
-    // Get location
-    jsi::Value locationProp = initDataProp.asObject(runtime).getProperty(
-        runtime, PropNameWorkletInitDataLocation);
-
-    if (locationProp.isUndefined() || locationProp.isNull() ||
-        !locationProp.isString()) {
-      return;
-    }
-
-    // Set location
-    _location = locationProp.asString(runtime).utf8(runtime);
 
     // This is a worklet
     _isWorklet = true;
 
     // Create closure wrapper so it will be accessible across runtimes
     _closureWrapper = JsiWrapper::wrap(runtime, closure);
-
-    // Let us try to install the function in the worklet context
-    _code = initDataProp.asObject(runtime)
-                .getProperty(runtime, PropNameWorkletInitDataCode)
-                .asString(runtime)
-                .utf8(runtime);
 
     // Try get the name of the function
     auto nameProp = func->getProperty(runtime, PropFunctionName);
