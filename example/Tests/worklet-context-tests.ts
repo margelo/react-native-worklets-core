@@ -316,4 +316,16 @@ export const worklet_context_tests = {
     wf = undefined;
     return ExpectValue(true, true);
   },
+  call_worklet_inside_worklet: () => {
+    const f = (a: number) => {
+      "worklet";
+      return a * 2;
+    };
+    const fw = () => {
+      "worklet";
+      return f(100);
+    };
+    let wf = Worklets.createRunInContextFn(fw);
+    return ExpectValue(wf(), 200);
+  },
 };
