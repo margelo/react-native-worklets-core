@@ -301,6 +301,14 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
 
     // Now we are in a situation where we are calling cross context (js -> ctx,
     // ctx -> ctx, ctx -> js)
+    
+     // Ensure that the function is a worklet
+    if (workletInvoker == nullptr && convention != CallingConvention::CtxToJs) {
+      throw jsi::JSError(runtime, "In callInContext the function parameter "
+                                  "is not a valid worklet and "
+                                  "cannot be called between contexts or "
+                                  "from/to JS from/to a context.");
+    }
 
     auto callIntoCorrectContext =
         [&runtime, convention,
