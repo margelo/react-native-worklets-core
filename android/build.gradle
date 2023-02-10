@@ -44,6 +44,7 @@ def JS_RUNTIME = {
 }.call()
 
 def nodeModules = findNodeModules(projectDir)
+def prefabHeadersDir = new File("$buildDir/prefab-headers")
 
 def reactNativeArchitectures() {
   def value = project.getProperties().get("reactNativeArchitectures")
@@ -56,16 +57,10 @@ if (isNewArchitectureEnabled()) {
     apply plugin: "com.facebook.react"
 }
 
-task prepareHeaders1(type: Copy) {
-  from fileTree('../cpp').filter { it.isFile() }
-  into "${project.buildDir}/headers/rnworklets/"
-  includeEmptyDirs = false
-}
-
-task prepareHeaders2(type: Copy) {
-  from fileTree('../cpp').filter { it.isFile() }
-  into "${project.buildDir}/headers/rnworklets/react-native-worklets"
-  includeEmptyDirs = false
+task prepareHeadersForPrefab(type: Copy) {
+    from fileTree('../cpp')
+    include("**/*.h")
+    into(prefabHeadersDir)
 }
 
 android {
@@ -82,12 +77,9 @@ android {
                 "-DREACT_NATIVE_DIR=${nodeModules}/react-native",
                 "-DJS_RUNTIME=${JS_RUNTIME}"
         abiFilters (*reactNativeArchitectures())
+        targets "rnworklets"
       }
     }
-  }
-
-  buildFeatures {
-    prefab true
   }
 
   compileOptions {
@@ -124,6 +116,7 @@ android {
 
   sourceSets {
     main {
+      manifest.srcFile "src/main/AndroidManifest.xml"
       if (isNewArchitectureEnabled()) {
         java.srcDirs += ["src/newarch"]
       } else {
@@ -134,8 +127,6 @@ android {
 
   packagingOptions {
     excludes = [
-      "META-INF",
-      "META-INF/**",
       "**/libc++_shared.so",
       "**/libfbjni.so",
       "**/libjsi.so",
@@ -151,14 +142,23 @@ android {
       "**/libjscexecutor.so",
     ]
   }
-  
+
   buildFeatures {
+    prefab true
     prefabPublishing true
   }
+
+    publishing {
+        multipleVariants {
+            withSourcesJar()
+            allVariants()
+        }
+    }
 
   prefab {
     rnworklets {
       headers "${project.buildDir}/headers/rnworklets/"
+      libraryName "rnworklets"
     }
   }
 }
@@ -170,4 +170,6 @@ dependencies {
   }
 }
 
-preBuild.dependsOn("prepareHeaders1", "prepareHeaders2")
+afterEvaluate {
+    preBuild.dependsOn(prepareHeadersForPrefab)
+}
