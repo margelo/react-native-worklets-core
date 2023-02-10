@@ -44,7 +44,7 @@ def JS_RUNTIME = {
 }.call()
 
 def nodeModules = findNodeModules(projectDir)
-def prefabHeadersDir = new File("$buildDir/prefab-headers")
+def prefabHeadersDir = new File("$buildDir/include/react-native-worklets")
 
 def reactNativeArchitectures() {
   def value = project.getProperties().get("reactNativeArchitectures")
