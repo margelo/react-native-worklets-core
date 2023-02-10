@@ -64,7 +64,7 @@ task prepareHeaders1(type: Copy) {
 
 task prepareHeaders2(type: Copy) {
   from fileTree('../cpp').filter { it.isFile() }
-  into "${project.buildDir}/headers/rnworklets/rnworklets"
+  into "${project.buildDir}/headers/rnworklets/react-native-worklets"
   includeEmptyDirs = false
 }
 
