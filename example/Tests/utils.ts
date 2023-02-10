@@ -1,3 +1,8 @@
+const isThenable = <V>(value: V | Promise<V>) =>
+  value instanceof Object &&
+  "then" in value &&
+  typeof value.then === "function";
+
 export const Expect = <V>(
   value: V | Promise<V>,
   expected: (v: V) => string | undefined
@@ -5,7 +10,7 @@ export const Expect = <V>(
   return new Promise<void>(async (resolve, reject) => {
     let resolvedValue: V;
 
-    if (value instanceof Promise) {
+    if (isThenable(value)) {
       resolvedValue = await value;
     } else {
       resolvedValue = value as any as V;
@@ -23,22 +28,26 @@ export const Expect = <V>(
 
 export const ExpectValue = <V, T>(value: V | Promise<V>, expected: T) => {
   return new Promise<void>(async (resolve, reject) => {
-    let resolvedValue: V;
-
-    if (value instanceof Promise) {
-      resolvedValue = await value;
+    let resolvedValue: V | undefined;
+    if (isThenable(value)) {
+      try {
+        resolvedValue = await value;
+      } catch (err) {
+        console.log("ExpectValue, failed:", err);
+        reject(new Error(`Expected ${expected}, got ${err}.`));
+        return;
+      }
     } else {
-      resolvedValue = value as any as V;
+      resolvedValue = value as V;
     }
+    console.log("ExpectValue, resolved:", resolvedValue);
 
     if (JSON.stringify(resolvedValue) !== JSON.stringify(expected)) {
-      reject(
-        new Error(
-          `Expected ${JSON.stringify(expected)}, got ${JSON.stringify(
-            resolvedValue
-          )}.`
-        )
-      );
+      const message = `Expected ${JSON.stringify(
+        expected
+      )}, got ${JSON.stringify(resolvedValue)}.`;
+      console.log("ExpectValue, failed:", message);
+      reject(new Error(message));
     } else {
       resolve();
     }
@@ -52,7 +61,7 @@ export const ExpectException = <T>(
   return new Promise<void>(async (resolve, reject) => {
     try {
       const value = executor();
-      if (value instanceof Promise) {
+      if (isThenable(value)) {
         await value;
         reject(new Error("Expected error but function succeeded (Promise)."));
       } else {
@@ -82,5 +91,5 @@ export const getWorkletInfo = <T extends Array<unknown>, R>(
   worklet: (...args: T) => R
 ) => {
   // @ts-ignore
-  return { closure: worklet._closure, code: worklet.asString };
+  return { closure: worklet._closure, code: worklet.__initData.code };
 };

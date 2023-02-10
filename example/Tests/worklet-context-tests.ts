@@ -2,7 +2,7 @@ import { Worklets } from "react-native-worklets";
 import { Expect, ExpectException, ExpectValue } from "./utils";
 
 export const worklet_context_tests = {
-  call_sync_on_js_thread: () => {
+  call_async_on_js_thread: () => {
     const worklet = (a: number) => {
       "worklet";
       return a;
@@ -10,7 +10,7 @@ export const worklet_context_tests = {
     return ExpectValue(worklet(100), 100);
   },
 
-  call_sync_on_js_thread_with_error: () => {
+  call_async_on_js_thread_with_error: () => {
     const worklet = () => {
       "worklet";
       throw new Error("Test error");
@@ -77,7 +77,7 @@ export const worklet_context_tests = {
     });
   },
 
-  call_sync_to_js_from_worklet: () => {
+  call_async_to_js_from_worklet: () => {
     const sharedValue = Worklets.createSharedValue(0);
     const setSharedValue = function (a: number) {
       "worklet";
@@ -88,7 +88,7 @@ export const worklet_context_tests = {
 
     const w1 = function (a: number) {
       "worklet";
-      js1(a);
+      return js1(a);
     };
 
     const w = Worklets.createRunInContextFn(w1);
@@ -99,7 +99,7 @@ export const worklet_context_tests = {
     });
   },
 
-  call_sync_to_js_from_worklet_with_retval: () => {
+  call_async_to_js_from_worklet_with_retval: () => {
     const workletB = Worklets.createRunInJsFn(function (a: number) {
       "worklet";
       return a;
@@ -112,7 +112,7 @@ export const worklet_context_tests = {
     return ExpectValue(workletA(200), 200);
   },
 
-  call_sync_to_js_from_worklet_with_error: () => {
+  call_async_to_js_from_worklet_with_error: () => {
     const callback = Worklets.createRunInJsFn(() => {
       "worklet";
       throw new Error("Test error");
@@ -120,9 +120,9 @@ export const worklet_context_tests = {
 
     const workletA = Worklets.createRunInContextFn(function () {
       "worklet";
-      callback();
+      return callback();
     });
-    return ExpectException(workletA, "Exception in HostFunction: Test error");
+    return ExpectException(workletA, "Test error");
   },
 
   call_decorated_js_function_from_worklet: () => {
@@ -244,7 +244,88 @@ export const worklet_context_tests = {
       const wjs = Worklets.createRunInJsFn(fn);
       return wjs(a);
     };
-    const worklet_in_context = Worklets.createRunInContextFn(f);
-    return ExpectValue(worklet_in_context(100), 200);
+    const w = Worklets.createRunInContextFn(f);
+    return ExpectValue(w(100), 200);
+  },
+  call_worklet_in_same_context: () => {
+    const workletInTest = Worklets.createRunInContextFn(function (a: number) {
+      "worklet";
+      console.log("ctx: workletInTest: returning 100 + ", a);
+      return 100 + a;
+    });
+
+    const worklet = Worklets.createRunInContextFn(function () {
+      "worklet";
+      console.log("ctx: worklet: calling workletInTest(100)");
+      const a = workletInTest(100);
+      console.log("ctx: worklet: ", a);
+      return a;
+    });
+    console.log("ctx: Calling worklet()");
+    return ExpectValue(worklet(), 200);
+  },
+  call_worklet_in_other_context: () => {
+    const ctx = Worklets.createContext("test");
+    function calcInCtx(a: number) {
+      "worklet";
+      return 100 + a;
+    }
+    calcInCtx.name = "calcInCtx";
+    const workletInCtx = Worklets.createRunInContextFn(calcInCtx, ctx);
+
+    function calcInDefaultCtx() {
+      "worklet";
+      return workletInCtx(100);
+    }
+    calcInDefaultCtx.name = "calcInDefaultCtx";
+    const worklet = Worklets.createRunInContextFn(calcInDefaultCtx);
+
+    return ExpectValue(worklet(), 200);
+  },
+  call_createRunInContextFn_from_context_FAILS: () => {
+    const worklet = Worklets.createRunInContextFn(function () {
+      "worklet";
+      const workletInTest = Worklets.createRunInContextFn(function (a: number) {
+        "worklet";
+        return 100 + a;
+      });
+      return workletInTest(100);
+    });
+    return ExpectValue(worklet(), 200);
+  },
+  call_createRunInContextFn_between_contexts_FAILS: () => {
+    const ctx = Worklets.createContext("test");
+
+    const worklet = Worklets.createRunInContextFn(function () {
+      "worklet";
+      const workletInTest = Worklets.createRunInContextFn(function (a: number) {
+        "worklet";
+        return 100 + a;
+      }, ctx);
+      return workletInTest(100);
+    });
+    return ExpectValue(worklet(), 200);
+  },
+  call_fire_and_forget: () => {
+    const f = (a: number) => {
+      "worklet";
+      return a * 2;
+    };
+    let wf: any = Worklets.createRunInContextFn(f);
+    wf(100);
+    wf = undefined;
+    return ExpectValue(true, true);
+  },
+  call_worklet_inside_worklet: () => {
+    const f = (a: number) => {
+      "worklet";
+      return a * 2;
+    };
+    const fw = () => {
+      "worklet";
+      return f(100);
+    };
+    let wf = Worklets.createRunInContextFn(fw);
+    return ExpectValue(wf(), 200);
   },
 };

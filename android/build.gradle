@@ -56,6 +56,18 @@ if (isNewArchitectureEnabled()) {
     apply plugin: "com.facebook.react"
 }
 
+task prepareHeaders1(type: Copy) {
+  from fileTree('../cpp').filter { it.isFile() }
+  into "${project.buildDir}/headers/rnworklets/"
+  includeEmptyDirs = false
+}
+
+task prepareHeaders2(type: Copy) {
+  from fileTree('../cpp').filter { it.isFile() }
+  into "${project.buildDir}/headers/rnworklets/react-native-worklets"
+  includeEmptyDirs = false
+}
+
 android {
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 
@@ -139,6 +151,16 @@ android {
       "**/libjscexecutor.so",
     ]
   }
+  
+  buildFeatures {
+    prefabPublishing true
+  }
+
+  prefab {
+    rnworklets {
+      headers "${project.buildDir}/headers/rnworklets/"
+    }
+  }
 }
 
 dependencies {
@@ -147,3 +169,5 @@ dependencies {
     implementation "com.facebook.react:hermes-android"
   }
 }
+
+preBuild.dependsOn("prepareHeaders1", "prepareHeaders2")

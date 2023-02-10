@@ -14,6 +14,8 @@ namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
 
+static const char *WorkletObjectProxyName = "__createWorkletObjectProxy";
+
 enum JsiWrapperType {
   Undefined,
   Null,
@@ -71,6 +73,31 @@ public:
   static jsi::Value unwrap(jsi::Runtime &runtime,
                            std::shared_ptr<JsiWrapper> wrapper) {
     return wrapper->getValue(runtime);
+  }
+
+  /**
+   Non-static variant of unwrapAsProxyOrValue
+   @param runtime Runtime
+   */
+  jsi::Value unwrap(jsi::Runtime &runtime) { return this->getValue(runtime); }
+
+  /**
+   * Returns the value as a javascript proxy or value depending on need on the
+   * provided runtime
+   * @param runtime Runtime
+   * @param wrapper Wrapper to get value for
+   * @return A new js value in the provided runtime with the wrapped value
+   */
+  static jsi::Value unwrapAsProxyOrValue(jsi::Runtime &runtime,
+                                         std::shared_ptr<JsiWrapper> wrapper) {
+    return wrapper->getAsProxyOrValue(runtime);
+  }
+
+  /**
+   Unwraps to a proxy if needed, to value if not.
+   */
+  jsi::Value unwrapAsProxyOrValue(jsi::Runtime &runtime) {
+    return getAsProxyOrValue(runtime);
   }
 
   /**
@@ -134,6 +161,14 @@ protected:
   }
 
   /**
+   Returns self as a proxy object or a regular value, depending on wether the
+   value needs to be a proxy.
+   */
+  virtual jsi::Value getAsProxyOrValue(jsi::Runtime &runtime) {
+    return getValue(runtime);
+  }
+
+  /**
    * Update the type
    * @param type Type to set
    */
@@ -166,6 +201,44 @@ protected:
    * @return A new js value in the provided runtime with the wrapped value
    */
   virtual jsi::Value getValue(jsi::Runtime &runtime);
+
+  /**
+   Creates a proxy for the host object so that we can make the runtime trust
+   that this is a real JS object
+   */
+  jsi::Value getObjectAsProxy(jsi::Runtime &runtime,
+                              std::shared_ptr<jsi::HostObject> hostObj) {
+    auto createObjProxy =
+        runtime.global().getProperty(runtime, WorkletObjectProxyName);
+    if (createObjProxy.isUndefined()) {
+      // Install worklet proxy helper into runtime
+      static std::string code =
+          "function (obj) {"
+          "  return new Proxy(obj, {"
+          "    getOwnPropertyDescriptor: function () {"
+          "      return { configurable: true, enumerable: true, writable: true "
+          "};"
+          "    },"
+          " set: function(target, prop, value) { return Reflect.set(target, "
+          "prop, value); },"
+          " get: function(target, prop) { return Reflect.get(target, prop); }"
+          "  });"
+          "}";
+
+      auto codeBuffer =
+          std::make_shared<const jsi::StringBuffer>("(" + code + "\n)");
+      createObjProxy =
+          runtime.evaluateJavaScript(codeBuffer, WorkletObjectProxyName);
+      runtime.global().setProperty(runtime, WorkletObjectProxyName,
+                                   createObjProxy);
+    }
+
+    auto createProxyFunc = createObjProxy.asObject(runtime).asFunction(runtime);
+    auto retVal = createProxyFunc.call(
+        runtime, jsi::Object::createFromHostObject(runtime, hostObj));
+
+    return retVal;
+  }
 
 private:
   /**

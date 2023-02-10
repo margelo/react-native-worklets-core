@@ -2,14 +2,17 @@
 #include "JsiWorkletContext.h"
 #include "JsiWorkletApi.h"
 
+#include "ArgumentsWrapper.h"
 #include "DispatchQueue.h"
 #include "JsRuntimeFactory.h"
 #include "JsiHostObject.h"
+#include "JsiPromiseWrapper.h"
 
 #include <exception>
 #include <functional>
 #include <memory>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -21,30 +24,31 @@ const char *WorkletRuntimeFlag = "__rn_worklets_runtime_flag";
 const char *GlobalPropertyName = "global";
 
 std::vector<std::shared_ptr<JsiBaseDecorator>> JsiWorkletContext::decorators;
-std::shared_ptr<JsiWorkletContext> JsiWorkletContext::instance;
+std::shared_ptr<JsiWorkletContext> JsiWorkletContext::defaultInstance;
+std::map<std::thread::id, JsiWorkletContext *>
+    JsiWorkletContext::threadContexts;
+size_t JsiWorkletContext::contextIdNumber = 1000;
 
 namespace jsi = facebook::jsi;
 
 JsiWorkletContext::JsiWorkletContext(const std::string &name) {
-  // Create queue
-  auto dispatchQueue =
-      std::make_shared<DispatchQueue>(name + "_worklet_dispatch_queue", 1);
-
   // Initialize context
-  initialize(name, JsiWorkletContext::getInstance()->_jsRuntime,
-             JsiWorkletContext::getInstance()->_jsCallInvoker,
-             [dispatchQueue](std::function<void()> &&f) {
-               dispatchQueue->dispatch(std::move(f));
-             });
+  initialize(name, JsiWorkletContext::getDefaultInstance()->_jsRuntime,
+             JsiWorkletContext::getDefaultInstance()->_jsCallInvoker);
 }
 
 JsiWorkletContext::JsiWorkletContext(
     const std::string &name,
     std::function<void(std::function<void()> &&)> workletCallInvoker) {
   // Initialize context
-  initialize(name, JsiWorkletContext::getInstance()->_jsRuntime,
-             JsiWorkletContext::getInstance()->_jsCallInvoker,
+  initialize(name, JsiWorkletContext::getDefaultInstance()->_jsRuntime,
+             JsiWorkletContext::getDefaultInstance()->_jsCallInvoker,
              workletCallInvoker);
+}
+
+JsiWorkletContext::~JsiWorkletContext() {
+  // Remove from thread contexts
+  threadContexts.erase(std::this_thread::get_id());
 }
 
 void JsiWorkletContext::initialize(
@@ -55,20 +59,39 @@ void JsiWorkletContext::initialize(
   _jsRuntime = jsRuntime;
   _jsCallInvoker = jsCallInvoker;
   _workletCallInvoker = workletCallInvoker;
+  _contextId = ++contextIdNumber;
+  _jsThreadId = std::this_thread::get_id();
+
+  // Initialize thread context - we save a pointer to this context
+  // in the static threadContexts map so that we later can look
+  // up the correct context from a given thread.
+  std::mutex mu;
+  std::condition_variable cond;
+  bool isFinished = false;
+  std::unique_lock<std::mutex> lock(mu);
+  _workletCallInvoker([&isFinished, &cond, this]() {
+    this->_threadId = std::this_thread::get_id();
+    threadContexts.emplace(this->_threadId, this);
+    isFinished = true;
+    cond.notify_one();
+  });
+  // Wait untill the blocking code as finished
+  cond.wait(lock, [&]() { return isFinished; });
 }
 
 void JsiWorkletContext::initialize(
     const std::string &name, jsi::Runtime *jsRuntime,
     std::function<void(std::function<void()> &&)> jsCallInvoker) {
   // Create queue
-  auto dispatchQueue =
-      std::make_shared<DispatchQueue>(name + "_worklet_dispatch_queue", 1);
+  auto dispatchQueue = std::make_shared<DispatchQueue>(
+      name + "_worklet_dispatch_queue_" + std::to_string(_contextId));
 
   // Initialize invoker
-  initialize(name, jsRuntime, jsCallInvoker,
-             [dispatchQueue](std::function<void()> &&f) {
-               dispatchQueue->dispatch(std::move(f));
-             });
+  initialize(
+      name, jsRuntime, jsCallInvoker,
+      [dispatchQueue = std::move(dispatchQueue)](std::function<void()> &&f) {
+        dispatchQueue->dispatch(std::move(f));
+      });
 }
 
 jsi::Runtime &JsiWorkletContext::getWorkletRuntime() {
@@ -89,7 +112,7 @@ jsi::Runtime &JsiWorkletContext::getWorkletRuntime() {
     // Run decorators if we're not the singleton main context - no need to
     // do this in the worklet thread because we should already be in the
     // worklet thread now.
-    if (JsiWorkletContext::getInstance().get() != this) {
+    if (JsiWorkletContext::getDefaultInstance().get() != this) {
       for (size_t i = 0; i < decorators.size(); ++i) {
         decorators[i]->decorateRuntime(getWorkletRuntime());
       }
@@ -99,27 +122,44 @@ jsi::Runtime &JsiWorkletContext::getWorkletRuntime() {
   return *_workletRuntime;
 }
 
-void JsiWorkletContext::invokeOnJsThread(std::function<void()> &&fp) {
+void JsiWorkletContext::invokeOnJsThread(
+    std::function<void(jsi::Runtime &runtime)> &&fp) {
   if (_jsCallInvoker == nullptr) {
     throw std::runtime_error(
         "Expected Worklet context to have a JS call invoker.");
   }
-  _jsCallInvoker(std::move(fp));
+  _jsCallInvoker([fp = std::move(fp), weakSelf = weak_from_this()]() {
+    auto self = weakSelf.lock();
+    if (self) {
+      assert(self->_jsThreadId == std::this_thread::get_id());
+      fp(*self->getJsRuntime());
+    }
+  });
 }
 
-void JsiWorkletContext::invokeOnWorkletThread(std::function<void()> &&fp) {
+void JsiWorkletContext::invokeOnWorkletThread(
+    std::function<void(JsiWorkletContext *context, jsi::Runtime &runtime)>
+        &&fp) {
   if (_workletCallInvoker == nullptr) {
     throw std::runtime_error(
         "Expected Worklet context to have a worklet call invoker.");
   }
-  _workletCallInvoker(std::move(fp));
+  _workletCallInvoker([fp = std::move(fp), weakSelf = weak_from_this()]() {
+    auto self = weakSelf.lock();
+    if (self) {
+      assert(self->_threadId == std::this_thread::get_id());
+      fp(self.get(), self->getWorkletRuntime());
+    }
+  });
 }
 
 void JsiWorkletContext::addDecorator(
     std::shared_ptr<JsiBaseDecorator> decorator) {
   decorators.push_back(decorator);
   // decorate default context
-  JsiWorkletContext::getInstance()->decorate(decorator);
+  if (JsiWorkletContext::getDefaultInstance()->_workletCallInvoker) {
+    JsiWorkletContext::getDefaultInstance()->decorate(decorator);
+  }
 }
 
 template <typename... Args> void JsiWorkletContext::decorate(Args &&...args) {
@@ -146,6 +186,308 @@ void JsiWorkletContext::applyDecorators(
 
   // Wait untill the blocking code as finished
   cond.wait(lock, [&]() { return isFinished; });
+}
+
+jsi::HostFunctionType
+JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
+                                       const jsi::Value &maybeFunc) {
+  return createCallInContext(runtime, maybeFunc, this);
+}
+
+jsi::HostFunctionType
+JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
+                                       const jsi::Value &maybeFunc,
+                                       JsiWorkletContext *ctx) {
+
+  // Ensure that we are passing a function as the param.
+  if (!maybeFunc.isObject() ||
+      !maybeFunc.asObject(runtime).isFunction(runtime)) {
+    throw jsi::JSError(
+        runtime,
+        "Parameter to callInContext is not a valid Javascript function.");
+  }
+
+  // Now we can save the function in a shared ptr to be able to keep it around
+  auto func = std::make_shared<jsi::Function>(
+      maybeFunc.asObject(runtime).asFunction(runtime));
+
+  // Create a worklet of the function if the function is a worklet - it should
+  // be allowed to create a caller function and call inside the same JS or ctx
+  // without having to pass a worklet
+  auto workletInvoker =
+      JsiWorklet::isDecoratedAsWorklet(runtime, func)
+          ? std::make_shared<WorkletInvoker>(runtime, maybeFunc)
+          : nullptr;
+
+  // Now return the caller function as a hostfunction type.
+  return [workletInvoker, func,
+          ctx](jsi::Runtime &runtime, const jsi::Value &thisValue,
+               const jsi::Value *arguments, size_t count) -> jsi::Value {
+    auto callingCtx = getCurrent();
+    auto convention = getCallingConvention(callingCtx, ctx);
+
+    // Start by wrapping the arguments
+    ArgumentsWrapper argsWrapper(runtime, arguments, count);
+
+    // Wrap the this value
+    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
+
+    // If we are calling directly from/to the JS context or within the same
+    // context, we can just dispatch everything directly.
+    if (convention == CallingConvention::JsToJs ||
+        convention == CallingConvention::WithinCtx) {
+
+      // Create promise
+      auto promise = JsiPromiseWrapper::createPromiseWrapper(
+          runtime,
+          [ctx, convention, workletInvoker, callingCtx, thisWrapper,
+           argsWrapper, func](jsi::Runtime &runtime,
+                              std::shared_ptr<PromiseParameter> promise) {
+            auto unwrappedThis = thisWrapper->unwrap(runtime);
+            auto args = argsWrapper.getArguments(runtime);
+
+            // We can resolve the result directly - we're in the same context.
+            try {
+              if (workletInvoker) {
+                auto retVal = workletInvoker->call(
+                    runtime, unwrappedThis, ArgumentsWrapper::toArgs(args),
+                    argsWrapper.getCount());
+                promise->resolve(runtime, retVal);
+              } else {
+                if (unwrappedThis.isObject()) {
+                  auto retVal = func->callWithThis(
+                      runtime, unwrappedThis.asObject(runtime),
+                      ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+                  promise->resolve(runtime, retVal);
+                } else {
+                  auto retVal =
+                      func->call(runtime, ArgumentsWrapper::toArgs(args),
+                                 argsWrapper.getCount());
+                  promise->resolve(runtime, retVal);
+                }
+              }
+            } catch (const jsi::JSError &err) {
+              // TODO: Handle Stack!!
+              promise->reject(runtime, jsi::String::createFromUtf8(
+                                           runtime, err.getMessage()));
+            } catch (const std::exception &err) {
+              std::string a = typeid(err).name();
+              std::string b = typeid(jsi::JSError).name();
+              if (a == b) {
+                const auto *jsError = static_cast<const jsi::JSError *>(&err);
+                auto message = jsError->getMessage();
+                // auto stack = jsError->getStack();
+                // TODO: JsErrorWrapper reason(message, stack);
+                promise->reject(runtime,
+                                jsi::String::createFromUtf8(runtime, message));
+              } else {
+                // TODO: JsErrorWrapper reason("Unknown error in promise",
+                // "[Uknown stack]");
+                promise->reject(runtime,
+                                jsi::String::createFromUtf8(
+                                    runtime, "Unknown error in promise"));
+              }
+            } catch (...) {
+              // TODO: JsErrorWrapper reason("Unknown error in promise",
+              // "[Uknown stack]");
+              promise->reject(runtime,
+                              jsi::String::createFromUtf8(
+                                  runtime, "Unknown error in promise"));
+            }
+          });
+
+      return jsi::Object::createFromHostObject(runtime, promise);
+    }
+
+    // Now we are in a situation where we are calling cross context (js -> ctx,
+    // ctx -> ctx, ctx -> js)
+    
+     // Ensure that the function is a worklet
+    if (workletInvoker == nullptr && convention != CallingConvention::CtxToJs) {
+      throw jsi::JSError(runtime, "In callInContext the function parameter "
+                                  "is not a valid worklet and "
+                                  "cannot be called between contexts or "
+                                  "from/to JS from/to a context.");
+    }
+
+    auto callIntoCorrectContext =
+        [&runtime, convention,
+         ctx](std::function<void(jsi::Runtime & runtime)> &&func) {
+          switch (convention) {
+          case CallingConvention::JsToCtx:
+          case CallingConvention::CtxToCtx:
+            ctx->invokeOnWorkletThread(
+                [func](JsiWorkletContext *, jsi::Runtime &rt) { func(rt); });
+            break;
+          case CallingConvention::CtxToJs:
+            JsiWorkletContext::getCurrent()->invokeOnJsThread(
+                [func](jsi::Runtime &rt) { func(rt); });
+            break;
+          default:
+            // Not used since the two last ones are only handling
+            // inter context calling
+            throw jsi::JSError(runtime,
+                               "Should not be reached. Callback into context.");
+          }
+        };
+
+    auto callback = [&runtime, convention, callingCtx,
+                     ctx](std::function<void(jsi::Runtime & rt)> &&func) {
+      // Always resolve in the calling context or the JS context if null
+      if (callingCtx == nullptr) {
+        JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
+            [func](jsi::Runtime &rt) { func(rt); });
+      } else {
+        callingCtx->invokeOnWorkletThread(
+            [func](JsiWorkletContext *, jsi::Runtime &rt) { func(rt); });
+      }
+    };
+
+    // Let's create a promise that can initialize and resolve / reject in the
+    // correct contexts
+    auto promise = JsiPromiseWrapper::createPromiseWrapper(
+        runtime, [ctx, workletInvoker, convention, callingCtx, thisWrapper,
+                  argsWrapper, callIntoCorrectContext, callback,
+                  func](jsi::Runtime &runtime,
+                        std::shared_ptr<PromiseParameter> promise) {
+          // Create callback wrapper
+          callIntoCorrectContext([callback, workletInvoker, thisWrapper,
+                                  argsWrapper, promise, func](jsi::Runtime &runtime) {
+            try {
+
+              auto args = argsWrapper.getArguments(runtime);
+
+              jsi::Value result;
+              if (workletInvoker != nullptr) {
+                result = workletInvoker->call(
+                      runtime, thisWrapper->unwrap(runtime),
+                      ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+              } else {
+                result = func->call(
+                       runtime,
+                       ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+              }
+
+              auto retVal = JsiWrapper::wrap(runtime, result);
+
+              // Callback with the results
+              callback([retVal, promise](jsi::Runtime &runtime) {
+                promise->resolve(runtime, retVal->unwrap(runtime));
+              });
+            } catch (const jsi::JSError &err) {
+              auto message = err.getMessage();
+              auto stack = err.getStack();
+              // TODO: Stack
+              callback([message, stack, promise](jsi::Runtime &runtime) {
+                promise->reject(runtime,
+                                jsi::String::createFromUtf8(runtime, message));
+              });
+            } catch (const std::exception &err) {
+              std::string a = typeid(err).name();
+              std::string b = typeid(jsi::JSError).name();
+              if (a == b) {
+                const auto *jsError = static_cast<const jsi::JSError *>(&err);
+                auto message = jsError->getMessage();
+                auto stack = jsError->getStack();
+                // TODO: Stack
+                callback([message, stack, promise](jsi::Runtime &runtime) {
+                  promise->reject(
+                      runtime, jsi::String::createFromUtf8(runtime, message));
+                });
+              } else {
+                // TODO: Stack
+                callback([err, promise](jsi::Runtime &runtime) {
+                  promise->reject(runtime, jsi::String::createFromUtf8(
+                                               runtime, err.what()));
+                });
+              }
+            } catch (...) {
+              callback([promise](jsi::Runtime &runtime) {
+                // TODO: Handle Stack!!
+                promise->reject(runtime,
+                                jsi::String::createFromUtf8(
+                                    runtime, "Unknown error in promise."));
+              });
+            }
+          });
+        });
+
+    return jsi::Object::createFromHostObject(runtime, promise);
+  };
+}
+
+jsi::HostFunctionType
+JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
+                                 const jsi::Value *maybeFunc) {
+  auto rtPtr = &runtime;
+  auto ctx = JsiWorkletContext::getCurrent();
+
+  // Create host function
+  return [rtPtr, ctx,
+          func = std::make_shared<jsi::Function>(
+              maybeFunc->asObject(runtime).asFunction(runtime))](
+             jsi::Runtime &runtime, const jsi::Value &thisValue,
+             const jsi::Value *arguments, size_t count) {
+    // If we are in the same context let's just call the function directly
+    if (&runtime == rtPtr) {
+      return func->call(runtime, arguments, count);
+    }
+
+    // We're about to cross contexts and will need to wrap args
+    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
+    ArgumentsWrapper argsWrapper(runtime, arguments, count);
+
+    if (ctx != nullptr) {
+      // We are on a worklet thread
+      ctx->invokeOnWorkletThread(
+          [argsWrapper, rtPtr, func](JsiWorkletContext *,
+                                     jsi::Runtime &runtime) {
+            assert(&runtime == rtPtr && "Expected same runtime ptr!");
+            auto args = argsWrapper.getArguments(runtime);
+            func->call(runtime, ArgumentsWrapper::toArgs(args),
+                       argsWrapper.getCount());
+          });
+    } else {
+      JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
+          [argsWrapper, rtPtr, func = std::move(func)](jsi::Runtime &runtime) {
+            assert(&runtime == rtPtr && "Expected same runtime ptr!");
+            auto args = argsWrapper.getArguments(runtime);
+            func->call(runtime, ArgumentsWrapper::toArgs(args),
+                       argsWrapper.getCount());
+          });
+    }
+
+    return jsi::Value::undefined();
+  };
+}
+
+JsiWorkletContext::CallingConvention
+JsiWorkletContext::getCallingConvention(JsiWorkletContext *fromContext,
+                                        JsiWorkletContext *toContext) {
+
+  if (toContext == nullptr) {
+    // Calling into JS
+    if (fromContext == nullptr) {
+      // Calling from JS
+      return CallingConvention::JsToJs;
+    } else {
+      // Calling from a context
+      return CallingConvention::CtxToJs;
+    }
+  } else {
+    // Calling into another ctx
+    if (fromContext == nullptr) {
+      // Calling from Js
+      return CallingConvention::JsToCtx;
+    } else {
+      // Calling from Ctx
+      if (fromContext == toContext) {
+        return CallingConvention::WithinCtx;
+      } else {
+        return CallingConvention::CtxToCtx;
+      }
+    }
+  }
 }
 
 } // namespace RNWorklet

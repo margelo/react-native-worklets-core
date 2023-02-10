@@ -38,7 +38,8 @@ std::shared_ptr<JsiWrapper> JsiWrapper::wrap(jsi::Runtime &runtime,
     auto obj = value.asObject(runtime);
     if (obj.isArray(runtime)) {
       retVal = std::make_shared<JsiArrayWrapper>(runtime, value, parent);
-    } else if (JsiPromiseWrapper::isPromise(runtime, obj)) {
+    } else if (!obj.isHostObject(runtime) &&
+               JsiPromiseWrapper::isThenable(runtime, obj)) {
       retVal = std::make_shared<JsiPromiseWrapper>(runtime, value, parent);
     } else {
       retVal = std::make_shared<JsiObjectWrapper>(runtime, value, parent);
@@ -110,6 +111,8 @@ std::string JsiWrapper::toString(jsi::Runtime &runtime) {
   }
   case JsiWrapperType::String:
     return _stringValue;
+  case JsiWrapperType::Promise:
+    return "[Promise]";
   default:
     throw jsi::JSError(runtime, "Value type not supported.");
     return "[Unknown]";

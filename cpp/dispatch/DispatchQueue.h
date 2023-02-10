@@ -17,7 +17,7 @@ class DispatchQueue {
   typedef std::function<void(void)> fp_t;
 
 public:
-  explicit DispatchQueue(std::string name, size_t thread_cnt = 1);
+  explicit DispatchQueue(std::string name);
 
   ~DispatchQueue();
 
@@ -39,7 +39,7 @@ public:
 private:
   std::string name_;
   std::mutex lock_;
-  std::vector<std::thread> threads_;
+  std::thread thread_;
   std::queue<fp_t> q_;
   std::condition_variable cv_;
   bool quit_ = false;
