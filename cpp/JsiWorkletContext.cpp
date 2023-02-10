@@ -301,9 +301,9 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
 
     // Now we are in a situation where we are calling cross context (js -> ctx,
     // ctx -> ctx, ctx -> js)
-
-    // Ensure that the function is a worklet
-    if (workletInvoker == nullptr) {
+    
+     // Ensure that the function is a worklet
+    if (workletInvoker == nullptr && convention != CallingConvention::CtxToJs) {
       throw jsi::JSError(runtime, "In callInContext the function parameter "
                                   "is not a valid worklet and "
                                   "cannot be called between contexts or "
@@ -352,17 +352,23 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
                         std::shared_ptr<PromiseParameter> promise) {
           // Create callback wrapper
           callIntoCorrectContext([callback, workletInvoker, thisWrapper,
-                                  argsWrapper, promise](jsi::Runtime &runtime) {
+                                  argsWrapper, promise, func](jsi::Runtime &runtime) {
             try {
 
               auto args = argsWrapper.getArguments(runtime);
 
-              // Call the worklet
-              auto results = workletInvoker->call(
-                  runtime, thisWrapper->unwrap(runtime),
-                  ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+              jsi::Value result;
+              if (workletInvoker != nullptr) {
+                result = workletInvoker->call(
+                      runtime, thisWrapper->unwrap(runtime),
+                      ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+              } else {
+                result = func->call(
+                       runtime,
+                       ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+              }
 
-              auto retVal = JsiWrapper::wrap(runtime, results);
+              auto retVal = JsiWrapper::wrap(runtime, result);
 
               // Callback with the results
               callback([retVal, promise](jsi::Runtime &runtime) {
