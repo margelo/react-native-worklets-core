@@ -157,7 +157,7 @@ android {
 
   prefab {
     rnworklets {
-      headers "${project.buildDir}/headers/rnworklets/"
+      headers prefabHeadersDir.absolutePath
       libraryName "rnworklets"
     }
   }
