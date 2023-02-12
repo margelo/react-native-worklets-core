@@ -35,7 +35,7 @@ public class WorkletsModule extends com.worklets.WorkletsSpec {
 
   public static native boolean nativeInstall(long jsiRuntimeRef, CallInvokerHolder jsCallInvokerHolder);
 
-  @ReactMethod
+  @ReactMethod(isBlockingSynchronousMethod = true)
   public boolean install() {
     try {
       ReactApplicationContext context = weakReactContext.get();
