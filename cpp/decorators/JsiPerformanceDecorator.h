@@ -1,8 +1,8 @@
 #pragma once
 
+#include <chrono>
 #include <memory>
 #include <string>
-#include <chrono>
 
 #include "JsiBaseDecorator.h"
 #include "JsiHostObject.h"
@@ -43,4 +43,3 @@ public:
   };
 };
 } // namespace RNWorklet
-

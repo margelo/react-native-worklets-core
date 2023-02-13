@@ -90,8 +90,8 @@ public:
    Returns the worklet context for the current thread. If called from the
    JS thread (or any other invalid context thread) nullptr is returned.
    */
-  static JsiWorkletContext *getCurrent(jsi::Runtime& runtime) {
-    auto rtPtr = static_cast<void*>(&runtime);
+  static JsiWorkletContext *getCurrent(jsi::Runtime &runtime) {
+    auto rtPtr = static_cast<void *>(&runtime);
     if (runtimeMappings.count(rtPtr) != 0) {
       return runtimeMappings.at(rtPtr);
     }
@@ -235,12 +235,12 @@ private:
   std::string _name;
   std::function<void(std::function<void()> &&)> _jsCallInvoker;
   std::function<void(std::function<void()> &&)> _workletCallInvoker;
-  size_t _contextId;  
+  size_t _contextId;
   std::thread::id _jsThreadId;
 
   static std::vector<std::shared_ptr<JsiBaseDecorator>> decorators;
   static std::shared_ptr<JsiWorkletContext> defaultInstance;
-  static std::map<void*, JsiWorkletContext *> runtimeMappings;
+  static std::map<void *, JsiWorkletContext *> runtimeMappings;
   static size_t contextIdNumber;
 };
 

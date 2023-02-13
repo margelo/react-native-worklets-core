@@ -25,8 +25,7 @@ const char *GlobalPropertyName = "global";
 
 std::vector<std::shared_ptr<JsiBaseDecorator>> JsiWorkletContext::decorators;
 std::shared_ptr<JsiWorkletContext> JsiWorkletContext::defaultInstance;
-std::map<void*, JsiWorkletContext *>
-    JsiWorkletContext::runtimeMappings;
+std::map<void *, JsiWorkletContext *> JsiWorkletContext::runtimeMappings;
 size_t JsiWorkletContext::contextIdNumber = 1000;
 
 namespace jsi = facebook::jsi;
@@ -60,7 +59,7 @@ void JsiWorkletContext::initialize(
   _jsCallInvoker = jsCallInvoker;
   _workletCallInvoker = workletCallInvoker;
   _contextId = ++contextIdNumber;
-  
+
   _jsThreadId = std::this_thread::get_id();
   runtimeMappings.emplace(&_workletRuntime, this);
 }
@@ -286,8 +285,8 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
 
     // Now we are in a situation where we are calling cross context (js -> ctx,
     // ctx -> ctx, ctx -> js)
-    
-     // Ensure that the function is a worklet
+
+    // Ensure that the function is a worklet
     if (workletInvoker == nullptr && convention != CallingConvention::CtxToJs) {
       throw jsi::JSError(runtime, "In callInContext the function parameter "
                                   "is not a valid worklet and "
@@ -337,7 +336,8 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
                         std::shared_ptr<PromiseParameter> promise) {
           // Create callback wrapper
           callIntoCorrectContext([callback, workletInvoker, thisWrapper,
-                                  argsWrapper, promise, func](jsi::Runtime &runtime) {
+                                  argsWrapper, promise,
+                                  func](jsi::Runtime &runtime) {
             try {
 
               auto args = argsWrapper.getArguments(runtime);
@@ -345,12 +345,11 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
               jsi::Value result;
               if (workletInvoker != nullptr) {
                 result = workletInvoker->call(
-                      runtime, thisWrapper->unwrap(runtime),
-                      ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+                    runtime, thisWrapper->unwrap(runtime),
+                    ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
               } else {
-                result = func->call(
-                       runtime,
-                       ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+                result = func->call(runtime, ArgumentsWrapper::toArgs(args),
+                                    argsWrapper.getCount());
               }
 
               auto retVal = JsiWrapper::wrap(runtime, result);

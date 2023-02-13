@@ -223,8 +223,8 @@ public:
 
       // Call the unwrapped function
       if (thisValue.isObject()) {
-        return workletFunction->callWithThis(runtime, thisValue.asObject(runtime),
-                                             arguments, count);
+        return workletFunction->callWithThis(
+            runtime, thisValue.asObject(runtime), arguments, count);
       } else {
         return workletFunction->call(runtime, arguments, count);
       }
