@@ -1,33 +1,38 @@
 # react-native-worklets
 
-Worklet runner for React Native
+[Worklet](docs/WORKLETS.md) runner for React Native.
+
+```js
+const worklet = () => {
+  'worklet'
+  return Math.random()
+}
+```
 
 ## Installation
 
-```sh
-npm install react-native-worklets
-```
-
-Remember to add the babel plugin to your babel config:
-
-```js
-module.exports = {
-  plugins: ["react-native-worklets/plugin"],
-};
-```
+1. Install the library from npm:
+    ```sh
+    yarn add react-native-worklets
+    ```
+2. Add the babel plugin to your `babel.config.js`:
+    ```js
+    module.exports = {
+      plugins: [
+        ["react-native-worklets/plugin"],
+        // ...
+      ],
+      // ...
+    };
+    ```
+3. Restart Metro with clean cache:
+    ```sh
+    yarn start --reset-cache
+    ```
 
 ## Usage
 
-```js
-const a = (b: number) => {
-  "worklet";
-  return b + 1;
-};
-
-const worklet = Worklets.createRunInContextFn(a);
-const result = await worklet(100);
-assert(result === 101);
-```
+See [USAGE.md](docs/USAGE.md)
 
 ## Contributing
 
