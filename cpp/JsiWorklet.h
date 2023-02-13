@@ -49,7 +49,7 @@ private:
   */
 class JsThisWrapper {
 public:
-  JsThisWrapper(jsi::Runtime &runtime, const jsi::Value &thisValue) {
+  JsThisWrapper(jsi::Runtime &runtime, const jsi::Object &thisValue) {
     _oldThis = runtime.global().getProperty(runtime, PropNameJsThis);
     runtime.global().setProperty(runtime, PropNameJsThis, thisValue);
     _runtime = &runtime;
@@ -217,7 +217,9 @@ public:
                                            arguments, count);
     } else {
       // Prepare jsThis
-      JsThisWrapper thisWrapper(runtime, unwrappedClosure);
+      jsi::Object jsThis(runtime);
+      jsThis.setProperty(runtime, PropNameWorkletClosure, unwrappedClosure);
+      JsThisWrapper thisWrapper(runtime, jsThis);
 
       // Call the unwrapped function
       if (thisValue.isObject()) {
