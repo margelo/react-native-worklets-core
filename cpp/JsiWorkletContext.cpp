@@ -15,7 +15,6 @@
 #include <thread>
 #include <utility>
 #include <vector>
-#include <pthread/pthread.h>
 
 #include <jsi/jsi.h>
 
@@ -26,7 +25,7 @@ const char *GlobalPropertyName = "global";
 
 std::vector<std::shared_ptr<JsiBaseDecorator>> JsiWorkletContext::decorators;
 std::shared_ptr<JsiWorkletContext> JsiWorkletContext::defaultInstance;
-std::map<uint64_t, JsiWorkletContext *> JsiWorkletContext::threadContexts;
+std::map<thread_id_t, JsiWorkletContext *> JsiWorkletContext::threadContexts;
 size_t JsiWorkletContext::contextIdNumber = 1000;
 
 namespace jsi = facebook::jsi;
@@ -188,10 +187,14 @@ void JsiWorkletContext::applyDecorators(
   cond.wait(lock, [&]() { return isFinished; });
 }
 
-uint64_t JsiWorkletContext::getCurrentThreadId() {
+thread_id_t JsiWorkletContext::getCurrentThreadId() {
+#ifdef __APPLE__
   uint64_t tid;
   pthread_threadid_np(pthread_self(), &tid);
   return tid;
+#else
+  return std::this_thread::get_id();
+#endif
 }
 
 jsi::HostFunctionType

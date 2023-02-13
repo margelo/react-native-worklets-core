@@ -14,6 +14,14 @@
 
 #include <jsi/jsi.h>
 
+#ifdef __APPLE__
+#include <pthread/pthread.h>
+typedef uint64_t thread_id_t;
+#else
+#include <thread>
+typedef std::thread::id thread_id_t;
+#endif
+
 namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
@@ -233,7 +241,7 @@ private:
   /**
    Returns the ID of the current calling Thread.
   */
-  uint64_t getCurrentThreadId();
+  thread_id_t getCurrentThreadId();
 
   jsi::Runtime *_jsRuntime;
   std::unique_ptr<jsi::Runtime> _workletRuntime;
@@ -246,7 +254,7 @@ private:
 
   static std::vector<std::shared_ptr<JsiBaseDecorator>> decorators;
   static std::shared_ptr<JsiWorkletContext> defaultInstance;
-  static std::map<uint64_t, JsiWorkletContext *> threadContexts;
+  static std::map<thread_id_t, JsiWorkletContext *> threadContexts;
   static size_t contextIdNumber;
 };
 
