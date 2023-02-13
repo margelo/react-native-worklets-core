@@ -38,7 +38,7 @@ worklet()
 
 ### Parameters and Results
 
-Worklets can take parameters and return results:
+Worklets can take parameters and return results. Results are returned as promises.
 
 ```js
 const fibonacci = (num: number): number => {
