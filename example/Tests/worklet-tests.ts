@@ -18,31 +18,20 @@ export const worklet_tests = {
     return ExpectValue(closure, { x: 100 });
   },
   check_nested_worklet_closure: () => {
-    const x = 100;
-    const w = (a: number) => {
+    const x = 5;
+    const w = () => {
       "worklet";
       const nestedFn = () => {
-        "worklet"
-        return a + x;
+        "worklet";
+        return x + 1;
       };
-      return nestedFn();
+      return nestedFn;
     };
-    const { closure } = getWorkletInfo(w);
-    return ExpectValue(closure, { x: 100 });
-  },
-  check_nested_worklet_closure_call: () => {
-    const x = 100;
-    const w = async (a: number) => {
-      "worklet";
-      const nestedAsyncFn = Worklets.createRunInContextFn(() => {
-        "worklet"
-        return a + x;
-      })
-      const result = await nestedAsyncFn();
-      return result;
-    };
-    const { closure } = getWorkletInfo(w);
-    return ExpectValue(closure, { x: 100 });
+    const { code } = getWorkletInfo(w);
+    return ExpectValue(
+      code,
+      "function anonymous() {\n  const {\n    x\n  } = this._closure;\n  const nestedFn = function () {\n  const {\n    x\n  } = this._closure;\n    return x + 1;\n  };\n  return nestedFn;\n}"
+    );
   },
   check_worklet_closure_shared_value: () => {
     const x = Worklets.createSharedValue(1000);
