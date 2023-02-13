@@ -17,7 +17,7 @@ export const worklet_tests = {
     const { closure } = getWorkletInfo(w);
     return ExpectValue(closure, { x: 100 });
   },
-  check_nested_worklet_closure: () => {
+  check_nested_worklet_code: () => {
     const x = 5;
     const w = () => {
       "worklet";
@@ -31,6 +31,22 @@ export const worklet_tests = {
     return ExpectValue(
       code,
       "function anonymous() {\n  const {\n    x\n  } = this._closure;\n  const nestedFn = function () {\n  const {\n    x\n  } = this._closure;\n    return x + 1;\n  };\n  return nestedFn;\n}"
+    );
+  },
+  check_recursive_worklet_code: () => {
+    const a = 1;
+    function w(t: number): number {
+      "worklet";
+      if (t > 0) {
+        return a + w(t - 1);
+      } else {
+        return 0;
+      }
+    }
+    const { code } = getWorkletInfo(w);
+    return ExpectValue(
+      code,
+      "function w(t) {\n  const w = this._recur;\n  const {\n    a\n  } = this._closure;\n  if (t > 0) {\n    return a + w(t - 1);\n  } else {\n    return 0;\n  }\n}"
     );
   },
   check_worklet_closure_shared_value: () => {
