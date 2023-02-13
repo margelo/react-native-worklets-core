@@ -241,7 +241,7 @@ private:
   /**
    Returns the ID of the current calling Thread.
   */
-  thread_id_t getCurrentThreadId();
+  static thread_id_t getCurrentThreadId();
 
   jsi::Runtime *_jsRuntime;
   std::unique_ptr<jsi::Runtime> _workletRuntime;
