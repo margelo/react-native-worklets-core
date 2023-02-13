@@ -91,7 +91,7 @@ public:
    JS thread (or any other invalid context thread) nullptr is returned.
    */
   static JsiWorkletContext *getCurrent() {
-    auto id = std::this_thread::get_id();
+    auto id = getCurrentThreadId();
     if (threadContexts.count(id) != 0) {
       return threadContexts.at(id);
     }
@@ -230,18 +230,23 @@ private:
   void applyDecorators(
       const std::vector<std::shared_ptr<JsiBaseDecorator>> &decorators);
 
+  /**
+   Returns the ID of the current calling Thread.
+  */
+  uint64_t getCurrentThreadId();
+
   jsi::Runtime *_jsRuntime;
   std::unique_ptr<jsi::Runtime> _workletRuntime;
   std::string _name;
   std::function<void(std::function<void()> &&)> _jsCallInvoker;
   std::function<void(std::function<void()> &&)> _workletCallInvoker;
   size_t _contextId;
-  std::thread::id _threadId;
-  std::thread::id _jsThreadId;
+  uint64_t _threadId;
+  uint64_t _jsThreadId;
 
   static std::vector<std::shared_ptr<JsiBaseDecorator>> decorators;
   static std::shared_ptr<JsiWorkletContext> defaultInstance;
-  static std::map<std::thread::id, JsiWorkletContext *> threadContexts;
+  static std::map<uint64_t, JsiWorkletContext *> threadContexts;
   static size_t contextIdNumber;
 };
 

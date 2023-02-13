@@ -15,6 +15,7 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include <pthread/pthread.h>
 
 #include <jsi/jsi.h>
 
@@ -25,8 +26,7 @@ const char *GlobalPropertyName = "global";
 
 std::vector<std::shared_ptr<JsiBaseDecorator>> JsiWorkletContext::decorators;
 std::shared_ptr<JsiWorkletContext> JsiWorkletContext::defaultInstance;
-std::map<std::thread::id, JsiWorkletContext *>
-    JsiWorkletContext::threadContexts;
+std::map<uint64_t, JsiWorkletContext *> JsiWorkletContext::threadContexts;
 size_t JsiWorkletContext::contextIdNumber = 1000;
 
 namespace jsi = facebook::jsi;
@@ -48,7 +48,7 @@ JsiWorkletContext::JsiWorkletContext(
 
 JsiWorkletContext::~JsiWorkletContext() {
   // Remove from thread contexts
-  threadContexts.erase(std::this_thread::get_id());
+  threadContexts.erase(getCurrentThreadId());
 }
 
 void JsiWorkletContext::initialize(
@@ -60,7 +60,7 @@ void JsiWorkletContext::initialize(
   _jsCallInvoker = jsCallInvoker;
   _workletCallInvoker = workletCallInvoker;
   _contextId = ++contextIdNumber;
-  _jsThreadId = std::this_thread::get_id();
+  _jsThreadId = getCurrentThreadId();
 
   // Initialize thread context - we save a pointer to this context
   // in the static threadContexts map so that we later can look
@@ -70,7 +70,7 @@ void JsiWorkletContext::initialize(
   bool isFinished = false;
   std::unique_lock<std::mutex> lock(mu);
   _workletCallInvoker([&isFinished, &cond, this]() {
-    this->_threadId = std::this_thread::get_id();
+    this->_threadId = this->getCurrentThreadId();
     threadContexts.emplace(this->_threadId, this);
     isFinished = true;
     cond.notify_one();
@@ -131,7 +131,7 @@ void JsiWorkletContext::invokeOnJsThread(
   _jsCallInvoker([fp = std::move(fp), weakSelf = weak_from_this()]() {
     auto self = weakSelf.lock();
     if (self) {
-      assert(self->_jsThreadId == std::this_thread::get_id());
+      assert(self->_jsThreadId == self->getCurrentThreadId());
       fp(*self->getJsRuntime());
     }
   });
@@ -147,7 +147,7 @@ void JsiWorkletContext::invokeOnWorkletThread(
   _workletCallInvoker([fp = std::move(fp), weakSelf = weak_from_this()]() {
     auto self = weakSelf.lock();
     if (self) {
-      assert(self->_threadId == std::this_thread::get_id());
+      assert(self->_threadId == self->getCurrentThreadId());
       fp(self.get(), self->getWorkletRuntime());
     }
   });
@@ -186,6 +186,12 @@ void JsiWorkletContext::applyDecorators(
 
   // Wait untill the blocking code as finished
   cond.wait(lock, [&]() { return isFinished; });
+}
+
+uint64_t JsiWorkletContext::getCurrentThreadId() {
+  uint64_t tid;
+  pthread_threadid_np(pthread_self(), &tid);
+  return tid;
 }
 
 jsi::HostFunctionType
@@ -301,7 +307,7 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
 
     // Now we are in a situation where we are calling cross context (js -> ctx,
     // ctx -> ctx, ctx -> js)
-    
+
      // Ensure that the function is a worklet
     if (workletInvoker == nullptr && convention != CallingConvention::CtxToJs) {
       throw jsi::JSError(runtime, "In callInContext the function parameter "
