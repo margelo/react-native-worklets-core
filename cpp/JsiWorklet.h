@@ -189,7 +189,7 @@ public:
   }
 
   /**
-   Calls the
+   Calls the Worklet function with the given arguments.
    */
   jsi::Value call(std::shared_ptr<jsi::Function> workletFunction,
                   jsi::Runtime &runtime, const jsi::Value &thisValue,

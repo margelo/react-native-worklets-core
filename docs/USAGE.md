@@ -70,7 +70,7 @@ Then, from C++ you can convert Functions to Worklets and call them on any Thread
     #include <JsiWorkletContext.h>
     #include <JsiWorklet.h>
     ```
-2. Create a Worklet Context:
+2. On the main JavaScript Thread (`mqt_js`), create your Worklet Context:
     ```cpp
     auto jsCallInvoker = ... // <-- facebook::react::CallInvoker
     auto customThread = ... // <-- your custom Thread
