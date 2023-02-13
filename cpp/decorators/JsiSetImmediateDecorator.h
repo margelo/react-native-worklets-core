@@ -76,7 +76,7 @@ public:
             }
           };
 
-          auto context = JsiWorkletContext::getCurrent();
+          auto context = JsiWorkletContext::getCurrent(runtime);
           if (context) {
             // Invoke function on context thread / runtime
             context->invokeOnWorkletThread(
