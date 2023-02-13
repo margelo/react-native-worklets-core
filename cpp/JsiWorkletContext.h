@@ -249,8 +249,8 @@ private:
   std::function<void(std::function<void()> &&)> _jsCallInvoker;
   std::function<void(std::function<void()> &&)> _workletCallInvoker;
   size_t _contextId;
-  uint64_t _threadId;
-  uint64_t _jsThreadId;
+  thread_id_t _threadId;
+  thread_id_t _jsThreadId;
 
   static std::vector<std::shared_ptr<JsiBaseDecorator>> decorators;
   static std::shared_ptr<JsiWorkletContext> defaultInstance;
