@@ -56,7 +56,10 @@ void DispatchQueue::dispatch_thread_handler(void) {
       // unlock now that we're done messing with the queue
       lock.unlock();
 
-      op();
+      {
+        auto opCopyThatWillBeDestroyedBeforeWeGetLock = std::move(op);
+        opCopyThatWillBeDestroyedBeforeWeGetLock();
+      }
 
       lock.lock();
     }
