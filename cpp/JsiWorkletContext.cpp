@@ -61,7 +61,7 @@ void JsiWorkletContext::initialize(
   _contextId = ++contextIdNumber;
 
   _jsThreadId = std::this_thread::get_id();
-  runtimeMappings.emplace(&_workletRuntime, this);
+  runtimeMappings.emplace(&getWorkletRuntime(), this);
 }
 
 void JsiWorkletContext::initialize(
