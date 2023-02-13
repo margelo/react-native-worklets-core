@@ -153,6 +153,11 @@ template <typename... Args> void JsiWorkletContext::decorate(Args &&...args) {
 
 void JsiWorkletContext::applyDecorators(
     const std::vector<std::shared_ptr<JsiBaseDecorator>> &decorators) {
+  // Initialize on JS thread
+  for (size_t i = 0; i < decorators.size(); ++i) {
+    decorators[i]->initialize(*getJsRuntime());
+  }
+
   std::mutex mu;
   std::condition_variable cond;
   bool isFinished = false;
