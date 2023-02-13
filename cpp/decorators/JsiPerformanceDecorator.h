@@ -24,7 +24,7 @@ public:
                         .count();
 
     constexpr double NANOSECONDS_IN_MILLISECOND = 1000000.0;
-    return jsi::Value::undefined(duration / NANOSECONDS_IN_MILLISECOND);
+    return jsi::Value(duration / NANOSECONDS_IN_MILLISECOND);
   }
 
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiPerformanceImpl, now))
