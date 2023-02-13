@@ -48,7 +48,24 @@
     "android"
   ],
   "repository": "https://github.com/chrfalch/react-native-worklets",
-  "author": "Chrisitan Falch <christian.falch@gmail.com> (https://github.com/chrfalch)",
+  "author": "Christian Falch <christian.falch@gmail.com> (https://github.com/chrfalch)",
+  "contributors": [
+    {
+      "name": "Marc Rousavy",
+      "email": "marc@margelo.io",
+      "url": "https://github.com/mrousavy"
+    },
+    {
+      "name": "Szymon Kapala",
+      "email": "szymon@margelo.io",
+      "url": "https://github.com/Szymon20000"
+    },
+    {
+      "name": "Janic Duplessis",
+      "email": "janic@margelo.io",
+      "url": "https://github.com/janicduplessis"
+    }
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/chrfalch/react-native-worklets/issues"
