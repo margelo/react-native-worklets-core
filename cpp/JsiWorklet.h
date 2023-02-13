@@ -15,6 +15,8 @@ static const char *PropNameWorkletHash = "__workletHash";
 static const char *PropNameWorkletInitData = "__initData";
 static const char *PropNameWorkletInitDataCode = "code";
 
+static const char *PropNameJsThis = "jsThis";
+
 static const char *PropNameWorkletInitDataLocation = "location";
 static const char *PropNameWorkletInitDataSourceMap = "__sourceMap";
 
@@ -40,6 +42,25 @@ public:
 private:
   std::string _message;
   std::string _stack;
+};
+
+/**
+  Class for wrapping jsThis when executing worklets
+  */
+class JsThisWrapper {
+public:
+  JsThisWrapper(jsi::Runtime &runtime, const jsi::Value &thisValue) {
+    _oldThis = runtime.global().getProperty(runtime, PropNameJsThis);
+    runtime.global().setProperty(runtime, PropNameJsThis, thisValue);
+    _runtime = &runtime;
+  }
+  ~JsThisWrapper() {
+    _runtime->global().setProperty(*_runtime, PropNameJsThis, _oldThis);
+  }
+
+private:
+  jsi::Value _oldThis;
+  jsi::Runtime *_runtime;
 };
 
 /**
@@ -177,26 +198,35 @@ public:
     // Unwrap closure
     auto unwrappedClosure = JsiWrapper::unwrap(runtime, _closureWrapper);
 
-    // Prepare return value
-    jsi::Value retVal;
+    if (_isRea30Compat) {
 
-    // Resolve this Value
-    std::unique_ptr<jsi::Object> resolvedThisValue;
-    if (!thisValue.isObject()) {
-      resolvedThisValue = std::make_unique<jsi::Object>(runtime);
-    } else {
-      resolvedThisValue =
-          std::make_unique<jsi::Object>(thisValue.asObject(runtime));
-    }
+      // Resolve this Value
+      std::unique_ptr<jsi::Object> resolvedThisValue;
+      if (!thisValue.isObject()) {
+        resolvedThisValue = std::make_unique<jsi::Object>(runtime);
+      } else {
+        resolvedThisValue =
+            std::make_unique<jsi::Object>(thisValue.asObject(runtime));
+      }
 
-    resolvedThisValue->setProperty(runtime, PropNameWorkletClosure,
-                                   unwrappedClosure);
+      resolvedThisValue->setProperty(runtime, PropNameWorkletClosure,
+                                     unwrappedClosure);
 
-    // Call the unwrapped function
-    retVal = workletFunction->callWithThis(runtime, *resolvedThisValue,
+      // Call the unwrapped function
+      return workletFunction->callWithThis(runtime, *resolvedThisValue,
                                            arguments, count);
+    } else {
+      // Prepare jsThis
+      JsThisWrapper thisWrapper(runtime, unwrappedClosure);
 
-    return retVal;
+      // Call the unwrapped function
+      if (thisValue.isObject()) {
+        return workletFunction->callWithThis(runtime, thisValue.asObject(runtime),
+                                             arguments, count);
+      } else {
+        return workletFunction->call(runtime, arguments, count);
+      }
+    }
   }
 
 private:
@@ -247,17 +277,24 @@ private:
 
       // Set location
       _location = locationProp.asString(runtime).utf8(runtime);
-      
+
       // Let us try to install the function in the worklet context
       _code = initDataProp.asObject(runtime)
                   .getProperty(runtime, PropNameWorkletInitDataCode)
                   .asString(runtime)
                   .utf8(runtime);
 
+      // Set compat level
+      _isRea30Compat = true;
+
     } else {
       // try old way
-      _code = func->getProperty(runtime, PropNameWorkletAsString).asString(runtime).utf8(runtime);
-      _location = func->getProperty(runtime, PropNameWorkletLocation).asString(runtime).utf8(runtime);
+      _code = func->getProperty(runtime, PropNameWorkletAsString)
+                  .asString(runtime)
+                  .utf8(runtime);
+      _location = func->getProperty(runtime, PropNameWorkletLocation)
+                      .asString(runtime)
+                      .utf8(runtime);
     }
 
     // This is a worklet
@@ -286,6 +323,7 @@ private:
   std::string _code = "";
   std::string _name = "fn";
   std::string _hash;
+  bool _isRea30Compat = false;
   double _workletHash = 0;
 };
 
