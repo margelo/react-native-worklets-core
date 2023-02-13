@@ -1,0 +1,46 @@
+#pragma once
+
+#include <memory>
+#include <string>
+#include <chrono>
+
+#include "JsiBaseDecorator.h"
+#include "JsiHostObject.h"
+#include "JsiWrapper.h"
+#include <jsi/jsi.h>
+
+namespace RNWorklet {
+
+namespace jsi = facebook::jsi;
+
+static const char *PropNamePerformance = "performance";
+
+class JsiPerformanceImpl : public JsiHostObject {
+public:
+  JSI_HOST_FUNCTION(now) {
+    auto time = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                        time.time_since_epoch())
+                        .count();
+
+    constexpr double NANOSECONDS_IN_MILLISECOND = 1000000.0;
+    return jsi::Value::undefined(duration / NANOSECONDS_IN_MILLISECOND);
+  }
+
+  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiPerformanceImpl, now))
+};
+
+/**
+ Decorator for performance.now
+ */
+class JsiPerformanceDecorator : public JsiBaseDecorator {
+public:
+  void decorateRuntime(jsi::Runtime &runtime) override {
+    auto performanceObj = std::make_shared<JsiPerformanceImpl>();
+    runtime.global().setProperty(
+        runtime, PropNamePerformance,
+        jsi::Object::createFromHostObject(runtime, performanceObj));
+  };
+};
+} // namespace RNWorklet
+
