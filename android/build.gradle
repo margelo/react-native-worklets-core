@@ -79,7 +79,7 @@ android {
       cmake {
         arguments "-DANDROID_STL=c++_shared",
                 "-DANDROID_TOOLCHAIN=clang",
-                "-DREACT_NATIVE_DIR=${nodeModules}/react-native",
+                "-DNODE_MODULES_DIR=${nodeModules}",
                 "-DJS_RUNTIME=${JS_RUNTIME}"
         abiFilters (*reactNativeArchitectures())
       }
@@ -151,7 +151,7 @@ android {
       "**/libjscexecutor.so",
     ]
   }
-  
+
   buildFeatures {
     prefabPublishing true
   }

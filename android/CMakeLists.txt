@@ -10,7 +10,6 @@ endif()
 
 set(PACKAGE_NAME "rnworklets")
 
-
 # Pre-set Folly flags from React Native core
 include("${NODE_MODULES_DIR}/react-native/ReactAndroid/cmake-utils/folly-flags.cmake")
 add_compile_options(${folly_FLAGS})
@@ -42,10 +41,10 @@ target_include_directories(
   ../cpp/dispatch
   ../cpp/sharedvalues
   ../cpp/wrappers
-  "${REACT_NATIVE_DIR}/ReactAndroid/src/main/jni/react/turbomodule"
-  "${REACT_NATIVE_DIR}/ReactCommon"
-  "${REACT_NATIVE_DIR}/ReactCommon/callinvoker"
-  "${REACT_NATIVE_DIR}/ReactCommon/runtimeexecutor"
+  "${NODE_MODULES_DIR}/react-native/ReactAndroid/src/main/jni/react/turbomodule"
+  "${NODE_MODULES_DIR}/react-native/ReactCommon"
+  "${NODE_MODULES_DIR}/react-native/ReactCommon/callinvoker"
+  "${NODE_MODULES_DIR}/react-native/ReactCommon/runtimeexecutor"
 )
 
 # build shared lib
