@@ -8,9 +8,9 @@
 
 #include "JsiBaseDecorator.h"
 #include "JsiConsoleDecorator.h"
-#include "JsiPerformanceDecorator.h"
 #include "JsiHostObject.h"
 #include "JsiJsDecorator.h"
+#include "JsiPerformanceDecorator.h"
 #include "JsiSetImmediateDecorator.h"
 #include "JsiSharedValue.h"
 #include "JsiWorklet.h"
@@ -57,7 +57,8 @@ std::shared_ptr<JsiWorkletApi> JsiWorkletApi::getInstance() {
     JsiWorkletContext::addDecorator(
         std::make_shared<JsiPerformanceDecorator>());
 
-    // In JS for now: JsiWorkletContext::addDecorator(std::make_shared<JsiConsoleDecorator>());
+    // In JS for now:
+    // JsiWorkletContext::addDecorator(std::make_shared<JsiConsoleDecorator>());
   }
   return instance;
 }

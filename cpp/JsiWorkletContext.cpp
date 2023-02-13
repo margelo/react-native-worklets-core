@@ -25,8 +25,7 @@ const char *GlobalPropertyName = "global";
 
 std::vector<std::shared_ptr<JsiBaseDecorator>> JsiWorkletContext::decorators;
 std::shared_ptr<JsiWorkletContext> JsiWorkletContext::defaultInstance;
-std::map<std::thread::id, JsiWorkletContext *>
-    JsiWorkletContext::threadContexts;
+std::map<void *, JsiWorkletContext *> JsiWorkletContext::runtimeMappings;
 size_t JsiWorkletContext::contextIdNumber = 1000;
 
 namespace jsi = facebook::jsi;
@@ -48,7 +47,7 @@ JsiWorkletContext::JsiWorkletContext(
 
 JsiWorkletContext::~JsiWorkletContext() {
   // Remove from thread contexts
-  threadContexts.erase(std::this_thread::get_id());
+  runtimeMappings.erase(&_workletRuntime);
 }
 
 void JsiWorkletContext::initialize(
@@ -60,23 +59,9 @@ void JsiWorkletContext::initialize(
   _jsCallInvoker = jsCallInvoker;
   _workletCallInvoker = workletCallInvoker;
   _contextId = ++contextIdNumber;
-  _jsThreadId = std::this_thread::get_id();
 
-  // Initialize thread context - we save a pointer to this context
-  // in the static threadContexts map so that we later can look
-  // up the correct context from a given thread.
-  std::mutex mu;
-  std::condition_variable cond;
-  bool isFinished = false;
-  std::unique_lock<std::mutex> lock(mu);
-  _workletCallInvoker([&isFinished, &cond, this]() {
-    this->_threadId = std::this_thread::get_id();
-    threadContexts.emplace(this->_threadId, this);
-    isFinished = true;
-    cond.notify_one();
-  });
-  // Wait untill the blocking code as finished
-  cond.wait(lock, [&]() { return isFinished; });
+  _jsThreadId = std::this_thread::get_id();
+  runtimeMappings.emplace(&_workletRuntime, this);
 }
 
 void JsiWorkletContext::initialize(
@@ -147,7 +132,6 @@ void JsiWorkletContext::invokeOnWorkletThread(
   _workletCallInvoker([fp = std::move(fp), weakSelf = weak_from_this()]() {
     auto self = weakSelf.lock();
     if (self) {
-      assert(self->_threadId == std::this_thread::get_id());
       fp(self.get(), self->getWorkletRuntime());
     }
   });
@@ -223,7 +207,7 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
   return [workletInvoker, func,
           ctx](jsi::Runtime &runtime, const jsi::Value &thisValue,
                const jsi::Value *arguments, size_t count) -> jsi::Value {
-    auto callingCtx = getCurrent();
+    auto callingCtx = getCurrent(runtime);
     auto convention = getCallingConvention(callingCtx, ctx);
 
     // Start by wrapping the arguments
@@ -301,8 +285,8 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
 
     // Now we are in a situation where we are calling cross context (js -> ctx,
     // ctx -> ctx, ctx -> js)
-    
-     // Ensure that the function is a worklet
+
+    // Ensure that the function is a worklet
     if (workletInvoker == nullptr && convention != CallingConvention::CtxToJs) {
       throw jsi::JSError(runtime, "In callInContext the function parameter "
                                   "is not a valid worklet and "
@@ -320,7 +304,7 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
                 [func](JsiWorkletContext *, jsi::Runtime &rt) { func(rt); });
             break;
           case CallingConvention::CtxToJs:
-            JsiWorkletContext::getCurrent()->invokeOnJsThread(
+            JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
                 [func](jsi::Runtime &rt) { func(rt); });
             break;
           default:
@@ -352,7 +336,8 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
                         std::shared_ptr<PromiseParameter> promise) {
           // Create callback wrapper
           callIntoCorrectContext([callback, workletInvoker, thisWrapper,
-                                  argsWrapper, promise, func](jsi::Runtime &runtime) {
+                                  argsWrapper, promise,
+                                  func](jsi::Runtime &runtime) {
             try {
 
               auto args = argsWrapper.getArguments(runtime);
@@ -360,12 +345,11 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
               jsi::Value result;
               if (workletInvoker != nullptr) {
                 result = workletInvoker->call(
-                      runtime, thisWrapper->unwrap(runtime),
-                      ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+                    runtime, thisWrapper->unwrap(runtime),
+                    ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
               } else {
-                result = func->call(
-                       runtime,
-                       ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+                result = func->call(runtime, ArgumentsWrapper::toArgs(args),
+                                    argsWrapper.getCount());
               }
 
               auto retVal = JsiWrapper::wrap(runtime, result);
@@ -420,7 +404,7 @@ jsi::HostFunctionType
 JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
                                  const jsi::Value *maybeFunc) {
   auto rtPtr = &runtime;
-  auto ctx = JsiWorkletContext::getCurrent();
+  auto ctx = JsiWorkletContext::getCurrent(runtime);
 
   // Create host function
   return [rtPtr, ctx,

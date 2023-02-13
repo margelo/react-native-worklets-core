@@ -210,7 +210,7 @@ void JsiPromiseWrapper::setValue(jsi::Runtime &runtime,
 
   auto obj = value.asObject(runtime);
 
-  auto callingContext = JsiWorkletContext::getCurrent();
+  auto callingContext = JsiWorkletContext::getCurrent(runtime);
 
   auto maybeThenFunc = obj.getProperty(runtime, ThenPropName);
   if (!maybeThenFunc.isObject() ||

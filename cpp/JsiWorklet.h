@@ -223,8 +223,8 @@ public:
 
       // Call the unwrapped function
       if (thisValue.isObject()) {
-        return workletFunction->callWithThis(runtime, thisValue.asObject(runtime),
-                                             arguments, count);
+        return workletFunction->callWithThis(
+            runtime, thisValue.asObject(runtime), arguments, count);
       } else {
         return workletFunction->call(runtime, arguments, count);
       }
@@ -367,7 +367,7 @@ public:
                   const jsi::Value *arguments, size_t count) {
     if (_workletFunction == nullptr) {
       _workletFunction = _worklet->createWorkletJsFunction(runtime);
-      auto owningContext = JsiWorkletContext::getCurrent();
+      auto owningContext = JsiWorkletContext::getCurrent(runtime);
       if (owningContext) {
         _owningContext = owningContext->shared_from_this();
       } else {
