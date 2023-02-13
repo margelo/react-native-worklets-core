@@ -1,8 +1,6 @@
 import type { TurboModule } from "react-native";
 import { TurboModuleRegistry } from "react-native";
 
-import { addDecorators } from "./decorators";
-
 export interface Spec extends TurboModule {
   install(): boolean;
 }
@@ -29,10 +27,8 @@ if (global.Worklets === undefined || global.Worklets == null) {
       );
     } else {
       console.log("Worklets loaded successfully");
-      addDecorators();
     }
   }
 } else {
   console.log("react-native-worklets installed.");
-  addDecorators();
 }
