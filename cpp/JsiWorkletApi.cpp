@@ -53,7 +53,8 @@ std::shared_ptr<JsiWorkletApi> JsiWorkletApi::getInstance() {
     // Add default decorators
     JsiWorkletContext::addDecorator(
         std::make_shared<JsiSetImmediateDecorator>());
-    JsiWorkletContext::addDecorator(std::make_shared<JsiConsoleDecorator>());
+    
+    // In JS for now: JsiWorkletContext::addDecorator(std::make_shared<JsiConsoleDecorator>());
   }
   return instance;
 }
