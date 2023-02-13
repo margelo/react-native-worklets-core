@@ -10,6 +10,11 @@ endif()
 
 set(PACKAGE_NAME "rnworklets")
 
+
+# Pre-set Folly flags from React Native core
+include("${NODE_MODULES_DIR}/react-native/ReactAndroid/cmake-utils/folly-flags.cmake")
+add_compile_options(${folly_FLAGS})
+
 # Consume shared libraries and headers from prefabs
 find_package(fbjni REQUIRED CONFIG)
 find_package(ReactAndroid REQUIRED CONFIG)
