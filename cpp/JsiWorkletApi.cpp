@@ -12,6 +12,11 @@
 #include "JsiWorklet.h"
 #include "JsiWorkletContext.h"
 
+#include "JsiJsDecorator.h"
+#include "JsiPerformanceDecorator.h"
+#include "JsiSetImmediateDecorator.h"
+#include "JsiConsoleDecorator.h"
+
 namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
@@ -47,6 +52,10 @@ void JsiWorkletApi::addDecorator(std::shared_ptr<JsiBaseDecorator> decorator) {
 std::shared_ptr<JsiWorkletApi> JsiWorkletApi::getInstance() {
   if (instance == nullptr) {
     instance = std::make_shared<JsiWorkletApi>();
+    instance->addDecorator(std::make_shared<JsiSetImmediateDecorator>());
+    instance->addDecorator(std::make_shared<JsiPerformanceDecorator>());
+    // in JS for now:
+    // instance->addDecorator(std::make_shared<JsiConsoleDecorator>());
   }
   return instance;
 }

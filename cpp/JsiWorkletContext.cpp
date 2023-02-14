@@ -60,7 +60,7 @@ void JsiWorkletContext::initialize(
   _contextId = ++contextIdNumber;
 
   _jsThreadId = std::this_thread::get_id();
-  runtimeMappings.emplace(&_workletRuntime, this);
+  runtimeMappings.emplace(&getWorkletRuntime(), this);
 }
 
 void JsiWorkletContext::initialize(
@@ -92,15 +92,6 @@ jsi::Runtime &JsiWorkletContext::getWorkletRuntime() {
 
     // Install the WorkletAPI into the new runtime
     JsiWorkletApi::installApi(*_workletRuntime);
-
-    // Run decorators if we're not the singleton main context - no need to
-    // do this in the worklet thread because we should already be in the
-    // worklet thread now.
-    if (JsiWorkletContext::getDefaultInstance().get() != this) {
-      for (size_t i = 0; i < _decorators.size(); ++i) {
-        _decorators[i]->decorateRuntime(getWorkletRuntime());
-      }
-    }
   }
 
   return *_workletRuntime;
@@ -139,7 +130,7 @@ void JsiWorkletContext::invokeOnWorkletThread(
 void JsiWorkletContext::addDecorator(
     std::shared_ptr<JsiBaseDecorator> decorator) {
   _decorators.push_back(decorator);
-  
+
   // Initialize on JS thread
   decorator->initialize(*getJsRuntime());
 
