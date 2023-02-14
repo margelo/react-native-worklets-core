@@ -323,7 +323,6 @@ export const worklet_context_tests = {
     };
     const fw = () => {
       "worklet";
-      console.log("RNWorklets test: calling f(100)");
       return f(100);
     };
     let wf = Worklets.createRunInContextFn(fw);
