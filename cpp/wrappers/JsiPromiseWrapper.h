@@ -78,9 +78,7 @@ public:
 
   explicit JsiPromiseWrapper(jsi::Runtime &runtime);
 
-  ~JsiPromiseWrapper() {
-    printf("promise: Dtor JsiPromiseWrapper %zu\n", _counter);
-  }
+  ~JsiPromiseWrapper() {}
   /**
    Returns true if the object is a thenable object - ie. an object with a then
    function. Which is basically what a promise is.

@@ -4,6 +4,7 @@
 #include "DispatchQueue.h"
 #include "JsiBaseDecorator.h"
 #include "JsiHostObject.h"
+#include "JsiJsDecorator.h"
 
 #include <exception>
 #include <functional>
@@ -101,9 +102,39 @@ public:
   size_t getContextId() { return _contextId; }
 
   /**
+   Adds a global decorator. The decorator will be installed in the default
+   context.
+   */
+  void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator);
+
+  /**
    Invalidates the instance
    */
   static void invalidateDefaultInstance() { defaultInstance = nullptr; }
+
+  JSI_HOST_FUNCTION(addDecorator) {
+    if (count != 2) {
+      throw jsi::JSError(runtime, "addDecorator expects a property name and a "
+                                  "Javascript object as its arguments.");
+    }
+    if (!arguments[0].isString()) {
+      throw jsi::JSError(runtime, "addDecorator expects a property name and a "
+                                  "Javascript object as its arguments.");
+    }
+
+    if (!arguments[1].isObject()) {
+      throw jsi::JSError(runtime, "addDecorator expects a property name and a "
+                                  "Javascript object as its arguments.");
+    }
+
+    // Create / add the decorator
+    addDecorator(std::make_shared<JsiJsDecorator>(
+        runtime, arguments[0].asString(runtime).utf8(runtime), arguments[1]));
+
+    return jsi::Value::undefined();
+  }
+
+  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletContext, addDecorator))
 
   JSI_PROPERTY_GET(name) {
     return jsi::String::createFromUtf8(runtime, getName());
@@ -141,13 +172,6 @@ public:
                                              const jsi::Value *maybeFunc);
 
   /**
-   Returns the list of decorators
-   */
-  static const std::vector<std::shared_ptr<JsiBaseDecorator>> &getDecorators() {
-    return decorators;
-  }
-
-  /**
    Calls a worklet function in a given context (or in the JS context if the ctx
    parameter is null.
    @param runtime Runtime for the calling context
@@ -172,12 +196,6 @@ public:
    */
   jsi::HostFunctionType createCallInContext(jsi::Runtime &runtime,
                                             const jsi::Value &maybeFunc);
-
-  /**
-   Adds a global decorator. The decorator will be installed in the default
-   context.
-   */
-  static void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator);
 
   // Resolve type of call we're about to do
   typedef enum {
@@ -215,21 +233,6 @@ public:
   }
 
 private:
-  /**
-   Decorates the worklet runtime. The decorator is run in the worklet runtime
-   and on the worklet thread, since it is not legal to access the worklet
-   runtime from the javascript thread.
-   */
-  template <typename... Args> void decorate(Args &&...args);
-
-  /**
-   Decorates the worklet runtime. The decorator is run in the worklet runtime
-   and on the worklet thread, since it is not legal to access the worklet
-   runtime from the javascript thread.
-   */
-  void applyDecorators(
-      const std::vector<std::shared_ptr<JsiBaseDecorator>> &decorators);
-
   jsi::Runtime *_jsRuntime;
   std::unique_ptr<jsi::Runtime> _workletRuntime;
   std::string _name;
@@ -238,7 +241,6 @@ private:
   size_t _contextId;
   std::thread::id _jsThreadId;
 
-  static std::vector<std::shared_ptr<JsiBaseDecorator>> decorators;
   static std::shared_ptr<JsiWorkletContext> defaultInstance;
   static std::map<void *, JsiWorkletContext *> runtimeMappings;
   static size_t contextIdNumber;

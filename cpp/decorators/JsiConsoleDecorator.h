@@ -3,16 +3,11 @@
 #include <memory>
 #include <string>
 
+#include "ArgumentsWrapper.h"
 #include "JsiBaseDecorator.h"
 #include "JsiHostObject.h"
 #include "JsiWrapper.h"
 #include <jsi/jsi.h>
-
-#ifdef ANDROID
-#include <android/log.h>
-#else
-#include <syslog.h>
-#endif
 
 namespace RNWorklet {
 
@@ -20,24 +15,103 @@ namespace jsi = facebook::jsi;
 
 static const char *PropNameConsole = "console";
 
-class JsiConsoleImpl : public JsiHostObject {
+class JsiConsoleImpl : public JsiHostObject,
+                       public std::enable_shared_from_this<JsiConsoleImpl> {
 public:
+  JsiConsoleImpl(jsi::Runtime &runtime, const jsi::Value &consoleObj)
+      : _consoleObj(consoleObj.asObject(runtime)),
+        _logFn(_consoleObj.getPropertyAsFunction(runtime, "log")),
+        _infoFn(_consoleObj.getPropertyAsFunction(runtime, "info")),
+        _warnFn(_consoleObj.getPropertyAsFunction(runtime, "warn")),
+        _errorFn(_consoleObj.getPropertyAsFunction(runtime, "error")) {}
+
   JSI_HOST_FUNCTION(log) {
-    logToConsole(getArgsAsString(runtime, arguments, count));
+    ArgumentsWrapper argsWrapper(runtime, arguments, count);
+    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
+    JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
+        [weakSelf = weak_from_this(), argsWrapper, thisWrapper,
+         count](jsi::Runtime &runtime) {
+          auto args = argsWrapper.getArguments(runtime);
+          auto self = weakSelf.lock();
+          if (self) {
+            if (thisWrapper->getType() == JsiWrapperType::Object) {
+              auto thisObject = thisWrapper->unwrap(runtime);
+              self->_logFn.callWithThis(runtime, thisObject.asObject(runtime),
+                                        ArgumentsWrapper::toArgs(args), count);
+            } else {
+              self->_logFn.call(runtime, ArgumentsWrapper::toArgs(args), count);
+            }
+          }
+        });
     return jsi::Value::undefined();
   }
 
   JSI_HOST_FUNCTION(warn) {
-    logToConsole("Warning: " + getArgsAsString(runtime, arguments, count));
+    ArgumentsWrapper argsWrapper(runtime, arguments, count);
+    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
+    JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
+        [weakSelf = weak_from_this(), argsWrapper, thisWrapper,
+         count](jsi::Runtime &runtime) {
+          auto args = argsWrapper.getArguments(runtime);
+          auto self = weakSelf.lock();
+          if (self) {
+            if (thisWrapper->getType() == JsiWrapperType::Object) {
+              auto thisObject = thisWrapper->unwrap(runtime);
+              self->_warnFn.callWithThis(runtime, thisObject.asObject(runtime),
+                                         ArgumentsWrapper::toArgs(args), count);
+            } else {
+              self->_warnFn.call(runtime, ArgumentsWrapper::toArgs(args),
+                                 count);
+            }
+          }
+        });
     return jsi::Value::undefined();
   }
 
   JSI_HOST_FUNCTION(error) {
-    logToConsole("Error: " + getArgsAsString(runtime, arguments, count));
+    ArgumentsWrapper argsWrapper(runtime, arguments, count);
+    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
+    JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
+        [weakSelf = weak_from_this(), argsWrapper, thisWrapper,
+         count](jsi::Runtime &runtime) {
+          auto args = argsWrapper.getArguments(runtime);
+          auto self = weakSelf.lock();
+          if (self) {
+            if (thisWrapper->getType() == JsiWrapperType::Object) {
+              auto thisObject = thisWrapper->unwrap(runtime);
+              self->_errorFn.callWithThis(runtime, thisObject.asObject(runtime),
+                                          ArgumentsWrapper::toArgs(args),
+                                          count);
+            } else {
+              self->_errorFn.call(runtime, ArgumentsWrapper::toArgs(args),
+                                  count);
+            }
+          }
+        });
     return jsi::Value::undefined();
   }
 
-  JSI_HOST_FUNCTION(info) { return log(runtime, thisValue, arguments, count); }
+  JSI_HOST_FUNCTION(info) {
+    ArgumentsWrapper argsWrapper(runtime, arguments, count);
+    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
+    JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
+        [weakSelf = weak_from_this(), argsWrapper, thisWrapper,
+         count](jsi::Runtime &runtime) {
+          auto args = argsWrapper.getArguments(runtime);
+          auto self = weakSelf.lock();
+          if (self) {
+            if (thisWrapper->getType() == JsiWrapperType::Object) {
+              auto thisObject = thisWrapper->unwrap(runtime);
+              self->_infoFn.callWithThis(runtime, thisObject.asObject(runtime),
+                                         ArgumentsWrapper::toArgs(args), count);
+            } else {
+              self->_infoFn.call(runtime, ArgumentsWrapper::toArgs(args),
+                                 count);
+            }
+          }
+        });
+    return jsi::Value::undefined();
+  }
 
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiConsoleImpl, log),
                        JSI_EXPORT_FUNC(JsiConsoleImpl, warn),
@@ -45,27 +119,11 @@ public:
                        JSI_EXPORT_FUNC(JsiConsoleImpl, info))
 
 private:
-  const std::string getArgsAsString(jsi::Runtime &runtime,
-                                    const jsi::Value *arguments, size_t count) {
-    std::string retVal = "";
-    for (size_t i = 0; i < count; i++) {
-      auto wrapper = JsiWrapper::wrap(runtime, arguments[i]);
-      retVal += (retVal != "" ? " " : "") + wrapper->toString(runtime);
-    }
-    return retVal;
-  }
-  /**
-   * Logs message to console
-   * @param message Message to be written out
-   */
-  static void logToConsole(std::string message) {
-#ifdef ANDROID
-    __android_log_write(ANDROID_LOG_INFO, "RNWorklets", message.c_str());
-#else
-
-    syslog(LOG_ERR, "%s\n", message.c_str());
-#endif
-  }
+  jsi::Object _consoleObj;
+  jsi::Function _logFn;
+  jsi::Function _warnFn;
+  jsi::Function _infoFn;
+  jsi::Function _errorFn;
 };
 
 /**
@@ -73,11 +131,18 @@ private:
  */
 class JsiConsoleDecorator : public JsiBaseDecorator {
 public:
+  void initialize(jsi::Runtime &runtime) override {
+    auto consoleObj = runtime.global().getProperty(runtime, PropNameConsole);
+    _jsiConsoleImpl = std::make_shared<JsiConsoleImpl>(runtime, consoleObj);
+  }
+
   void decorateRuntime(jsi::Runtime &runtime) override {
-    auto consoleObj = std::make_shared<JsiConsoleImpl>();
     runtime.global().setProperty(
         runtime, PropNameConsole,
-        jsi::Object::createFromHostObject(runtime, consoleObj));
+        jsi::Object::createFromHostObject(runtime, _jsiConsoleImpl));
   };
+
+private:
+  std::shared_ptr<JsiConsoleImpl> _jsiConsoleImpl;
 };
 } // namespace RNWorklet

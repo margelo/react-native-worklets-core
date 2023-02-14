@@ -8,7 +8,9 @@
 #include <vector>
 
 #include "JsiHostObject.h"
+#include "JsiWorkletContext.h"
 #include "JsiWrapper.h"
+
 namespace RNWorklet {
 
 static const char *PropNameWorkletHash = "__workletHash";

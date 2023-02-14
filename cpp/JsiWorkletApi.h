@@ -38,28 +38,6 @@ public:
    */
   static void invalidateInstance();
 
-  JSI_HOST_FUNCTION(addDecorator) {
-    if (count != 2) {
-      throw jsi::JSError(runtime, "addDecorator expects a property name and a "
-                                  "Javascript object as its arguments.");
-    }
-    if (!arguments[0].isString()) {
-      throw jsi::JSError(runtime, "addDecorator expects a property name and a "
-                                  "Javascript object as its arguments.");
-    }
-
-    if (!arguments[1].isObject()) {
-      throw jsi::JSError(runtime, "addDecorator expects a property name and a "
-                                  "Javascript object as its arguments.");
-    }
-
-    // Create / add the decorator
-    addDecorator(std::make_shared<JsiJsDecorator>(
-        runtime, arguments[0].asString(runtime).utf8(runtime), arguments[1]));
-
-    return jsi::Value::undefined();
-  }
-
   JSI_HOST_FUNCTION(createContext) {
     if (count == 0) {
       throw jsi::JSError(
@@ -145,8 +123,15 @@ public:
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletApi, createSharedValue),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createContext),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createRunInContextFn),
-                       JSI_EXPORT_FUNC(JsiWorkletApi, createRunInJsFn),
-                       JSI_EXPORT_FUNC(JsiWorkletApi, addDecorator))
+                       JSI_EXPORT_FUNC(JsiWorkletApi, createRunInJsFn))
+
+  JSI_PROPERTY_GET(defaultContext) {
+    return jsi::Object::createFromHostObject(
+        runtime, JsiWorkletContext::getDefaultInstance());
+  }
+
+  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorkletApi,
+                                                  defaultContext))
 
   /**
    Creates a new worklet context
@@ -155,12 +140,6 @@ public:
    */
   std::shared_ptr<JsiWorkletContext>
   createWorkletContext(const std::string &name);
-
-  /**
-   Adds a decorator that will be used to decorate all contexts.
-   @decorator The decorator to add
-   */
-  void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator);
 
 private:
   // Instance/singletong

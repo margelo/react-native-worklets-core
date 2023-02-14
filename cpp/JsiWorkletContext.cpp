@@ -8,6 +8,11 @@
 #include "JsiHostObject.h"
 #include "JsiPromiseWrapper.h"
 
+#include "JsiConsoleDecorator.h"
+#include "JsiJsDecorator.h"
+#include "JsiPerformanceDecorator.h"
+#include "JsiSetImmediateDecorator.h"
+
 #include <exception>
 #include <functional>
 #include <memory>
@@ -27,7 +32,6 @@ namespace RNWorklet {
 const char *WorkletRuntimeFlag = "__rn_worklets_runtime_flag";
 const char *GlobalPropertyName = "global";
 
-std::vector<std::shared_ptr<JsiBaseDecorator>> JsiWorkletContext::decorators;
 std::shared_ptr<JsiWorkletContext> JsiWorkletContext::defaultInstance;
 std::map<void *, JsiWorkletContext *> JsiWorkletContext::runtimeMappings;
 size_t JsiWorkletContext::contextIdNumber = 1000;
@@ -66,6 +70,11 @@ void JsiWorkletContext::initialize(
 
   _jsThreadId = std::this_thread::get_id();
   runtimeMappings.emplace(&getWorkletRuntime(), this);
+
+  // Add default decorators
+  addDecorator(std::make_shared<JsiSetImmediateDecorator>());
+  addDecorator(std::make_shared<JsiPerformanceDecorator>());
+  addDecorator(std::make_shared<JsiConsoleDecorator>());
 }
 
 void JsiWorkletContext::initialize(
@@ -97,15 +106,6 @@ jsi::Runtime &JsiWorkletContext::getWorkletRuntime() {
 
     // Install the WorkletAPI into the new runtime
     JsiWorkletApi::installApi(*_workletRuntime);
-
-    // Run decorators if we're not the singleton main context - no need to
-    // do this in the worklet thread because we should already be in the
-    // worklet thread now.
-    if (JsiWorkletContext::getDefaultInstance().get() != this) {
-      for (size_t i = 0; i < decorators.size(); ++i) {
-        decorators[i]->decorateRuntime(getWorkletRuntime());
-      }
-    }
   }
 
   return *_workletRuntime;
@@ -146,31 +146,17 @@ void JsiWorkletContext::invokeOnWorkletThread(
 
 void JsiWorkletContext::addDecorator(
     std::shared_ptr<JsiBaseDecorator> decorator) {
-  decorators.push_back(decorator);
-  // decorate default context
-  if (JsiWorkletContext::getDefaultInstance()->_workletCallInvoker) {
-    JsiWorkletContext::getDefaultInstance()->decorate(decorator);
-  }
-}
-
-template <typename... Args> void JsiWorkletContext::decorate(Args &&...args) {
-  std::vector<std::shared_ptr<JsiBaseDecorator>> decorators = {args...};
-  applyDecorators(decorators);
-}
-
-void JsiWorkletContext::applyDecorators(
-    const std::vector<std::shared_ptr<JsiBaseDecorator>> &decorators) {
   std::mutex mu;
   std::condition_variable cond;
   bool isFinished = false;
   std::unique_lock<std::mutex> lock(mu);
 
+  decorator->initialize(*getJsRuntime());
+
   // Execute decoration in context' worklet thread/runtime
   _workletCallInvoker([&]() {
     std::lock_guard<std::mutex> lock(mu);
-    for (size_t i = 0; i < decorators.size(); ++i) {
-      decorators[i]->decorateRuntime(getWorkletRuntime());
-    }
+    decorator->decorateRuntime(getWorkletRuntime());
     isFinished = true;
     cond.notify_one();
   });
