@@ -123,8 +123,7 @@ public:
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletApi, createSharedValue),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createContext),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createRunInContextFn),
-                       JSI_EXPORT_FUNC(JsiWorkletApi, createRunInJsFn),
-                       JSI_EXPORT_FUNC(JsiWorkletApi, addDecorator))
+                       JSI_EXPORT_FUNC(JsiWorkletApi, createRunInJsFn))
   
   JSI_PROPERTY_GET(defaultContext) {
     return jsi::Object::createFromHostObject(runtime, getInstance());
@@ -139,12 +138,6 @@ public:
    */
   std::shared_ptr<JsiWorkletContext>
   createWorkletContext(const std::string &name);
-
-  /**
-   Adds a decorator that will be used to decorate all contexts.
-   @decorator The decorator to add
-   */
-  void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator);
 
 private:
   // Instance/singletong

@@ -100,6 +100,12 @@ public:
   }
 
   size_t getContextId() { return _contextId; }
+        
+  /**
+   Adds a global decorator. The decorator will be installed in the default
+   context.
+   */
+  void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator);
 
   /**
    Invalidates the instance
@@ -123,8 +129,9 @@ public:
     }
 
     // Create / add the decorator
-    addDecorator(std::make_shared<JsiJsDecorator>(
-        runtime, arguments[0].asString(runtime).utf8(runtime), arguments[1]));
+    addDecorator(std::make_shared<JsiJsDecorator>(runtime,
+                                                  arguments[0].asString(runtime).utf8(runtime),
+                                                  arguments[1]));
 
     return jsi::Value::undefined();
   }
@@ -198,12 +205,6 @@ public:
    */
   jsi::HostFunctionType createCallInContext(jsi::Runtime &runtime,
                                             const jsi::Value &maybeFunc);
-
-  /**
-   Adds a global decorator. The decorator will be installed in the default
-   context.
-   */
-  void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator);
 
   // Resolve type of call we're about to do
   typedef enum {

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "JsiWorkletContext.h"
-
 #include <map>
 #include <memory>
 #include <mutex>
