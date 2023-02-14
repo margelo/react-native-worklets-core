@@ -282,7 +282,7 @@ export const worklet_context_tests = {
 
     return ExpectValue(worklet(), 200);
   },
-  call_createRunInContextFn_from_context_FAILS: () => {
+  call_createRunInContextFn_from_context: () => {
     const worklet = Worklets.createRunInContextFn(function () {
       "worklet";
       const workletInTest = Worklets.createRunInContextFn(function (a: number) {
@@ -293,7 +293,7 @@ export const worklet_context_tests = {
     });
     return ExpectValue(worklet(), 200);
   },
-  call_createRunInContextFn_between_contexts_FAILS: () => {
+  call_createRunInContextFn_between_contexts: () => {
     const ctx = Worklets.createContext("test");
 
     const worklet = Worklets.createRunInContextFn(function () {
@@ -323,6 +323,7 @@ export const worklet_context_tests = {
     };
     const fw = () => {
       "worklet";
+      console.log("RNWorklets test: calling f(100)");
       return f(100);
     };
     let wf = Worklets.createRunInContextFn(fw);
