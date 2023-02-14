@@ -378,4 +378,18 @@ describe("babel plugin", () => {
     const { code } = runPlugin(input);
     expect(code).toMatchSnapshot();
   });
+  it("supports nested worklets keeping worklet decoration for inner worklet", () => {
+    const input = `const f = () => {
+      "worklet";
+    
+      const b = () => {
+        "worklet";
+        return 200;
+      }
+    
+      return 100 + b();
+    }`;
+    const { code } = runPlugin(input);
+    expect(code).toMatchSnapshot();
+  });
 });
