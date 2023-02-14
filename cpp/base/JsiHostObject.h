@@ -195,6 +195,6 @@ protected:
   std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &runtime) override;
 
 private:
-  std::map<std::string, jsi::Function> _hostFunctionCache;
+  std::map<void *, std::map<std::string, jsi::Function>> _hostFunctionCache;
 };
 } // namespace RNWorklet
