@@ -126,7 +126,8 @@ public:
                        JSI_EXPORT_FUNC(JsiWorkletApi, createRunInJsFn))
   
   JSI_PROPERTY_GET(defaultContext) {
-    return jsi::Object::createFromHostObject(runtime, getInstance());
+    return jsi::Object::createFromHostObject(runtime,
+                                             JsiWorkletContext::getDefaultInstance());
   }
 
   JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorkletApi, defaultContext))
