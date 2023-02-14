@@ -150,6 +150,8 @@ void JsiWorkletContext::addDecorator(std::shared_ptr<JsiBaseDecorator> decorator
   bool isFinished = false;
   std::unique_lock<std::mutex> lock(mu);
 
+  decorator->initialize(*getJsRuntime());
+  
   // Execute decoration in context' worklet thread/runtime
   _workletCallInvoker([&]() {
     std::lock_guard<std::mutex> lock(mu);
