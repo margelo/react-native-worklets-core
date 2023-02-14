@@ -144,7 +144,7 @@ public:
    Returns the list of decorators
    */
   static const std::vector<std::shared_ptr<JsiBaseDecorator>> &getDecorators() {
-    return decorators;
+    return std::vector<std::shared_ptr<JsiBaseDecorator>>();
   }
 
   /**
@@ -174,10 +174,9 @@ public:
                                             const jsi::Value &maybeFunc);
 
   /**
-   Adds a global decorator. The decorator will be installed in the default
-   context.
+   Adds a decorator to this Worklet Context.
    */
-  static void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator);
+  void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator);
 
   // Resolve type of call we're about to do
   typedef enum {
@@ -215,21 +214,6 @@ public:
   }
 
 private:
-  /**
-   Decorates the worklet runtime. The decorator is run in the worklet runtime
-   and on the worklet thread, since it is not legal to access the worklet
-   runtime from the javascript thread.
-   */
-  template <typename... Args> void decorate(Args &&...args);
-
-  /**
-   Decorates the worklet runtime. The decorator is run in the worklet runtime
-   and on the worklet thread, since it is not legal to access the worklet
-   runtime from the javascript thread.
-   */
-  void applyDecorators(
-      const std::vector<std::shared_ptr<JsiBaseDecorator>> &decorators);
-
   jsi::Runtime *_jsRuntime;
   std::unique_ptr<jsi::Runtime> _workletRuntime;
   std::string _name;
@@ -237,8 +221,8 @@ private:
   std::function<void(std::function<void()> &&)> _workletCallInvoker;
   size_t _contextId;
   std::thread::id _jsThreadId;
-
-  static std::vector<std::shared_ptr<JsiBaseDecorator>> decorators;
+  std::vector<std::shared_ptr<JsiBaseDecorator>> _decorators;
+  
   static std::shared_ptr<JsiWorkletContext> defaultInstance;
   static std::map<void *, JsiWorkletContext *> runtimeMappings;
   static size_t contextIdNumber;
