@@ -174,13 +174,6 @@ public:
                                              const jsi::Value *maybeFunc);
 
   /**
-   Returns the list of decorators
-   */
-  static const std::vector<std::shared_ptr<JsiBaseDecorator>> &getDecorators() {
-    return decorators;
-  }
-
-  /**
    Calls a worklet function in a given context (or in the JS context if the ctx
    parameter is null.
    @param runtime Runtime for the calling context
