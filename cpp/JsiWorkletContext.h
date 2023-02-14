@@ -51,6 +51,18 @@ public:
       std::function<void(std::function<void()> &&)> workletCallInvoker);
 
   /**
+   Constructs a new worklet context using the given runtime and call invokers.
+   @param name Name of the context
+   @param jsRuntime The main JS Runtime
+   @param jsCallInvoker Callback for running a function on the main React JS Thread
+   @param workletCallInvoker Callback for running a function on the worklet
+   thread
+   */
+  JsiWorkletContext(const std::string &name, jsi::Runtime *jsRuntime,
+                    std::function<void(std::function<void()> &&)> jsCallInvoker,
+                    std::function<void(std::function<void()> &&)> workletCallInvoker);
+
+  /**
    Destructor
    */
   ~JsiWorkletContext();

@@ -53,6 +53,14 @@ JsiWorkletContext::JsiWorkletContext(
              workletCallInvoker);
 }
 
+JsiWorkletContext::JsiWorkletContext(
+    const std::string &name, jsi::Runtime *jsRuntime,
+    std::function<void(std::function<void()> &&)> jsCallInvoker,
+    std::function<void(std::function<void()> &&)> workletCallInvoker) {
+  // Initialize context
+  initialize(name, jsRuntime, jsCallInvoker, workletCallInvoker);
+}
+
 JsiWorkletContext::~JsiWorkletContext() {
   // Remove from thread contexts
   runtimeMappings.erase(&_workletRuntime);
