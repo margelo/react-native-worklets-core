@@ -21,6 +21,13 @@ export interface IWorklet {
 */
 export interface IWorkletContext {
   readonly name: string;
+  /**
+   * Adds an object to the worklet context. The object will be available in all worklets
+   * on the global object by referencing to the propertyName
+   * @param propertyName
+   * @param propertyObject
+   */
+  addDecorator: <T>(propertyName: string, propertyObject: T) => void;
 }
 
 export type ContextType = {
@@ -74,13 +81,11 @@ export interface IWorkletNativeApi {
   createRunInJsFn: <C extends ContextType, T, A extends Array<unknown>>(
     fn: (this: C, ...args: A) => T
   ) => (...args: A) => Promise<T>;
+
   /**
-   * Adds an object to the worklet context. The object will be available in all worklets
-   * on the global object by referencing to the propertyName
-   * @param propertyName
-   * @param propertyObject
+   * Get the default Worklet context.
    */
-  addDecorator: <T>(propertyName: string, propertyObject: T) => void;
+  defaultContext: IWorkletContext;
 }
 declare global {
   var Worklets: IWorkletNativeApi;
