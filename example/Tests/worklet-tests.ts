@@ -17,6 +17,24 @@ export const worklet_tests = {
     const { closure } = getWorkletInfo(w);
     return ExpectValue(closure, { x: 100 });
   },
+  call_nested_worklet: () => {
+    const rootWorklet = () => {
+      "worklet";
+      const cl = { x: 100 };
+      const nestedWorklet = (c: number) => {
+        "worklet";
+        return c + cl.x;
+      };
+      const nestedWorkletFn = Worklets.createRunInContextFn(nestedWorklet);
+      return nestedWorkletFn(100);
+    };
+    const fw = () => {
+      "worklet";
+      return rootWorklet();
+    };
+    let wf = Worklets.createRunInContextFn(fw);
+    return ExpectValue(wf(), 200);
+  },
   check_worklet_closure_shared_value: () => {
     const x = Worklets.createSharedValue(1000);
     const w = (a: number) => {
