@@ -100,7 +100,7 @@ public:
   }
 
   size_t getContextId() { return _contextId; }
-        
+
   /**
    Adds a global decorator. The decorator will be installed in the default
    context.
@@ -111,8 +111,8 @@ public:
    Invalidates the instance
    */
   static void invalidateDefaultInstance() { defaultInstance = nullptr; }
-        
-        
+
+
   JSI_HOST_FUNCTION(addDecorator) {
     if (count != 2) {
       throw jsi::JSError(runtime, "addDecorator expects a property name and a "
@@ -251,7 +251,6 @@ private:
   size_t _contextId;
   std::thread::id _jsThreadId;
 
-  static std::vector<std::shared_ptr<JsiBaseDecorator>> decorators;
   static std::shared_ptr<JsiWorkletContext> defaultInstance;
   static std::map<void *, JsiWorkletContext *> runtimeMappings;
   static size_t contextIdNumber;

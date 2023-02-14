@@ -32,7 +32,6 @@ namespace RNWorklet {
 const char *WorkletRuntimeFlag = "__rn_worklets_runtime_flag";
 const char *GlobalPropertyName = "global";
 
-std::vector<std::shared_ptr<JsiBaseDecorator>> JsiWorkletContext::decorators;
 std::shared_ptr<JsiWorkletContext> JsiWorkletContext::defaultInstance;
 std::map<void *, JsiWorkletContext *> JsiWorkletContext::runtimeMappings;
 size_t JsiWorkletContext::contextIdNumber = 1000;
@@ -107,15 +106,6 @@ jsi::Runtime &JsiWorkletContext::getWorkletRuntime() {
 
     // Install the WorkletAPI into the new runtime
     JsiWorkletApi::installApi(*_workletRuntime);
-
-    // Run decorators if we're not the singleton main context - no need to
-    // do this in the worklet thread because we should already be in the
-    // worklet thread now.
-    if (JsiWorkletContext::getDefaultInstance().get() != this) {
-      for (size_t i = 0; i < decorators.size(); ++i) {
-        decorators[i]->decorateRuntime(getWorkletRuntime());
-      }
-    }
   }
 
   return *_workletRuntime;
