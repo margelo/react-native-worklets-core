@@ -8,8 +8,8 @@
 #include <vector>
 
 #include "JsiHostObject.h"
-#include "JsiWrapper.h"
 #include "JsiWorkletContext.h"
+#include "JsiWrapper.h"
 
 namespace RNWorklet {
 

@@ -124,13 +124,14 @@ public:
                        JSI_EXPORT_FUNC(JsiWorkletApi, createContext),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createRunInContextFn),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createRunInJsFn))
-  
+
   JSI_PROPERTY_GET(defaultContext) {
-    return jsi::Object::createFromHostObject(runtime,
-                                             JsiWorkletContext::getDefaultInstance());
+    return jsi::Object::createFromHostObject(
+        runtime, JsiWorkletContext::getDefaultInstance());
   }
 
-  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorkletApi, defaultContext))
+  JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorkletApi,
+                                                  defaultContext))
 
   /**
    Creates a new worklet context

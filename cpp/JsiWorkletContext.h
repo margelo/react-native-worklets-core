@@ -112,7 +112,6 @@ public:
    */
   static void invalidateDefaultInstance() { defaultInstance = nullptr; }
 
-
   JSI_HOST_FUNCTION(addDecorator) {
     if (count != 2) {
       throw jsi::JSError(runtime, "addDecorator expects a property name and a "
@@ -129,9 +128,8 @@ public:
     }
 
     // Create / add the decorator
-    addDecorator(std::make_shared<JsiJsDecorator>(runtime,
-                                                  arguments[0].asString(runtime).utf8(runtime),
-                                                  arguments[1]));
+    addDecorator(std::make_shared<JsiJsDecorator>(
+        runtime, arguments[0].asString(runtime).utf8(runtime), arguments[1]));
 
     return jsi::Value::undefined();
   }
@@ -235,7 +233,6 @@ public:
   }
 
 private:
-
   jsi::Runtime *_jsRuntime;
   std::unique_ptr<jsi::Runtime> _workletRuntime;
   std::string _name;

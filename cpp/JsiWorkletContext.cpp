@@ -8,8 +8,8 @@
 #include "JsiHostObject.h"
 #include "JsiPromiseWrapper.h"
 
-#include "JsiJsDecorator.h"
 #include "JsiConsoleDecorator.h"
+#include "JsiJsDecorator.h"
 #include "JsiPerformanceDecorator.h"
 #include "JsiSetImmediateDecorator.h"
 
@@ -144,14 +144,15 @@ void JsiWorkletContext::invokeOnWorkletThread(
   });
 }
 
-void JsiWorkletContext::addDecorator(std::shared_ptr<JsiBaseDecorator> decorator) {
+void JsiWorkletContext::addDecorator(
+    std::shared_ptr<JsiBaseDecorator> decorator) {
   std::mutex mu;
   std::condition_variable cond;
   bool isFinished = false;
   std::unique_lock<std::mutex> lock(mu);
 
   decorator->initialize(*getJsRuntime());
-  
+
   // Execute decoration in context' worklet thread/runtime
   _workletCallInvoker([&]() {
     std::lock_guard<std::mutex> lock(mu);
