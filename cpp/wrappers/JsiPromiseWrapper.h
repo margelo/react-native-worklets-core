@@ -178,7 +178,7 @@ private:
   void propagateFulfilled(jsi::Runtime &runtime);
   void propagateRejected(jsi::Runtime &runtime);
 
-  PromiseState _state;
+  PromiseState _state = PromiseState::Pending;
   std::shared_ptr<JsiWrapper> _value;
   std::shared_ptr<JsiWrapper> _reason;
   std::vector<PromiseQueueItem> _thenQueue;
