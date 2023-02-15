@@ -111,6 +111,10 @@ public:
     return nullptr;
   }
 
+  std::shared_ptr<Best> getptr() {
+    return shared_from_this();
+  }
+
   size_t getContextId() { return _contextId; }
 
   /**
