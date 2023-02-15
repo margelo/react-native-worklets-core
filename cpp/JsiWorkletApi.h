@@ -134,7 +134,7 @@ public:
     auto current = JsiWorkletContext::getCurrent(runtime);
     if (!current) return jsi::Value::undefined();
     return jsi::Object::createFromHostObject(
-        runtime, current->getptr());
+        runtime, current->shared_from_this());
   }
 
   JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorkletApi,
