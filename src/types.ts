@@ -86,6 +86,10 @@ export interface IWorkletNativeApi {
    * Get the default Worklet context.
    */
   defaultContext: IWorkletContext;
+  /**
+   * Get the current Worklet context, or `undefined` if called in main React JS context.
+   */
+  currentContext: IWorkletContext;
 }
 declare global {
   var Worklets: IWorkletNativeApi;

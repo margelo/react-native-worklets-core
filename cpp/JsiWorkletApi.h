@@ -130,8 +130,17 @@ public:
         runtime, JsiWorkletContext::getDefaultInstance());
   }
 
+  JSI_PROPERTY_GET(currentContext) {
+    auto current = JsiWorkletContext::getCurrent(runtime);
+    if (!current) return jsi::Value::undefined();
+    return jsi::Object::createFromHostObject(
+        runtime, current->shared_from_this());
+  }
+
   JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorkletApi,
-                                                  defaultContext))
+                                                  defaultContext),
+                              JSI_EXPORT_PROP_GET(JsiWorkletApi,
+                                                  currentContext))
 
   /**
    Creates a new worklet context
