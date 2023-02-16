@@ -6,7 +6,7 @@
 // we can set this value to 1 and debug the constructor/destructor
 #define JSI_DEBUG_ALLOCATIONS 0
 
-namespace RNJsi {
+namespace RNWorklet {
 
 #if JSI_DEBUG_ALLOCATIONS
 int objCounter = 0;
@@ -123,4 +123,4 @@ JsiHostObject::getPropertyNames(jsi::Runtime &runtime) {
   return propNames;
 }
 
-} // namespace RNJsi
+} // namespace RNWorklet

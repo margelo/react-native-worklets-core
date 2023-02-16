@@ -18,7 +18,7 @@ const char *WorkletArrayProxyName = "__createWorkletArrayProxy";
 
 class JsiWrapper;
 
-class JsiArrayWrapper : public RNJsi::JsiHostObject,
+class JsiArrayWrapper : public JsiHostObject,
                         public std::enable_shared_from_this<JsiArrayWrapper>,
                         public JsiWrapper {
 public:
@@ -384,7 +384,7 @@ public:
       return JsiWrapper::unwrapAsProxyOrValue(runtime, prop);
     }
     // Return super JsiHostObject's get
-    return RNJsi::JsiHostObject::get(runtime, name);
+    return JsiHostObject::get(runtime, name);
   }
 
   /**

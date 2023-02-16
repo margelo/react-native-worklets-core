@@ -14,7 +14,7 @@ namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
 
-class JsiSharedValue : public RNJsi::JsiHostObject {
+class JsiSharedValue : public JsiHostObject {
 public:
   /**
    Constructs a shared value - which is a wrapped value that can be accessed in

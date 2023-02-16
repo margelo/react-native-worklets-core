@@ -15,7 +15,7 @@ namespace jsi = facebook::jsi;
 
 static const char *PropNamePerformance = "performance";
 
-class JsiPerformanceImpl : public RNJsi::JsiHostObject {
+class JsiPerformanceImpl : public JsiHostObject {
 public:
   JSI_HOST_FUNCTION(now) {
     auto time = std::chrono::steady_clock::now();
