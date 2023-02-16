@@ -1,8 +1,8 @@
-#include "JsiPromiseWrapper.h"
+#include "WKTJsiPromiseWrapper.h"
 
-#include "ArgumentsWrapper.h"
-#include "JsiObjectWrapper.h"
-#include "JsiWorkletContext.h"
+#include "WKTArgumentsWrapper.h"
+#include "WKTJsiObjectWrapper.h"
+#include "WKTJsiWorkletContext.h"
 
 #include <utility>
 

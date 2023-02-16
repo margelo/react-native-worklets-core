@@ -1,4 +1,4 @@
-#include "JsiWorkletApi.h"
+#include "WKTJsiWorkletApi.h"
 
 #include <jsi/jsi.h>
 
@@ -6,11 +6,11 @@
 #include <string>
 #include <vector>
 
-#include "JsiBaseDecorator.h"
-#include "JsiHostObject.h"
-#include "JsiSharedValue.h"
-#include "JsiWorklet.h"
-#include "JsiWorkletContext.h"
+#include "WKTJsiBaseDecorator.h"
+#include "WKTJsiHostObject.h"
+#include "WKTJsiSharedValue.h"
+#include "WKTJsiWorklet.h"
+#include "WKTJsiWorkletContext.h"
 
 namespace RNWorklet {
 

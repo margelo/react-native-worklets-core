@@ -6,13 +6,13 @@
 #include <string>
 #include <vector>
 
-#include "JsiHostObject.h"
-#include "JsiJsDecorator.h"
-#include "JsiPromiseWrapper.h"
-#include "JsiSharedValue.h"
-#include "JsiWorklet.h"
-#include "JsiWorkletContext.h"
-#include "JsiWrapper.h"
+#include "WKTJsiHostObject.h"
+#include "WKTJsiJsDecorator.h"
+#include "WKTJsiPromiseWrapper.h"
+#include "WKTJsiSharedValue.h"
+#include "WKTJsiWorklet.h"
+#include "WKTJsiWorkletContext.h"
+#include "WKTJsiWrapper.h"
 
 namespace RNWorklet {
 

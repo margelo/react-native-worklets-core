@@ -5,10 +5,10 @@
 
 #include <memory>
 
-#include "JsiDispatcher.h"
-#include "JsiHostObject.h"
-#include "JsiWorkletContext.h"
-#include "JsiWrapper.h"
+#include "WKTJsiDispatcher.h"
+#include "WKTJsiHostObject.h"
+#include "WKTJsiWorkletContext.h"
+#include "WKTJsiWrapper.h"
 
 namespace RNWorklet {
 

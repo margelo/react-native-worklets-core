@@ -7,7 +7,7 @@
 
 #include <jsi/jsi.h>
 
-#include "JsiWrapper.h"
+#include "WKTJsiWrapper.h"
 
 namespace RNWorklet {
 
