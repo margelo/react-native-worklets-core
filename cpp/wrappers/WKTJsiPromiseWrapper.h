@@ -52,7 +52,7 @@ using PromiseComputationFunction = std::function<void(
  or return values.
  */
 class JsiPromiseWrapper
-    : public RNJsi::JsiHostObject,
+    : public JsiHostObject,
       public JsiWrapper,
       public PromiseParameter,
       public std::enable_shared_from_this<JsiPromiseWrapper> {

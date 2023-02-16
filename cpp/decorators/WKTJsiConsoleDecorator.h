@@ -15,7 +15,7 @@ namespace jsi = facebook::jsi;
 
 static const char *PropNameConsole = "console";
 
-class JsiConsoleImpl : public RNJsi::JsiHostObject,
+class JsiConsoleImpl : public JsiHostObject,
                        public std::enable_shared_from_this<JsiConsoleImpl> {
 public:
   JsiConsoleImpl(jsi::Runtime &runtime, const jsi::Value &consoleObj)
