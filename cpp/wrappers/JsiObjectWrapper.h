@@ -15,7 +15,7 @@ namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
 
-class JsiObjectWrapper : public JsiHostObject,
+class JsiObjectWrapper : public RNJsi::JsiHostObject,
                          public std::enable_shared_from_this<JsiObjectWrapper>,
                          public JsiWrapper {
 
@@ -117,7 +117,7 @@ public:
       return JsiWrapper::unwrap(runtime, prop);
     }
 
-    return JsiHostObject::get(runtime, name);
+    return RNJsi::JsiHostObject::get(runtime, name);
   }
 
   /**

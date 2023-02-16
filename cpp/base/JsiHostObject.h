@@ -67,8 +67,8 @@
  * Creates a JSI export functions statement
  */
 #define JSI_EXPORT_FUNCTIONS(...)                                              \
-  const RNWorklet::JsiFunctionMap &getExportedFunctionMap() override {         \
-    static RNWorklet::JsiFunctionMap map = {__VA_ARGS__};                      \
+  const RNJsi::JsiFunctionMap &getExportedFunctionMap() override {         \
+    static RNJsi::JsiFunctionMap map = {__VA_ARGS__};                      \
     return map;                                                                \
   }
 
@@ -85,9 +85,9 @@
  * Creates a JSI export getters statement
  */
 #define JSI_EXPORT_PROPERTY_GETTERS(...)                                       \
-  const RNWorklet::JsiPropertyGettersMap &getExportedPropertyGettersMap()      \
+  const RNJsi::JsiPropertyGettersMap &getExportedPropertyGettersMap()      \
       override {                                                               \
-    static RNWorklet::JsiPropertyGettersMap map = {__VA_ARGS__};               \
+    static RNJsi::JsiPropertyGettersMap map = {__VA_ARGS__};               \
     return map;                                                                \
   }
 
@@ -105,13 +105,13 @@
  * Creates a JSI export setters statement
  */
 #define JSI_EXPORT_PROPERTY_SETTERS(...)                                       \
-  const RNWorklet::JsiPropertySettersMap &getExportedPropertySettersMap()      \
+  const RNJsi::JsiPropertySettersMap &getExportedPropertySettersMap()      \
       override {                                                               \
-    static RNWorklet::JsiPropertySettersMap map = {__VA_ARGS__};               \
+    static RNJsi::JsiPropertySettersMap map = {__VA_ARGS__};               \
     return map;                                                                \
   }
 
-namespace RNWorklet {
+namespace RNJsi {
 
 namespace jsi = facebook::jsi;
 
@@ -147,8 +147,8 @@ protected:
   /**
    Override to return map of name/functions
    */
-  virtual const RNWorklet::JsiFunctionMap &getExportedFunctionMap() {
-    static const RNWorklet::JsiFunctionMap empty;
+  virtual const RNJsi::JsiFunctionMap &getExportedFunctionMap() {
+    static const RNJsi::JsiFunctionMap empty;
     return empty;
   }
 
@@ -197,4 +197,4 @@ protected:
 private:
   std::map<void *, std::map<std::string, jsi::Function>> _hostFunctionCache;
 };
-} // namespace RNWorklet
+} // namespace RNJsi

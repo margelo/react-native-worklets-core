@@ -71,7 +71,7 @@ private:
  in the worklet runtime. The worklet object exposes some methods and props
  for handling this. The worklet exists in a given worklet context.
  */
-class JsiWorklet : public JsiHostObject,
+class JsiWorklet : public RNJsi::JsiHostObject,
                    public std::enable_shared_from_this<JsiWorklet> {
 public:
   JsiWorklet(jsi::Runtime &runtime, const jsi::Value &arg) {
