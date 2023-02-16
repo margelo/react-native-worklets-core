@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-#include "JsiBaseDecorator.h"
-#include "JsiWrapper.h"
+#include "WKTJsiBaseDecorator.h"
+#include "WKTJsiWrapper.h"
 #include <jsi/jsi.h>
 
 namespace RNWorklet {

@@ -1,5 +1,5 @@
 #ifdef __cplusplus
-#import "JsiWorkletApi.h"
+#import "WKTJsiWorkletApi.h"
 #endif
 
 #ifdef RCT_NEW_ARCH_ENABLED

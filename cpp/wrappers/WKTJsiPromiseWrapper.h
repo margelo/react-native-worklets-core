@@ -7,9 +7,9 @@
 #include <string>
 #include <vector>
 
-#include "JsiHostObject.h"
-#include "JsiWorklet.h"
-#include "JsiWrapper.h"
+#include "WKTJsiHostObject.h"
+#include "WKTJsiWorklet.h"
+#include "WKTJsiWrapper.h"
 
 namespace RNWorklet {
 
