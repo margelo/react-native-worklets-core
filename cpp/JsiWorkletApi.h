@@ -18,7 +18,7 @@ namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
 
-class JsiWorkletApi : public JsiHostObject {
+class JsiWorkletApi : public RNJsi::JsiHostObject {
 public:
   // Name of the Worklet API member (where to install on global)
   static const char *WorkletsApiName;
