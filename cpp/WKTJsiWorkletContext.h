@@ -20,7 +20,7 @@ namespace RNWorklet {
 namespace jsi = facebook::jsi;
 
 class JsiWorkletContext
-    : public RNJsi::JsiHostObject,
+    : public JsiHostObject,
       public std::enable_shared_from_this<JsiWorkletContext> {
 public:
   /**
