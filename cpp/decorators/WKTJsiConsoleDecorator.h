@@ -3,10 +3,10 @@
 #include <memory>
 #include <string>
 
-#include "ArgumentsWrapper.h"
-#include "JsiBaseDecorator.h"
-#include "JsiHostObject.h"
-#include "JsiWrapper.h"
+#include "WKTArgumentsWrapper.h"
+#include "WKTJsiBaseDecorator.h"
+#include "WKTJsiHostObject.h"
+#include "WKTJsiWrapper.h"
 #include <jsi/jsi.h>
 
 namespace RNWorklet {

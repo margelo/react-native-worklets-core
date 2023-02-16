@@ -3,7 +3,7 @@
 #include <jsi/jsi.h>
 #include <ReactCommon/CallInvokerHolder.h>
 
-#include "JsiWorkletApi.h"
+#include "WKTJsiWorkletApi.h"
 
 using namespace facebook; // NOLINT
 

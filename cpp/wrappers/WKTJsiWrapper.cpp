@@ -1,7 +1,7 @@
-#include "JsiWrapper.h"
-#include "JsiArrayWrapper.h"
-#include "JsiObjectWrapper.h"
-#include "JsiPromiseWrapper.h"
+#include "WKTJsiWrapper.h"
+#include "WKTJsiArrayWrapper.h"
+#include "WKTJsiObjectWrapper.h"
+#include "WKTJsiPromiseWrapper.h"
 
 namespace RNWorklet {
 

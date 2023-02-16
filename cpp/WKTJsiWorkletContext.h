@@ -1,10 +1,10 @@
 
 #pragma once
 
-#include "DispatchQueue.h"
-#include "JsiBaseDecorator.h"
-#include "JsiHostObject.h"
-#include "JsiJsDecorator.h"
+#include "WKTDispatchQueue.h"
+#include "WKTJsiBaseDecorator.h"
+#include "WKTJsiHostObject.h"
+#include "WKTJsiJsDecorator.h"
 
 #include <exception>
 #include <functional>

@@ -7,9 +7,9 @@
 #include <string>
 #include <vector>
 
-#include "JsiPromiseWrapper.h"
-#include "JsiWorklet.h"
-#include "JsiWrapper.h"
+#include "WKTJsiPromiseWrapper.h"
+#include "WKTJsiWorklet.h"
+#include "WKTJsiWrapper.h"
 
 namespace RNWorklet {
 

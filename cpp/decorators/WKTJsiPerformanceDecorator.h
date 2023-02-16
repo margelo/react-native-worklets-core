@@ -4,9 +4,9 @@
 #include <memory>
 #include <string>
 
-#include "JsiBaseDecorator.h"
-#include "JsiHostObject.h"
-#include "JsiWrapper.h"
+#include "WKTJsiBaseDecorator.h"
+#include "WKTJsiHostObject.h"
+#include "WKTJsiWrapper.h"
 #include <jsi/jsi.h>
 
 namespace RNWorklet {
