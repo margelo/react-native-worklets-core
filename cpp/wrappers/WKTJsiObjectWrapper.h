@@ -161,7 +161,7 @@ protected:
     if (getType() == JsiWrapperType::Object) {
       return getObjectAsProxy(runtime, shared_from_this());
     } else if (getType() == JsiWrapperType::HostObject) {
-      return getObjectAsProxy(runtime, _hostObject);
+      return jsi::Object::createFromHostObject(runtime, _hostObject);
     }
     return JsiWrapper::getAsProxyOrValue(runtime);
   }
