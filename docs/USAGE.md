@@ -29,6 +29,20 @@ function something() {
 }
 ```
 
+### Hooks
+
+Worklets also provides two utility hooks, here's an example:
+
+```ts
+function App() {
+  const something = useSharedValue(5)
+  const worklet = useWorklet(() => {
+    'worklet'
+    something.value = Math.random()
+  }, [something])
+}
+```
+
 ## Integration
 
 To integrate react-native-worklets in your library, first install the package:
