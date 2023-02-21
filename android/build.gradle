@@ -56,15 +56,9 @@ if (isNewArchitectureEnabled()) {
     apply plugin: "com.facebook.react"
 }
 
-task prepareHeaders1(type: Copy) {
+task prepareHeaders(type: Copy) {
   from fileTree('../cpp').filter { it.isFile() }
   into "${project.buildDir}/headers/rnworklets/"
-  includeEmptyDirs = false
-}
-
-task prepareHeaders2(type: Copy) {
-  from fileTree('../cpp').filter { it.isFile() }
-  into "${project.buildDir}/headers/rnworklets/react-native-worklets"
   includeEmptyDirs = false
 }
 
@@ -151,7 +145,7 @@ android {
       "**/libjscexecutor.so",
     ]
   }
-  
+
   buildFeatures {
     prefabPublishing true
   }
@@ -170,4 +164,4 @@ dependencies {
   }
 }
 
-preBuild.dependsOn("prepareHeaders1", "prepareHeaders2")
+preBuild.dependsOn(prepareHeaders)
