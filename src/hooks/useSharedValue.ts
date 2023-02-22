@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import type { ISharedValue } from "src/types";
+import type { ISharedValue } from "../types";
 
 /**
  * Create a Shared Value that persists between re-renders.
