@@ -58,7 +58,7 @@ if (isNewArchitectureEnabled()) {
 
 task prepareHeaders(type: Copy) {
   from fileTree('../cpp').filter { it.isFile() }
-  into "${project.buildDir}/headers/rnworklets/"
+  into "${project.buildDir}/headers/rnworklets/react-native-worklets/"
   includeEmptyDirs = false
 }
 
