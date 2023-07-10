@@ -43,6 +43,38 @@ function App() {
 }
 ```
 
+### Separate Contexts
+
+You can also create specific contexts (Threads) to run Worklets on:
+
+```js
+const context1 = Worklets.createContext('my-new-thread-1')
+const run = Worklets.createRunInContextFn(() => {
+  'worklet'
+  console.log("Hello from context #1!")
+}, context1)
+
+run()
+```
+
+...and even nest them without ever crossing the JavaScript Thread:
+
+```js
+const context1 = Worklets.createContext('my-new-thread-1')
+const context2 = Worklets.createContext('my-new-thread-2')
+const run1 = Worklets.createRunInContextFn(() => {
+  'worklet'
+  console.log("Hello from context #1!")
+}, context1)
+const run2 = Worklets.createRunInContextFn(() => {
+  'worklet'
+  console.log("Hello from context #2!")
+  run1()
+}, context2)
+
+run2()
+```
+
 ## Integration
 
 To integrate react-native-worklets in your library, first install the package:
