@@ -94,7 +94,6 @@
     "react-native": "0.71.2",
     "react-native-builder-bob": "^0.20.0",
     "release-it": "^15.0.0",
-    "string-hash-64": "^1.0.3",
     "typescript": "^4.5.2"
   },
   "resolutions": {
@@ -187,5 +186,8 @@
     "android": {
       "javaPackageName": "com.worklets"
     }
+  },
+  "dependencies": {
+    "string-hash-64": "^1.0.3"
   }
 }
