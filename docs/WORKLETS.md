@@ -6,7 +6,7 @@ Worklets are small JavaScript functions that can be executed on a separate JavaS
 
 The JavaScript Context is the Runtime that runs your app's JavaScript. Usually there is only one JavaScript Context executing your app's JS bundle, which is called the "Main JS Thread" (`mqt_js`).
 
-With react-native-worklets, a separate JavaScript Context can be created to offload some functions to a separate Thread.
+With react-native-worklets-core, a separate JavaScript Context can be created to offload some functions to a separate Thread.
 
 This can be useful for libraries like Reanimated where Worklets are used as style updaters to run animations on the UI Thread, or VisionCamera to create Frame Processors which run on the Camera Thread. This comes with the benefit of being able to run JavaScript code in parallel.
 
@@ -54,7 +54,7 @@ console.log(`Fibonacci of 50 is ${result}`)
 
 ### Usage with integrations
 
-Some third-party libraries integrate with react-native-worklets.
+Some third-party libraries integrate with react-native-worklets-core.
 
 For example, [react-native-vision-camera](https://github.com/mrousavy/react-native-vision-camera) allows you to run any kind of realtime image processing inside a Worklet that gets called for every frame the camera sees.
 

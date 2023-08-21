@@ -1,6 +1,6 @@
 # Usage
 
-react-native-worklets can be used either as a standalone library to run Worklets on a background context, or as an integration with another third-party library to run code on a custom context.
+react-native-worklets-core can be used either as a standalone library to run Worklets on a background context, or as an integration with another third-party library to run code on a custom context.
 
 ## Standalone
 
@@ -45,33 +45,33 @@ function App() {
 
 ## Integration
 
-To integrate react-native-worklets in your library, first install the package:
+To integrate react-native-worklets-core in your library, first install the package:
 
 ### Dependency Installation
 
 #### iOS:
 
-1. Add `react-native-worklets` to your podspec:
+1. Add `react-native-worklets-core` to your podspec:
     ```ruby
-    s.dependency "react-native-worklets"
+    s.dependency "react-native-worklets-core"
     ```
 
 #### Android:
 
-1. Add `react-native-worklets` to your `build.gradle`:
+1. Add `react-native-worklets-core` to your `build.gradle`:
     ```groovy
-    implementation project(":react-native-worklets")
+    implementation project(":react-native-worklets-core")
     ```
-2. Add `react-native-worklets` to your `CMakeLists.txt`:
+2. Add `react-native-worklets-core` to your `CMakeLists.txt`:
     ```CMake
-    find_package(react-native-worklets REQUIRED CONFIG)
+    find_package(react-native-worklets-core REQUIRED CONFIG)
 
     # ...
 
     target_link_libraries(
         ${PACKAGE_NAME}
         # ... other libs
-        react-native-worklets::rnworklets
+        react-native-worklets-core::rnworklets
     )
     ```
 

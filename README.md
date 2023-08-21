@@ -1,4 +1,4 @@
-# react-native-worklets
+# react-native-worklets-core
 
 [Worklet](docs/WORKLETS.md) runner for React Native.
 
@@ -13,13 +13,13 @@ const worklet = () => {
 
 1. Install the library from npm:
     ```sh
-    yarn add react-native-worklets
+    yarn add react-native-worklets-core
     ```
 2. Add the babel plugin to your `babel.config.js`:
     ```js
     module.exports = {
       plugins: [
-        ["react-native-worklets/plugin"],
+        ["react-native-worklets-core/plugin"],
         // ...
       ],
       // ...

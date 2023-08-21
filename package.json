@@ -1,5 +1,5 @@
 {
-  "name": "react-native-worklets",
+  "name": "react-native-worklets-core",
   "version": "0.1.0",
   "description": "test",
   "main": "lib/commonjs/index",
@@ -47,7 +47,7 @@
     "ios",
     "android"
   ],
-  "repository": "https://github.com/chrfalch/react-native-worklets",
+  "repository": "https://github.com/chrfalch/react-native-worklets-core",
   "author": "Christian Falch <christian.falch@gmail.com> (https://github.com/chrfalch)",
   "contributors": [
     {
@@ -68,9 +68,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/chrfalch/react-native-worklets/issues"
+    "url": "https://github.com/chrfalch/react-native-worklets-core/issues"
   },
-  "homepage": "https://github.com/chrfalch/react-native-worklets#readme",
+  "homepage": "https://github.com/chrfalch/react-native-worklets-core#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },

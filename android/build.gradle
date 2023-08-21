@@ -24,7 +24,7 @@ static def findNodeModules(baseDir) {
     }
     basePath = basePath.getParent()
   }
-  throw new GradleException("react-native-worklets: Failed to find node_modules/ path!")
+  throw new GradleException("react-native-worklets-core: Failed to find node_modules/ path!")
 }
 
 def JS_RUNTIME = {
@@ -58,7 +58,7 @@ if (isNewArchitectureEnabled()) {
 
 task prepareHeaders(type: Copy) {
   from fileTree('../cpp').filter { it.isFile() }
-  into "${project.buildDir}/headers/rnworklets/react-native-worklets/"
+  into "${project.buildDir}/headers/rnworklets/react-native-worklets-core/"
   includeEmptyDirs = false
 }
 

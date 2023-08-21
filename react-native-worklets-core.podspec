@@ -4,7 +4,7 @@ package = JSON.parse(File.read(File.join(__dir__, "package.json")))
 folly_compiler_flags = '-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -Wno-comma -Wno-shorten-64-to-32'
 
 Pod::Spec.new do |s|
-  s.name         = "react-native-worklets"
+  s.name         = "react-native-worklets-core"
   s.version      = package["version"]
   s.summary      = package["description"]
   s.homepage     = package["homepage"]
@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
   s.authors      = package["author"]
 
   s.platforms    = { :ios => "11.0" }
-  s.source       = { :git => "https://github.com/chrfalch/react-native-worklets.git", :tag => "#{s.version}" }
+  s.source       = { :git => "https://github.com/chrfalch/react-native-worklets-core.git", :tag => "#{s.version}" }
 
   s.source_files = "ios/**/*.{h,m,mm}", "cpp/**/*.{h,cpp}"
 
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
     s.dependency "RCTRequired"
     s.dependency "RCTTypeSafety"
     s.dependency "ReactCommon/turbomodule/core"
-  else  
+  else
     s.pod_target_xcconfig = {
       'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
       'DEFINES_MODULE' => 'YES',
@@ -41,6 +41,6 @@ Pod::Spec.new do |s|
 
     s.dependency "React-callinvoker"
     s.dependency "React"
-    s.dependency "React-Core" 
+    s.dependency "React-Core"
   end
 end

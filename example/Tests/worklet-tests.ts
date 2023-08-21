@@ -1,4 +1,4 @@
-import { Worklets } from "react-native-worklets";
+import { Worklets } from "react-native-worklets-core";
 import { ExpectException, ExpectValue, getWorkletInfo } from "./utils";
 
 export const worklet_tests = {

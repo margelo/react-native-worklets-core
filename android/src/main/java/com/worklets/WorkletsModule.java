@@ -48,7 +48,7 @@ public class WorkletsModule extends com.worklets.WorkletsSpec {
       CallInvokerHolder jsCallInvokerHolder = context.getCatalystInstance().getJSCallInvokerHolder();
       return nativeInstall(jsiRuntimeRef, jsCallInvokerHolder);
     } catch (Exception exception) {
-      Log.e(NAME, "Failed to initialize react-native-worklets!", exception);
+      Log.e(NAME, "Failed to initialize react-native-worklets-core!", exception);
       return false;
     }
   }

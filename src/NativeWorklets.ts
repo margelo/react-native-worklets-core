@@ -7,7 +7,7 @@ export interface Spec extends TurboModule {
 
 const WorkletsInstaller = TurboModuleRegistry.getEnforcing<Spec>("Worklets");
 
-console.log("Loading react-native-worklets...");
+console.log("Loading react-native-worklets-core...");
 
 if (global.Worklets === undefined || global.Worklets == null) {
   if (
@@ -30,5 +30,5 @@ if (global.Worklets === undefined || global.Worklets == null) {
     }
   }
 } else {
-  console.log("react-native-worklets installed.");
+  console.log("react-native-worklets-core installed.");
 }
