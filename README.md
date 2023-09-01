@@ -41,6 +41,10 @@ const worklet = () => {
 
 See [USAGE.md](docs/USAGE.md)
 
+## Community Discord
+
+[Join the Margelo Community Discord](https://discord.gg/6CSHz2qAvA) to chat about react-native-worklets-core or other Margelo libraries.
+
 ## Contributing
 
 See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the repository and the development workflow.
