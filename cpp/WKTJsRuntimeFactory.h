@@ -12,7 +12,7 @@
 #include <hermes/hermes.h>
 #else
 // JSC
-#include <jsc/JSCRuntime.h>
+#include <react-jsc/JSCRuntime.h>
 #endif
 
 namespace RNWorklet {
