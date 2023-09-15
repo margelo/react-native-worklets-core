@@ -10,9 +10,11 @@
 #if JS_RUNTIME_HERMES
 // Hermes
 #include <hermes/hermes.h>
+#elif __has_include(<React-jsc/JSCRuntime.h>)
+  // JSC
+  #include <React-jsc/JSCRuntime.h>
 #else
-// JSC
-#include <react-jsc/JSCRuntime.h>
+  #include <jsc/JSCRuntime.h>
 #endif
 
 namespace RNWorklet {
