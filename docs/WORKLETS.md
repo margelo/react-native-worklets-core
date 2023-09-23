@@ -52,6 +52,24 @@ const result = await worklet(50)
 console.log(`Fibonacci of 50 is ${result}`)
 ```
 
+### Shared Values
+
+Shared Values are values that can be accessed from any Context.
+They are useful to share values between a Worklet Context and the main React Context:
+
+```js
+const progress = useSharedValue(0)
+const someHeavyFunction = () => {
+  'worklet'
+  for (let i = 0; i < lotsOfItems.length; i++) {
+    // do some heavy lifting
+    progress.value = i / lotsOfItems.length
+  }
+}
+
+// progress.value can now be accessed here to check the Worklet's progress
+```
+
 ### Usage with integrations
 
 Some third-party libraries integrate with react-native-worklets-core.
