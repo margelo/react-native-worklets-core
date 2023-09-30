@@ -198,7 +198,7 @@ public:
                   const jsi::Value *arguments, size_t count) {
 
     // Unwrap closure
-    auto unwrappedClosure = JsiWrapper::unwrap(runtime, __closureWrapper);
+    auto unwrappedClosure = JsiWrapper::unwrap(runtime, _closureWrapper);
 
     if (_isRea30Compat) {
 
@@ -305,7 +305,7 @@ private:
     _isWorklet = true;
 
     // Create closure wrapper so it will be accessible across runtimes
-    __closureWrapper = JsiWrapper::wrap(runtime, closure);
+    _closureWrapper = JsiWrapper::wrap(runtime, closure);
 
     // Try get the name of the function
     auto nameProp = func->getProperty(runtime, PropFunctionName);
@@ -322,7 +322,7 @@ private:
   }
 
   bool _isWorklet = false;
-  std::shared_ptr<JsiWrapper> __closureWrapper;
+  std::shared_ptr<JsiWrapper> _closureWrapper;
   std::string _location = "";
   std::string _code = "";
   std::string _name = "fn";
