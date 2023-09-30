@@ -8,7 +8,7 @@ export const worklet_tests = {
     });
     return ExpectValue(typeof fn, "function");
   },
-  check_worklet_closure: () => {
+  check_worklet__closure: () => {
     const x = 100;
     const w = (a: number) => {
       "worklet";
@@ -35,7 +35,7 @@ export const worklet_tests = {
     let wf = Worklets.createRunInContextFn(fw);
     return ExpectValue(wf(), 200);
   },
-  check_worklet_closure_shared_value: () => {
+  check_worklet__closure_shared_value: () => {
     const x = Worklets.createSharedValue(1000);
     const w = (a: number) => {
       "worklet";

@@ -270,7 +270,7 @@ function buildWorkletString(t, fun, closureVariables, name, inputMap) {
             )
           )
         ),
-        t.memberExpression(t.thisExpression(), t.identifier("_closure"))
+        t.memberExpression(t.thisExpression(), t.identifier("__closure"))
       ),
     ]);
 
@@ -533,7 +533,7 @@ function makeWorklet(t, fun, state) {
     t.expressionStatement(
       t.assignmentExpression(
         "=",
-        t.memberExpression(privateFunctionId, t.identifier("_closure"), false),
+        t.memberExpression(privateFunctionId, t.identifier("__closure"), false),
         closureGenerator.generate(t, variables, closure.keys())
       )
     ),

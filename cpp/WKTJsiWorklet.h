@@ -25,7 +25,7 @@ static const char *PropNameWorkletInitDataSourceMap = "__sourceMap";
 static const char *PropNameWorkletLocation = "__location";
 static const char *PropNameWorkletAsString = "asString";
 
-static const char *PropNameWorkletClosure = "_closure";
+static const char *PropNameWorkletClosure = "__closure";
 static const char *PropFunctionName = "name";
 
 namespace jsi = facebook::jsi;
@@ -198,7 +198,7 @@ public:
                   const jsi::Value *arguments, size_t count) {
 
     // Unwrap closure
-    auto unwrappedClosure = JsiWrapper::unwrap(runtime, _closureWrapper);
+    auto unwrappedClosure = JsiWrapper::unwrap(runtime, __closureWrapper);
 
     if (_isRea30Compat) {
 
@@ -305,7 +305,7 @@ private:
     _isWorklet = true;
 
     // Create closure wrapper so it will be accessible across runtimes
-    _closureWrapper = JsiWrapper::wrap(runtime, closure);
+    __closureWrapper = JsiWrapper::wrap(runtime, closure);
 
     // Try get the name of the function
     auto nameProp = func->getProperty(runtime, PropFunctionName);
@@ -322,7 +322,7 @@ private:
   }
 
   bool _isWorklet = false;
-  std::shared_ptr<JsiWrapper> _closureWrapper;
+  std::shared_ptr<JsiWrapper> __closureWrapper;
   std::string _location = "";
   std::string _code = "";
   std::string _name = "fn";

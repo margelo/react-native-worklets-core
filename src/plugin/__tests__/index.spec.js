@@ -140,7 +140,7 @@ describe("babel plugin", () => {
       enter(path) {
         if (
           path.isAssignmentExpression() &&
-          path.node.left.property.name === "_closure"
+          path.node.left.property.name === "__closure"
         ) {
           closureBindings = path.node.right.properties;
         }
@@ -381,12 +381,12 @@ describe("babel plugin", () => {
   it("supports nested worklets keeping worklet decoration for inner worklet", () => {
     const input = `const f = () => {
       "worklet";
-    
+
       const b = () => {
         "worklet";
         return 200;
       }
-    
+
       return 100 + b();
     }`;
     const { code } = runPlugin(input);
