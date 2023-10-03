@@ -93,7 +93,7 @@ export const getWorkletInfo = <T extends Array<unknown>, R>(
   // @ts-ignore
   return worklet.__initData
     ? // @ts-ignore
-      { closure: worklet._closure, code: worklet.__initData.code }
+      { closure: worklet.__closure, code: worklet.__initData.code }
     : // @ts-ignore
-      { closure: worklet._closure, code: worklet.asString };
+      { closure: worklet.__closure, code: worklet.asString };
 };

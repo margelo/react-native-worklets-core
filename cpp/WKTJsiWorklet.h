@@ -25,7 +25,7 @@ static const char *PropNameWorkletInitDataSourceMap = "__sourceMap";
 static const char *PropNameWorkletLocation = "__location";
 static const char *PropNameWorkletAsString = "asString";
 
-static const char *PropNameWorkletClosure = "_closure";
+static const char *PropNameWorkletClosure = "__closure";
 static const char *PropFunctionName = "name";
 
 namespace jsi = facebook::jsi;
