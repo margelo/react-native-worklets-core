@@ -62,6 +62,13 @@ task prepareHeaders(type: Copy) {
   includeEmptyDirs = false
 }
 
+task cleanCmakeCache() {
+  tasks.getByName("clean").dependsOn(cleanCmakeCache)
+  doFirst {
+    delete "${projectDir}/.cxx"
+  }
+}
+
 android {
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 
