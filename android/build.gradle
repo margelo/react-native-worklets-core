@@ -62,8 +62,7 @@ task prepareHeaders(type: Copy) {
   includeEmptyDirs = false
 }
 
-task cleanCmakeCache() {
-  tasks.getByName("clean").dependsOn(cleanCmakeCache)
+task deleteCmakeCache() {
   doFirst {
     delete "${projectDir}/.cxx"
   }
@@ -172,3 +171,10 @@ dependencies {
 }
 
 preBuild.dependsOn(prepareHeaders)
+
+tasks.configureEach { task ->
+  // C++ clean
+  if (task.name.contains("clean")) {
+    task.dependsOn(deleteCmakeCache)
+  }
+}
