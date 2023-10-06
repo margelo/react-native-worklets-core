@@ -300,6 +300,16 @@ private:
                       .asString(runtime)
                       .utf8(runtime);
     }
+    
+    // Double-check if the code property is valid.
+    bool isCodeEmpty = std::all_of(_code.begin(), _code.end(), std::isspace);
+    if (isCodeEmpty) {
+      std::string error = "Failed to create Worklet, the provided code is empty. Tips:\n"
+        "* Is the babel plugin correctly installed?\n"
+        "* If you are using react-native-reanimated, make sure the react-native-reanimated plugin does not override the react-native-worklets-core/plugin.\n"
+        "* Make sure the JS Worklet contains a \"" + std::string(PropNameWorkletInitDataCode) + "\" property with the function's code.";
+      throw jsi::JSError(runtime, error);
+    }
 
     // This is a worklet
     _isWorklet = true;
