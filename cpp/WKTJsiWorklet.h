@@ -274,13 +274,14 @@ private:
       jsi::Value locationProp = initDataProp.asObject(runtime).getProperty(
           runtime, PropNameWorkletInitDataLocation);
 
-      if (locationProp.isUndefined() || locationProp.isNull() ||
-          !locationProp.isString()) {
-        return;
+      // Check location must be a string if it is defined
+      if (!locationProp.isUndefined() && !locationProp.isNull() &&
+          locationProp.isString()) {
+        // Set location
+        _location = locationProp.asString(runtime).utf8(runtime);
+      } else {
+        _location = "(unknown)";
       }
-
-      // Set location
-      _location = locationProp.asString(runtime).utf8(runtime);
 
       // Let us try to install the function in the worklet context
       _code = initDataProp.asObject(runtime)
