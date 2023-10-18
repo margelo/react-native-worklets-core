@@ -5,7 +5,7 @@ exports[`babel plugin captures worklets environment 1`] = `
 var objX = {
   x: x
 };
-var _worklet_5359970077727_init_data = {
+var _worklet_3447562087488_init_data = {
   code: \\"function f(){const{x,objX}=this.__closure;return{res:x+objX.x};}\\",
   location: \\"${ process.cwd() }/jest tests fixture\\"
 };
@@ -22,8 +22,8 @@ var f = function () {
       x: objX.x
     }
   };
-  _f.__initData = _worklet_5359970077727_init_data;
-  _f.__workletHash = 5359970077727;
+  _f.__initData = _worklet_3447562087488_init_data;
+  _f.__workletHash = 3447562087488;
   _f.__stackDetails = _e;
   return _f;
 }();"
@@ -121,7 +121,7 @@ function App() {
 `;
 
 exports[`babel plugin supports SequenceExpression, with worklet closure 1`] = `
-"var _worklet_5237526540557_init_data = {
+"var _worklet_4104704620690_init_data = {
   code: \\"function onStart(){const{obj}=this.__closure;var a=obj.a;}\\",
   location: \\"${ process.cwd() }/jest tests fixture\\"
 };
@@ -141,8 +141,8 @@ function App() {
           a: obj.a
         }
       };
-      _f.__initData = _worklet_5237526540557_init_data;
-      _f.__workletHash = 5237526540557;
+      _f.__initData = _worklet_4104704620690_init_data;
+      _f.__workletHash = 4104704620690;
       _f.__stackDetails = _e;
       return _f;
     }()
@@ -155,7 +155,7 @@ exports[`babel plugin supports nested worklets keeping worklet decoration for in
   code: \\"function anonymous(){return 200;}\\",
   location: \\"${ process.cwd() }/jest tests fixture\\"
 };
-var _worklet_7858844471746_init_data = {
+var _worklet_6579109065346_init_data = {
   code: \\"function anonymous(){const{_worklet_16463389415794_init_data}=this.__closure;var b=function(){var _e=[new Error(),1,-20];var _f=function _f(){return 200;};_f.__closure={};_f.__initData=_worklet_16463389415794_init_data;_f.__workletHash=16463389415794;_f.__stackDetails=_e;return _f;}();return 100+b();}\\",
   location: \\"${ process.cwd() }/jest tests fixture\\"
 };
@@ -178,8 +178,8 @@ var f = function () {
   _f.__closure = {
     _worklet_16463389415794_init_data: _worklet_16463389415794_init_data
   };
-  _f.__initData = _worklet_7858844471746_init_data;
-  _f.__workletHash = 7858844471746;
+  _f.__initData = _worklet_6579109065346_init_data;
+  _f.__workletHash = 6579109065346;
   _f.__stackDetails = _e;
   return _f;
 }();"
@@ -187,7 +187,7 @@ var f = function () {
 
 exports[`babel plugin supports recursive calls 1`] = `
 "var a = 1;
-var _worklet_2022702330805_init_data = {
+var _worklet_210900050506_init_data = {
   code: \\"function foo(t){const foo=this._recur;const{a}=this.__closure;if(t>0){return a+foo(t-1);}}\\",
   location: \\"${ process.cwd() }/jest tests fixture\\"
 };
@@ -201,8 +201,8 @@ var foo = function () {
   _f.__closure = {
     a: a
   };
-  _f.__initData = _worklet_2022702330805_init_data;
-  _f.__workletHash = 2022702330805;
+  _f.__initData = _worklet_210900050506_init_data;
+  _f.__workletHash = 210900050506;
   _f.__stackDetails = _e;
   return _f;
 }();"
@@ -278,7 +278,7 @@ var foo = function () {
 exports[`babel plugin transforms spread operator in worklets for function calls 1`] = `
 "var _interopRequireDefault = require(\\"@babel/runtime/helpers/interopRequireDefault\\");
 var _toConsumableArray2 = _interopRequireDefault(require(\\"@babel/runtime/helpers/toConsumableArray\\"));
-var _worklet_4972199179357_init_data = {
+var _worklet_17339033565762_init_data = {
   code: \\"function foo(arg){const{_toConsumableArray}=this.__closure;var _console;(_console=console).log.apply(_console,_toConsumableArray(arg));}\\",
   location: \\"${ process.cwd() }/jest tests fixture\\"
 };
@@ -291,8 +291,8 @@ var foo = function () {
   _f.__closure = {
     _toConsumableArray: _toConsumableArray2.default
   };
-  _f.__initData = _worklet_4972199179357_init_data;
-  _f.__workletHash = 4972199179357;
+  _f.__initData = _worklet_17339033565762_init_data;
+  _f.__workletHash = 17339033565762;
   _f.__stackDetails = _e;
   return _f;
 }();"
@@ -365,7 +365,7 @@ exports[`babel plugin workletizes getter 1`] = `
 "var _interopRequireDefault = require(\\"@babel/runtime/helpers/interopRequireDefault\\");
 var _classCallCheck2 = _interopRequireDefault(require(\\"@babel/runtime/helpers/classCallCheck\\"));
 var _createClass2 = _interopRequireDefault(require(\\"@babel/runtime/helpers/createClass\\"));
-var _worklet_10436985806815_init_data = {
+var _worklet_13932542455552_init_data = {
   code: \\"function get(){const{x}=this.__closure;return x+2;}\\",
   location: \\"${ process.cwd() }/jest tests fixture\\"
 };
@@ -383,8 +383,8 @@ var Foo = function () {
       _f.__closure = {
         x: x
       };
-      _f.__initData = _worklet_10436985806815_init_data;
-      _f.__workletHash = 10436985806815;
+      _f.__initData = _worklet_13932542455552_init_data;
+      _f.__workletHash = 13932542455552;
       _f.__stackDetails = _e;
       return _f;
     }()
