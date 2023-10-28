@@ -168,6 +168,7 @@ public:
   }
 
 protected:
+  // Release resources when the owning JS engine calls dispose on this object
   void dispose(bool disposed) override {
     if (!disposed) {
       release_wrapped_resources();

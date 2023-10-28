@@ -81,6 +81,10 @@ public:
   JsiWorklet(jsi::Runtime &runtime, std::shared_ptr<jsi::Function> func) {
     createWorklet(runtime, func);
   }
+                     
+  ~JsiWorklet() {
+    JsiHostObject::dispose();
+  }
 
   JSI_HOST_FUNCTION(isWorklet) { return isWorklet(); }
 
@@ -233,6 +237,15 @@ public:
     }
   }
 
+protected:
+  void dispose(bool disposed) override {
+    if (!disposed) {
+      if (_closureWrapper != nullptr) {
+        _closureWrapper->release_wrapped_resources();
+      }
+    }
+  }
+
 private:
   /**
    Installs the worklet function into the worklet runtime
@@ -305,10 +318,15 @@ private:
     // Double-check if the code property is valid.
     bool isCodeEmpty = std::all_of(_code.begin(), _code.end(), std::isspace);
     if (isCodeEmpty) {
-      std::string error = "Failed to create Worklet, the provided code is empty. Tips:\n"
-        "* Is the babel plugin correctly installed?\n"
-        "* If you are using react-native-reanimated, make sure the react-native-reanimated plugin does not override the react-native-worklets-core/plugin.\n"
-        "* Make sure the JS Worklet contains a \"" + std::string(PropNameWorkletInitDataCode) + "\" property with the function's code.";
+      std::string error =
+          "Failed to create Worklet, the provided code is empty. Tips:\n"
+          "* Is the babel plugin correctly installed?\n"
+          "* If you are using react-native-reanimated, make sure the "
+          "react-native-reanimated plugin does not override the "
+          "react-native-worklets-core/plugin.\n"
+          "* Make sure the JS Worklet contains a \"" +
+          std::string(PropNameWorkletInitDataCode) +
+          "\" property with the function's code.";
       throw jsi::JSError(runtime, error);
     }
 
