@@ -301,7 +301,7 @@ private:
                       .asString(runtime)
                       .utf8(runtime);
     }
-    
+
     // Double-check if the code property is valid.
     bool isCodeEmpty = std::all_of(_code.begin(), _code.end(), std::isspace);
     if (isCodeEmpty) {

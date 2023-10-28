@@ -30,6 +30,8 @@ public:
                    JsiWrapper *parent)
       : JsiWrapper(runtime, value, parent) {}
 
+  ~JsiObjectWrapper() { JsiHostObject::dispose(); }
+
   JSI_HOST_FUNCTION(toStringImpl) {
     return jsi::String::createFromUtf8(runtime, toString(runtime));
   }
@@ -156,7 +158,22 @@ public:
     }
   }
 
+  /**
+    Overridden dispose - release our array resources!
+  */
+  void release_wrapped_resources() override {
+    for (auto it = _properties.begin(); it != _properties.end(); it++) {
+      it->second->release_wrapped_resources();
+    }
+  }
+
 protected:
+  void dispose(bool disposed) override {
+    if (!disposed) {
+      release_wrapped_resources();
+    }
+  }
+
   jsi::Value getAsProxyOrValue(jsi::Runtime &runtime) override {
     if (getType() == JsiWrapperType::Object) {
       return getObjectAsProxy(runtime, shared_from_this());

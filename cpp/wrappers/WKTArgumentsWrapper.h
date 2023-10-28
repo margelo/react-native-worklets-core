@@ -20,6 +20,12 @@ public:
     }
   }
 
+  ~ArgumentsWrapper() {
+    for (size_t i = 0; i < _arguments.size(); i++) {
+      _arguments[i]->release_wrapped_resources();
+    }
+  }
+
   size_t getCount() const { return _count; }
 
   std::vector<jsi::Value> getArguments(jsi::Runtime &runtime) const {

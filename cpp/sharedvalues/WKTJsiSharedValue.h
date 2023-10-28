@@ -30,6 +30,11 @@ public:
    */
   ~JsiSharedValue() { _valueWrapper = nullptr; }
 
+  JSI_HOST_FUNCTION(dispose) {
+    JsiHostObject::dispose();
+    return jsi::Value::undefined();
+  }
+
   JSI_HOST_FUNCTION(toString) {
     return jsi::String::createFromUtf8(runtime,
                                        _valueWrapper->toString(runtime));
@@ -100,6 +105,7 @@ public:
   }
 
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiSharedValue, toString),
+                       JSI_EXPORT_FUNC(JsiSharedValue, dispose),
                        JSI_EXPORT_FUNC(JsiSharedValue, addListener))
 
   JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiSharedValue, value))
@@ -120,6 +126,13 @@ public:
    */
   void removeListener(size_t listenerId) {
     _valueWrapper->removeListener(listenerId);
+  }
+
+protected:
+  void dispose(bool disposed) override {
+    if (!disposed) {
+      _valueWrapper->release_wrapped_resources();
+    }
   }
 
 private:

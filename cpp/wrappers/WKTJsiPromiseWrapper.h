@@ -78,7 +78,20 @@ public:
 
   explicit JsiPromiseWrapper(jsi::Runtime &runtime);
 
-  ~JsiPromiseWrapper() {}
+  ~JsiPromiseWrapper() { JsiHostObject::dispose(); }
+
+  /**
+    Overridden dispose - release our array resources!
+   */
+  void release_wrapped_resources() override {
+    if (_reason != nullptr) {
+      _reason->release_wrapped_resources();
+    }
+    if (_value != nullptr) {
+      _value->release_wrapped_resources();
+    }
+  }
+
   /**
    Returns true if the object is a thenable object - ie. an object with a then
    function. Which is basically what a promise is.
@@ -138,6 +151,12 @@ public:
   }
 
 protected:
+  void dispose(bool disposed) override {
+    if (!disposed) {
+      release_wrapped_resources();
+    }
+  }
+
   jsi::Value then(jsi::Runtime &runtime, const jsi::Value &thisValue,
                   const jsi::Value *thenFn, const jsi::Value *catchFn);
 

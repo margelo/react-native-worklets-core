@@ -143,6 +143,11 @@ public:
   JsiHostObject();
   ~JsiHostObject();
 
+  /**
+   Disposes and releases all used resources
+   */
+  void dispose();
+
 protected:
   /**
    Override to return map of name/functions
@@ -194,7 +199,13 @@ protected:
    */
   std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &runtime) override;
 
+  /**
+   Override to dispose
+   */
+  virtual void dispose(bool disposed) {}
+
 private:
   std::map<void *, std::map<std::string, jsi::Function>> _hostFunctionCache;
+  std::atomic<bool> _disposed = {false};
 };
 } // namespace RNWorklet
