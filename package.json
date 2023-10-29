@@ -1,7 +1,7 @@
 {
   "name": "react-native-worklets-core",
   "version": "0.2.2",
-  "description": "test",
+  "description": "A Worklet runner for React Native",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
   "types": "lib/typescript/index.d.ts",
@@ -15,6 +15,7 @@
     "cpp",
     "plugin.js",
     "*.podspec",
+    "img/banner.svg",
     "!lib/typescript/example",
     "!ios/build",
     "!android/build",
@@ -47,7 +48,7 @@
     "ios",
     "android"
   ],
-  "repository": "https://github.com/chrfalch/react-native-worklets-core",
+  "repository": "https://github.com/margelo/react-native-worklets-core",
   "author": "Christian Falch <christian.falch@gmail.com> (https://github.com/chrfalch)",
   "contributors": [
     {
