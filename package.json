@@ -69,9 +69,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/chrfalch/react-native-worklets-core/issues"
+    "url": "https://github.com/margelo/react-native-worklets-core/issues"
   },
-  "homepage": "https://github.com/chrfalch/react-native-worklets-core#readme",
+  "homepage": "https://github.com/margelo/react-native-worklets-core#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
