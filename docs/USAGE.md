@@ -31,12 +31,51 @@ function something() {
 
 ### Hooks
 
-Worklets also provides two utility hooks, here's an example:
+Worklets also provides three utility hooks:
+
+#### `useWorklet`
+
+Uses a memoized Worklet that can be called from the JS context, or from within another Worklet context:
+
+```ts
+function App() {
+  const worklet = useWorklet('default', () => {
+    'worklet'
+    console.log("hello from worklet!")
+  }, [])
+
+  worklet()
+}
+```
+
+#### `useRunInJS`
+
+Uses a memoized callback to the JS context that can be called from within a Worklet context:
+
+```ts
+function App() {
+  const sayHello = useRunInJS(() => {
+    console.log("hello from JS!")
+  }, [])
+
+  const worklet = useWorklet('default', () => {
+    'worklet'
+    console.log("hello from worklet!")
+    sayHello()
+  }, [sayHello])
+
+  worklet()
+}
+```
+
+#### `useSharedValue`
+
+Uses a SharedValue instance that can be read from- and written to by both a JS context and a Worklet context at the same time:
 
 ```ts
 function App() {
   const something = useSharedValue(5)
-  const worklet = useWorklet(() => {
+  const worklet = useWorklet('default', () => {
     'worklet'
     something.value = Math.random()
   }, [something])
