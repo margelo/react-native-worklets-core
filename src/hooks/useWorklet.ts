@@ -1,7 +1,11 @@
-import { DependencyList, useCallback, useMemo } from "react";
+import { DependencyList, useMemo } from "react";
+import type { IWorkletContext } from "src/types";
 
 /**
  * Create a Worklet function that persists between re-renders.
+ * The returned function can be called from both a Worklet context and the JS context, but will execute on a Worklet context.
+ *
+ * @param context The context to run this Worklet in. Can be `default` to use the default background context, or a custom context.
  * @param callback The Worklet. Must be marked with the `'worklet'` directive.
  * @param dependencyList The React dependencies of this Worklet.
  * @returns A memoized Worklet
@@ -11,19 +15,21 @@ export function useWorklet<
   TArguments extends [],
   T extends (...args: TArguments) => TResult
 >(
+  context: IWorkletContext | "default",
   callback: T,
   dependencyList: DependencyList
 ): (...args: TArguments) => Promise<TResult> {
   const worklet = useMemo(
-    () =>
-      Worklets.createRunInContextFn((...args: TArguments) => {
-        "worklet";
-        return callback(...args);
-      }),
+    () => {
+      if (context === "default") {
+        return Worklets.createRunInContextFn(callback);
+      } else {
+        return Worklets.createRunInContextFn(callback, context);
+      }
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     dependencyList
   );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useCallback(worklet, dependencyList);
+  return worklet;
 }
