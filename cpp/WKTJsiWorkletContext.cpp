@@ -145,9 +145,12 @@ void JsiWorkletContext::invokeOnWorkletThread(
     auto self = weakSelf.lock();
     if (self) {
 #ifdef ANDROID
-      facebook::jni::ThreadScope scope;
-#endif
+      facebook::jni::ThreadScope::WithClassLoader([fp = std::move(fp), self]() {
+        fp(self.get(), self->getWorkletRuntime());
+      });
+#else
       fp(self.get(), self->getWorkletRuntime());
+#endif
     }
   });
 }
