@@ -16,7 +16,6 @@ include("${REACT_NATIVE_DIR}/ReactAndroid/cmake-utils/folly-flags.cmake")
 add_compile_options(${folly_FLAGS})
 
 # Consume shared libraries and headers from prefabs
-find_package(fbjni REQUIRED CONFIG)
 find_package(ReactAndroid REQUIRED CONFIG)
 
 if(${JS_RUNTIME} STREQUAL "hermes")
@@ -63,7 +62,6 @@ target_link_libraries(
   ReactAndroid::glog
   ReactAndroid::jsi
   ReactAndroid::reactnativejni
-  fbjni::fbjni
 )
 
 if(${JS_RUNTIME} STREQUAL "hermes")

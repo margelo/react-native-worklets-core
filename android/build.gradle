@@ -137,7 +137,6 @@ android {
       "META-INF",
       "META-INF/**",
       "**/libc++_shared.so",
-      "**/libfbjni.so",
       "**/libjsi.so",
       "**/libfolly_json.so",
       "**/libfolly_runtime.so",
