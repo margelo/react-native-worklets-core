@@ -29,6 +29,8 @@ const globals = new Set([
   "Uint32Array",
   "Float32Array",
   "Float64Array",
+  "BigInt64Array",
+  "BigUint64Array",
   "Date",
   "HermesInternal",
   "JSON",
