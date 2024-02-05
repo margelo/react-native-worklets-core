@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { ISharedValue } from "../types";
 
 /**
@@ -11,5 +11,10 @@ export function useSharedValue<T>(initialValue: T): ISharedValue<T> {
   if (ref.current == null) {
     ref.current = Worklets.createSharedValue(initialValue);
   }
+  // Free on unmount
+  useEffect(() => {
+    return ref.current?.dispose();
+  }, []);
+
   return ref.current;
 }

@@ -2,6 +2,7 @@ export interface ISharedValue<T> {
   get value(): T;
   set value(v: T);
   addListener(listener: () => void): () => void;
+  dispose: () => void;
 }
 
 export interface IWorklet {

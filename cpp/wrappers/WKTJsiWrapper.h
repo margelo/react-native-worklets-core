@@ -137,6 +137,11 @@ public:
    */
   void removeListener(size_t listenerId) { _listeners.erase(listenerId); }
 
+  /**
+    Override to ensure releasing resources correctly
+   */
+  virtual void release_wrapped_resources() {}
+
 protected:
   /**
    * Returns a wrapper for the value
@@ -185,7 +190,6 @@ protected:
                           const jsi::Value &thisValue,
                           const jsi::Value *arguments, size_t count);
 
-protected:
   /**
    * Sets the value from a JS value
    * @param runtime runtime for the value
@@ -253,10 +257,10 @@ private:
    * @param parent Parent wrapper
    */
   explicit JsiWrapper(JsiWrapper *parent) : _parent(parent) {
-    _readWriteMutex = new std::mutex();
+    _readWriteMutex = std::make_shared<std::mutex>();
   }
 
-  std::mutex *_readWriteMutex;
+  std::shared_ptr<std::mutex> _readWriteMutex;
   JsiWrapper *_parent;
 
   JsiWrapperType _type;

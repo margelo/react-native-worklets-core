@@ -31,6 +31,13 @@ JsiHostObject::~JsiHostObject() {
 #endif
 }
 
+void JsiHostObject::dispose() {
+  if (!_disposed) {
+    dispose(_disposed);
+    _disposed = true;
+  }
+}
+
 void JsiHostObject::set(jsi::Runtime &rt, const jsi::PropNameID &name,
                         const jsi::Value &value) {
 

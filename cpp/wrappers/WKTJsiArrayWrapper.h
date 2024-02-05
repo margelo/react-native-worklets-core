@@ -32,6 +32,8 @@ public:
                   JsiWrapper *parent)
       : JsiWrapper(runtime, value, parent, JsiWrapperType::Array) {}
 
+  ~JsiArrayWrapper() { JsiHostObject::dispose(); }
+
   JSI_HOST_FUNCTION(toStringImpl) {
     return jsi::String::createFromUtf8(runtime, toString(runtime));
   }
@@ -412,6 +414,23 @@ public:
   }
 
   const std::vector<std::shared_ptr<JsiWrapper>> &getArray() { return _array; }
+
+  /**
+    Overridden dispose - release our array resources!
+   */
+  void release_wrapped_resources() override {
+    for (size_t i = 0; i < _array.size(); i++) {
+      _array[i]->release_wrapped_resources();
+    }
+  }
+
+protected:
+  // Release resources when the owning JS engine calls dispose on this object
+  void dispose(bool disposed) override {
+    if (!disposed) {
+      release_wrapped_resources();
+    }
+  }
 
 private:
   /**
