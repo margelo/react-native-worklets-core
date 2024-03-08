@@ -233,6 +233,13 @@ public:
     }
   }
 
+  /**
+   Returns true if the character is a whitespace character
+   */
+  static bool isWhitespace(unsigned char c) {
+    return std::isspace(c);
+  }
+
 private:
   /**
    Installs the worklet function into the worklet runtime
@@ -303,7 +310,7 @@ private:
     }
     
     // Double-check if the code property is valid.
-    bool isCodeEmpty = std::all_of(_code.begin(), _code.end(), std::isspace);
+    bool isCodeEmpty = std::all_of(_code.begin(), _code.end(), isWhitespace);
     if (isCodeEmpty) {
       std::string error = "Failed to create Worklet, the provided code is empty. Tips:\n"
         "* Is the babel plugin correctly installed?\n"
