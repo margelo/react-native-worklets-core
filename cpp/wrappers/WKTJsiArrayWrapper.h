@@ -35,6 +35,19 @@ public:
   JSI_HOST_FUNCTION(toStringImpl) {
     return jsi::String::createFromUtf8(runtime, toString(runtime));
   }
+                          
+  JSI_HOST_FUNCTION(toJSON) {
+    return toArray(runtime, thisValue, arguments, count);
+  }
+                          
+  JSI_HOST_FUNCTION(toArray) {
+    jsi::Array array(runtime, _array.size());
+    for (size_t i = 0; i < _array.size(); i++) {
+      auto arg = _array.at(i)->unwrapAsProxyOrValue(runtime);
+      array.setValueAtIndex(runtime, i, std::move(arg));
+    }
+    return array;
+  }
 
   JSI_PROPERTY_GET(length) { return static_cast<double>(_array.size()); }
 
@@ -287,6 +300,8 @@ public:
       JSI_EXPORT_FUNC(JsiArrayWrapper, indexOf),
       JSI_EXPORT_FUNC(JsiArrayWrapper, join),
       JSI_EXPORT_FUNC(JsiArrayWrapper, reduce),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, toArray),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, toJSON),
       JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, toStringImpl, toString),
       JSI_EXPORT_FUNC_NAMED(JsiArrayWrapper, toStringImpl, Symbol.toStringTag),
 
