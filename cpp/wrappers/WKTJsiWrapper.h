@@ -252,11 +252,9 @@ private:
    * Base Constructor
    * @param parent Parent wrapper
    */
-  explicit JsiWrapper(JsiWrapper *parent) : _parent(parent) {
-    _readWriteMutex = new std::mutex();
-  }
+  explicit JsiWrapper(JsiWrapper *parent) : _parent(parent) {}
 
-  std::mutex *_readWriteMutex;
+  std::mutex _readWriteMutex;
   JsiWrapper *_parent;
 
   JsiWrapperType _type;
