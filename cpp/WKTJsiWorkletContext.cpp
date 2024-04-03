@@ -25,6 +25,7 @@
 
 #ifdef ANDROID
 #include <fbjni/fbjni.h>
+#include <android/log.h>
 #endif
 
 namespace RNWorklet {
@@ -64,12 +65,15 @@ JsiWorkletContext::JsiWorkletContext(
 JsiWorkletContext::~JsiWorkletContext() {
   // Remove from thread contexts
   runtimeMappings.erase(&_workletRuntime);
+  __android_log_print(ANDROID_LOG_INFO, "JsiWorkletContext", "JsiWorkletContext::~JsiWorkletContext(%s)", _name.c_str());
 }
 
 void JsiWorkletContext::initialize(
     const std::string &name, jsi::Runtime *jsRuntime,
     std::function<void(std::function<void()> &&)> jsCallInvoker,
     std::function<void(std::function<void()> &&)> workletCallInvoker) {
+__android_log_print(ANDROID_LOG_INFO, "JsiWorkletContext", "JsiWorkletContext::initialize(%s)", name.c_str());
+
   _name = name;
   _jsRuntime = jsRuntime;
   _jsCallInvoker = jsCallInvoker;
