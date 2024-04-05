@@ -58,8 +58,7 @@ public:
   JSI_HOST_FUNCTION(createSharedValue) {
     return jsi::Object::createFromHostObject(
         *JsiWorkletContext::getDefaultInstance()->getJsRuntime(),
-        std::make_shared<JsiSharedValue>(
-            arguments[0], JsiWorkletContext::getDefaultInstanceAsShared()));
+        std::make_shared<JsiSharedValue>(arguments[0]));
   };
 
   JSI_HOST_FUNCTION(createRunInJsFn) {
