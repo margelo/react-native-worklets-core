@@ -59,7 +59,7 @@ public:
     return jsi::Object::createFromHostObject(
         *JsiWorkletContext::getDefaultInstance()->getJsRuntime(),
         std::make_shared<JsiSharedValue>(
-            arguments[0], JsiWorkletContext::getDefaultInstance()));
+            arguments[0], JsiWorkletContext::getDefaultInstanceAsShared()));
   };
 
   JSI_HOST_FUNCTION(createRunInJsFn) {
@@ -98,11 +98,12 @@ public:
     }
 
     // Get the active context
-    auto activeContext =
-        count == 2 && arguments[1].isObject()
-            ? arguments[1].asObject(runtime).getHostObject<JsiWorkletContext>(
-                  runtime)
-            : JsiWorkletContext::getDefaultInstance();
+    auto activeContext = count == 2 && arguments[1].isObject()
+                             ? arguments[1]
+                                   .asObject(runtime)
+                                   .getHostObject<JsiWorkletContext>(runtime)
+                                   .get()
+                             : JsiWorkletContext::getDefaultInstance();
 
     if (activeContext == nullptr) {
       throw jsi::JSError(runtime,
@@ -110,7 +111,7 @@ public:
     }
 
     auto caller = JsiWorkletContext::createCallInContext(runtime, arguments[0],
-                                                         activeContext.get());
+                                                         activeContext);
 
     // Now let us create the caller function.
     return jsi::Function::createFromHostFunction(
@@ -127,14 +128,15 @@ public:
 
   JSI_PROPERTY_GET(defaultContext) {
     return jsi::Object::createFromHostObject(
-        runtime, JsiWorkletContext::getDefaultInstance());
+        runtime, JsiWorkletContext::getDefaultInstanceAsShared());
   }
 
   JSI_PROPERTY_GET(currentContext) {
     auto current = JsiWorkletContext::getCurrent(runtime);
-    if (!current) return jsi::Value::undefined();
-    return jsi::Object::createFromHostObject(
-        runtime, current->shared_from_this());
+    if (!current)
+      return jsi::Value::undefined();
+    return jsi::Object::createFromHostObject(runtime,
+                                             current->shared_from_this());
   }
 
   JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorkletApi,
