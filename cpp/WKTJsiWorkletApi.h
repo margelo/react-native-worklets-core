@@ -133,16 +133,10 @@ namespace RNWorklet
           });
     }
 
-    JSI_HOST_FUNCTION(receiveJSFunction);
-
-    JSI_HOST_FUNCTION(callStoredJSFunction);
-
     JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletApi, createSharedValue),
                          JSI_EXPORT_FUNC(JsiWorkletApi, createContext),
                          JSI_EXPORT_FUNC(JsiWorkletApi, createRunInContextFn),
-                         JSI_EXPORT_FUNC(JsiWorkletApi, createRunInJsFn),
-                         JSI_EXPORT_FUNC(JsiWorkletApi, receiveJSFunction),
-                         JSI_EXPORT_FUNC(JsiWorkletApi, callStoredJSFunction))
+                         JSI_EXPORT_FUNC(JsiWorkletApi, createRunInJsFn))
 
     JSI_PROPERTY_GET(defaultContext)
     {
@@ -175,6 +169,6 @@ namespace RNWorklet
   private:
     // Instance/singletong
     static std::shared_ptr<JsiWorkletApi> instance;
-      std::shared_ptr<facebook::jsi::Function> storedJSFunction = nullptr;
+    std::shared_ptr<facebook::jsi::Function> storedJSFunction = nullptr;
   };
 } // namespace RNWorklet

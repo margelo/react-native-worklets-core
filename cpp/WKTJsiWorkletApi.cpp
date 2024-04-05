@@ -12,6 +12,8 @@
 #include "WKTJsiWorklet.h"
 #include "WKTJsiWorkletContext.h"
 
+#include "hybridObject/TestHybridObject.h"
+
 namespace RNWorklet
 {
 
@@ -35,6 +37,12 @@ namespace RNWorklet
     runtime.global().setProperty(
         runtime, WorkletsApiName,
         jsi::Object::createFromHostObject(runtime, getInstance()));
+
+    // Install test object
+    std::shared_ptr<TestHybridObject> testObject = std::make_shared<TestHybridObject>();
+    runtime.global().setProperty(
+        runtime, "TestObject",
+        jsi::Object::createFromHostObject(runtime, testObject));
   }
 
   std::shared_ptr<JsiWorkletContext>
@@ -50,29 +58,6 @@ namespace RNWorklet
       instance = std::make_shared<JsiWorkletApi>();
     }
     return instance;
-  }
-
-  jsi::Value JsiWorkletApi::receiveJSFunction(jsi::Runtime &runtime, const jsi::Value &thisValue,
-                                              const jsi::Value *arguments, size_t count)
-  {
-    // auto workletFct = createRunInContextFn(runtime, thisValue, arguments, count);
-    // storedJSFunction = std::make_shared<jsi::Function>(workletFct.asObject(runtime).asFunction(runtime));
-    storedJSFunction = std::make_shared<jsi::Function>(arguments[0].asObject(runtime).asFunction(runtime));
-
-    return jsi::Value::undefined();
-  }
-
-  jsi::Value JsiWorkletApi::callStoredJSFunction(jsi::Runtime &runtime, const jsi::Value &thisValue,
-                                                 const jsi::Value *arguments, size_t count)
-  {
-      if (storedJSFunction == nullptr)
-      {
-          throw jsi::JSError(
-              runtime, "No stored JS function!");
-      }
-      
-    storedJSFunction->call(runtime);
-    return jsi::Value::undefined();
   }
 
   /**

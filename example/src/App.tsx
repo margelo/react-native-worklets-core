@@ -12,25 +12,24 @@ import { TestWrapper } from "../Tests/TestWrapper";
 
 import { Worklets } from "react-native-worklets-core";
 
-// Pass a JS function on JS thread to worklets
-Worklets.receiveJSFunction(() => {
-  console.log("Received JS function");
-});
+// Invoke worklets one so it installs into the runtime
+Worklets.defaultContext;
 
-Worklets.callStoredJSFunction(); // This works
+const testObject = global.TestObject;
+// Pass a JS function on JS thread to worklets
+testObject.setJsCallback(() => {
+  console.log("JS Callback !!!");
+});
 
 const App = () => {
   const { tests, categories, output, runTests, runSingleTest } =
     useTestRunner();
 
-  // In some worklet context call our JS function from the native side
   useEffect(() => {
-    const workletFctCall = Worklets.callStoredJSFunction;
+    // In some worklet context call our JS function from the native side
     Worklets.createRunInContextFn(() => {
       "worklet";
-
-      // This doesn't work
-      workletFctCall();
+      testObject.callJsCallback();
     })();
   }, []);
 
