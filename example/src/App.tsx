@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -10,9 +10,30 @@ import {
 import { useTestRunner } from "../Tests";
 import { TestWrapper } from "../Tests/TestWrapper";
 
+import { Worklets } from "react-native-worklets-core";
+
+// Pass a JS function on JS thread to worklets
+Worklets.receiveJSFunction(() => {
+  console.log("Received JS function");
+});
+
+Worklets.callStoredJSFunction(); // This works
+
 const App = () => {
   const { tests, categories, output, runTests, runSingleTest } =
     useTestRunner();
+
+  // In some worklet context call our JS function from the native side
+  useEffect(() => {
+    const workletFctCall = Worklets.callStoredJSFunction;
+    Worklets.createRunInContextFn(() => {
+      "worklet";
+
+      // This doesn't work
+      workletFctCall();
+    })();
+  }, []);
+
   return (
     <View style={styles.container}>
       <View style={styles.tests}>
