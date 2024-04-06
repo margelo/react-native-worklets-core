@@ -92,7 +92,7 @@ public:
     auto firstEl = _array.at(0);
     _array.erase(_array.begin());
     notify();
-    return firstEl->unwrapAsProxyOrValue(runtime);
+    return firstEl->unwrap(runtime);
   };
 
   JSI_HOST_FUNCTION(forEach) {

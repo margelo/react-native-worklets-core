@@ -36,7 +36,6 @@ public:
    */
   explicit JsiWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping)
       : _parent(parent), _useProxiesForUnwrapping(useProxiesForUnwrapping) {
-    _readWriteMutex = new std::mutex();
   }
 
   /**
@@ -228,7 +227,7 @@ private:
     }
   }
 
-  std::mutex *_readWriteMutex;
+  std::mutex _readWriteMutex;
 
   JsiWrapper *_parent;
 
