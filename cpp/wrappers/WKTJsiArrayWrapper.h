@@ -84,6 +84,17 @@ public:
     return lastEl->unwrap(runtime);
   };
 
+  JSI_HOST_FUNCTION(shift) {
+    // Shift first element from array
+    if (_array.empty()) {
+      return jsi::Value::undefined();
+    }
+    auto firstEl = _array.at(0);
+    _array.erase(_array.begin());
+    notify();
+    return firstEl->unwrapAsProxyOrValue(runtime);
+  };
+
   JSI_HOST_FUNCTION(forEach) {
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     for (size_t i = 0; i < _array.size(); i++) {
@@ -277,6 +288,7 @@ public:
   JSI_EXPORT_FUNCTIONS(
       JSI_EXPORT_FUNC(JsiArrayWrapper, push),
       JSI_EXPORT_FUNC(JsiArrayWrapper, pop),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, shift),
       JSI_EXPORT_FUNC(JsiArrayWrapper, forEach),
       JSI_EXPORT_FUNC(JsiArrayWrapper, map),
       JSI_EXPORT_FUNC(JsiArrayWrapper, filter),
