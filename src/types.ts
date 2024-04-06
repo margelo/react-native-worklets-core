@@ -90,6 +90,14 @@ export interface IWorkletNativeApi {
    * Get the current Worklet context, or `undefined` if called in main React JS context.
    */
   currentContext: IWorkletContext;
+  /**
+   * Returns true if jsi/cpp believes that the passed value is an array.
+   */
+  __jsi_is_array: <T>(value: T) => boolean;
+  /**
+   * Returns true if jsi/cpp believes that the passed value is an object.
+   */
+  __jsi_is_object: <T>(value: T) => boolean;
 }
 declare global {
   var Worklets: IWorkletNativeApi;
