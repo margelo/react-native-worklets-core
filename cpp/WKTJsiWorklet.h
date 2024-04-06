@@ -363,10 +363,11 @@ public:
   jsi::Value call(jsi::Runtime &runtime, const jsi::Value &thisValue,
                   const jsi::Value *arguments, size_t count) {
     if (_workletFunction.get(runtime) == nullptr) {
-      _workletFunction.get(runtime) = _worklet->createWorkletJsFunction(runtime);      
+      _workletFunction.get(runtime) =
+          _worklet->createWorkletJsFunction(runtime);
     }
-    return _worklet->call(_workletFunction.get(runtime), runtime, thisValue, arguments,
-                          count);
+    return _worklet->call(_workletFunction.get(runtime), runtime, thisValue,
+                          arguments, count);
   }
 
 private:

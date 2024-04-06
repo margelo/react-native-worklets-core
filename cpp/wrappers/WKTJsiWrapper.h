@@ -35,8 +35,7 @@ public:
    * @param useProxiesForUnwrapping Uses proxies when unwrapping
    */
   explicit JsiWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping)
-      : _parent(parent), _useProxiesForUnwrapping(useProxiesForUnwrapping) {
-  }
+      : _parent(parent), _useProxiesForUnwrapping(useProxiesForUnwrapping) {}
 
   /**
    * Constructor
@@ -85,7 +84,7 @@ public:
   }
 
   /**
-   Non-static variant of unwrapAsProxyOrValue
+   Non-static variant of unwrap
    @param runtime Runtime
    */
   jsi::Value unwrap(jsi::Runtime &runtime) { return this->getValue(runtime); }

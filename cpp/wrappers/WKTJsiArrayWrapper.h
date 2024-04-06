@@ -74,8 +74,9 @@ public:
   JSI_HOST_FUNCTION(unshift) {
     // Insert all arguments to the array beginning
     for (size_t i = 0; i < count; i++) {
-      _array.insert(_array.begin(), JsiWrapper::wrap(runtime, arguments[i], this,
-                                                     getUseProxiesForUnwrapping()));
+      _array.insert(_array.begin(),
+                    JsiWrapper::wrap(runtime, arguments[i], this,
+                                     getUseProxiesForUnwrapping()));
     }
     notify();
     return static_cast<double>(_array.size());

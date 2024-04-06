@@ -101,11 +101,11 @@ public:
     return defaultInstance;
   }
 
-/**
- * @brief Get the Default Instance object
- * 
- * @return JsiWorkletContext* 
- */
+  /**
+   * @brief Get the Default Instance object
+   *
+   * @return JsiWorkletContext*
+   */
   static JsiWorkletContext *getDefaultInstance() {
     return JsiWorkletContext::getDefaultInstanceAsShared().get();
   }
