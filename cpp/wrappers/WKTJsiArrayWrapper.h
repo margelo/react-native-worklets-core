@@ -357,6 +357,11 @@ public:
         std::all_of(nameStr.begin(), nameStr.end(), ::isdigit)) {
       // Return property by index
       auto index = std::stoi(nameStr.c_str());
+      // Ensure we have the required length
+      if(index >= _array.size()) {
+        _array.resize(index + 1);
+      }
+      // Set value
       _array[index] = JsiWrapper::wrap(runtime, value);
       notify();
     } else {
@@ -420,45 +425,58 @@ private:
    */
   jsi::Value getArrayProxy(jsi::Runtime &runtime,
                            std::shared_ptr<jsi::HostObject> hostObj) {
-    // return jsi::Object::createFromHostObject(runtime, hostObj);
-
     auto createArrayProxy =
         runtime.global().getProperty(runtime, WorkletArrayProxyName);
+    
+    // Install factory for creating an array proxy
     if (createArrayProxy.isUndefined()) {
       // Install worklet proxy helper into runtime
       static std::string code =
-          "function (obj) {"
-          "return new Proxy(obj, {"
-          "    ownKeys: function (target) {"
-          "      return Reflect.ownKeys(target).concat(['length']);"
-          "    },"
-          "    getPrototypeOf: function () {"
-          "      return Reflect.getPrototypeOf([]);"
-          "    },"
-          "    getOwnPropertyDescriptor: function (_, prop) {"
-          "      return {"
-          "        configurable: true,"
-          "        writable: true,"
-          "        enumerable: prop !== 'length',"
-          "      };"
-          "    },"
-          "    set: function(target, prop, value) { return "
-          "Reflect.set(target,prop,value); },"
-          "    get: function(target, prop) { return Reflect.get(target, prop); "
-          "}"
-          "  })"
-          "}";
+      "function (target) {\
+        const dummy = [];\
+        return new Proxy(dummy, {\
+          ownKeys: function (_target) {\
+            return Reflect.ownKeys(target).concat(['length']);\
+          },\
+          getOwnPropertyDescriptor: function (_target, prop) {\
+            return {\
+              ...Reflect.getOwnPropertyDescriptor(target, prop),\
+              configurable: prop !== 'length',\
+              writable: true,\
+              enumerable: prop !== 'length',\
+            };\
+          },\
+          set: function (_target, prop, value, _receiver) {\
+            return Reflect.set(target, prop, value, target);\
+          },\
+          get: function (_target, prop, receiver) {\
+            if (prop === 'length') return Object.keys(target).length;\
+            if (prop === 'keys') return Object.keys(target);\
+            if (prop === 'values') return Object.values(target);\
+            return Reflect.get(target, prop, receiver);\
+          },\
+        });\
+      }\
+      ";
 
+      // Format code as an installable function
       auto codeBuffer =
           std::make_shared<const jsi::StringBuffer>("(" + code + "\n)");
+           
+      // Create function
       createArrayProxy =
           runtime.evaluateJavaScript(codeBuffer, WorkletArrayProxyName);
+      
+      // Set in runtime
       runtime.global().setProperty(runtime, WorkletArrayProxyName,
                                    createArrayProxy);
     }
 
+    // Get the create proxy factory function
     auto createProxyFunc =
         createArrayProxy.asObject(runtime).asFunction(runtime);
+    
+    // Create the proxy that converts the HostObject to an Array
     return createProxyFunc.call(
         runtime, jsi::Object::createFromHostObject(runtime, hostObj));
   }
