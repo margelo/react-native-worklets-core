@@ -160,7 +160,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(indexOf) {
-    auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0], getUseProxiesForUnwrapping());
+    auto wrappedArg =
+        JsiWrapper::wrap(runtime, arguments[0], getUseProxiesForUnwrapping());
     for (size_t i = 0; i < _array.size(); i++) {
       // TODO: Add == operator to JsiWrapper
       if (wrappedArg->getType() == _array[i]->getType()) {
@@ -206,7 +207,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(includes) {
-    auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0], getUseProxiesForUnwrapping());
+    auto wrappedArg =
+        JsiWrapper::wrap(runtime, arguments[0], getUseProxiesForUnwrapping());
     for (size_t i = 0; i < _array.size(); i++) {
       // TODO: Add == operator to JsiWrapper!!!
       if (wrappedArg->getType() == _array[i]->getType()) {
@@ -250,10 +252,11 @@ public:
 
   JSI_HOST_FUNCTION(reduce) {
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-    std::shared_ptr<JsiWrapper> acc =
-        JsiWrapper::wrap(runtime, jsi::Value::undefined(), getUseProxiesForUnwrapping());
+    std::shared_ptr<JsiWrapper> acc = JsiWrapper::wrap(
+        runtime, jsi::Value::undefined(), getUseProxiesForUnwrapping());
     if (count > 1) {
-      acc = JsiWrapper::wrap(runtime, arguments[1], getUseProxiesForUnwrapping());
+      acc =
+          JsiWrapper::wrap(runtime, arguments[1], getUseProxiesForUnwrapping());
     }
     for (size_t i = 0; i < _array.size(); i++) {
       std::vector<jsi::Value> args(3);
@@ -263,7 +266,8 @@ public:
       acc = JsiWrapper::wrap(
           runtime,
           callFunction(runtime, callbackFn, thisValue,
-                       static_cast<const jsi::Value *>(args.data()), 3), getUseProxiesForUnwrapping());
+                       static_cast<const jsi::Value *>(args.data()), 3),
+          getUseProxiesForUnwrapping());
     }
     return JsiWrapper::unwrapAsProxyOrValue(runtime, acc);
   }
@@ -356,11 +360,12 @@ public:
       // Return property by index
       auto index = std::stoi(nameStr.c_str());
       // Ensure we have the required length
-      if(index >= _array.size()) {
+      if (index >= _array.size()) {
         _array.resize(index + 1);
       }
       // Set value
-      _array[index] = JsiWrapper::wrap(runtime, value, getUseProxiesForUnwrapping());
+      _array[index] =
+          JsiWrapper::wrap(runtime, value, getUseProxiesForUnwrapping());
       notify();
     } else {
       // This is an edge case where the array is used as a
@@ -425,12 +430,11 @@ private:
                            std::shared_ptr<jsi::HostObject> hostObj) {
     auto createArrayProxy =
         runtime.global().getProperty(runtime, WorkletArrayProxyName);
-    
+
     // Install factory for creating an array proxy
     if (createArrayProxy.isUndefined()) {
       // Install worklet proxy helper into runtime
-      static std::string code =
-      "function (target) {\
+      static std::string code = "function (target) {\
         const dummy = [];\
         return new Proxy(dummy, {\
           ownKeys: function (_target) {\
@@ -460,11 +464,11 @@ private:
       // Format code as an installable function
       auto codeBuffer =
           std::make_shared<const jsi::StringBuffer>("(" + code + "\n)");
-           
+
       // Create function
       createArrayProxy =
           runtime.evaluateJavaScript(codeBuffer, WorkletArrayProxyName);
-      
+
       // Set in runtime
       runtime.global().setProperty(runtime, WorkletArrayProxyName,
                                    createArrayProxy);
@@ -473,7 +477,7 @@ private:
     // Get the create proxy factory function
     auto createProxyFunc =
         createArrayProxy.asObject(runtime).asFunction(runtime);
-    
+
     // Create the proxy that converts the HostObject to an Array
     return createProxyFunc.call(
         runtime, jsi::Object::createFromHostObject(runtime, hostObj));

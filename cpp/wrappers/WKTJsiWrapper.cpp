@@ -38,12 +38,15 @@ std::shared_ptr<JsiWrapper> JsiWrapper::wrap(jsi::Runtime &runtime,
   } else if (value.isObject()) {
     auto obj = value.asObject(runtime);
     if (obj.isArray(runtime)) {
-      retVal = std::make_shared<JsiArrayWrapper>(parent, useProxiesForUnwrapping);
+      retVal =
+          std::make_shared<JsiArrayWrapper>(parent, useProxiesForUnwrapping);
     } else if (!obj.isHostObject(runtime) &&
                JsiPromiseWrapper::isThenable(runtime, obj)) {
-      retVal = std::make_shared<JsiPromiseWrapper>(parent, useProxiesForUnwrapping);
+      retVal =
+          std::make_shared<JsiPromiseWrapper>(parent, useProxiesForUnwrapping);
     } else {
-      retVal = std::make_shared<JsiObjectWrapper>(parent, useProxiesForUnwrapping);
+      retVal =
+          std::make_shared<JsiObjectWrapper>(parent, useProxiesForUnwrapping);
     }
   }
 

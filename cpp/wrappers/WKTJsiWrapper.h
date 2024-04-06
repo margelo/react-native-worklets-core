@@ -34,19 +34,22 @@ public:
    * @param parent Parent wrapper
    * @param useProxiesForUnwrapping Uses proxies when unwrapping
    */
-  explicit JsiWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping) : _parent(parent), _useProxiesForUnwrapping(useProxiesForUnwrapping) {
+  explicit JsiWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping)
+      : _parent(parent), _useProxiesForUnwrapping(useProxiesForUnwrapping) {
     _readWriteMutex = new std::mutex();
   }
-  
+
   /**
    * Constructor
    * @param parent Parent Wrapper
    * @param useProxiesForUnwrapping Uses proxies when unwrapping
    * @param type Type of wrapper
    */
-  JsiWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping, JsiWrapperType type) : JsiWrapper(parent, useProxiesForUnwrapping) {
+  JsiWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping,
+             JsiWrapperType type)
+      : JsiWrapper(parent, useProxiesForUnwrapping) {
     _type = type;
- }
+  }
 
   /**
    * Returns a wrapper for the a jsi value
@@ -145,8 +148,10 @@ protected:
    * @param useProxiesForUnwrapping Uses proxies when unwrapping
    * @return A new JsiWrapper
    */
-  static std::shared_ptr<JsiWrapper>
-  wrap(jsi::Runtime &runtime, const jsi::Value &value, JsiWrapper *parent, bool useProxiesForUnwrapping);
+  static std::shared_ptr<JsiWrapper> wrap(jsi::Runtime &runtime,
+                                          const jsi::Value &value,
+                                          JsiWrapper *parent,
+                                          bool useProxiesForUnwrapping);
 
   /**
    * Call to notify parent that something has changed
@@ -176,7 +181,7 @@ protected:
    * @return The parent object
    */
   JsiWrapper *getParent() { return _parent; }
-  
+
   /**
    Returns true if proxies should be used when unwrapping
    */
@@ -264,7 +269,7 @@ private:
 
   size_t _listenerId = 1000;
   std::map<size_t, std::shared_ptr<std::function<void()>>> _listeners;
-  
+
   bool _useProxiesForUnwrapping;
 };
 

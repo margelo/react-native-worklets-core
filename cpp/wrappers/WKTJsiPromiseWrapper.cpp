@@ -112,7 +112,9 @@ jsi::Value JsiPromiseWrapper::then(jsi::Runtime &runtime,
     thenHostFn = JsiWorkletContext::createInvoker(runtime, thenFn);
   } else {
     thenHostFn = JSI_HOST_FUNCTION_LAMBDA {
-      return JsiWrapper::wrap(runtime, arguments[0], getUseProxiesForUnwrapping())->unwrap(runtime);
+      return JsiWrapper::wrap(runtime, arguments[0],
+                              getUseProxiesForUnwrapping())
+          ->unwrap(runtime);
     };
   }
 
@@ -122,7 +124,8 @@ jsi::Value JsiPromiseWrapper::then(jsi::Runtime &runtime,
     catchHostFn = JsiWorkletContext::createInvoker(runtime, catchFn);
   }
 
-  auto thisWrapper = JsiWrapper::wrap(runtime, thisValue, getUseProxiesForUnwrapping());
+  auto thisWrapper =
+      JsiWrapper::wrap(runtime, thisValue, getUseProxiesForUnwrapping());
   return jsi::Object::createFromHostObject(
       runtime, then(runtime, std::move(thisWrapper), std::move(thenHostFn),
                     std::move(catchHostFn)));
@@ -132,7 +135,8 @@ std::shared_ptr<JsiPromiseWrapper> JsiPromiseWrapper::then(
     jsi::Runtime &runtime, std::shared_ptr<JsiWrapper> thisValue,
     const jsi::HostFunctionType &thenFn, const jsi::HostFunctionType &catchFn) {
 
-  auto controlledPromise = std::make_shared<JsiPromiseWrapper>(this, getUseProxiesForUnwrapping());
+  auto controlledPromise =
+      std::make_shared<JsiPromiseWrapper>(this, getUseProxiesForUnwrapping());
 
   _thenQueue.push_back({
       .controlledPromise = controlledPromise,
@@ -170,7 +174,8 @@ jsi::Value JsiPromiseWrapper::finally(jsi::Runtime &runtime,
                : JsiPromiseWrapper::reject(runtime, _reason)->unwrap(runtime);
   }
 
-  auto controlledPromise = std::make_shared<JsiPromiseWrapper>(this, getUseProxiesForUnwrapping());
+  auto controlledPromise =
+      std::make_shared<JsiPromiseWrapper>(this, getUseProxiesForUnwrapping());
 
   _finallyQueue.push_back({
       .controlledPromise = controlledPromise,
@@ -210,12 +215,16 @@ void JsiPromiseWrapper::setValue(jsi::Runtime &runtime,
       maybeCatchFunc.asObject(runtime).isFunction(runtime)) {
     // We have catch and then
     auto catchFn = callingContext->createCallInContext(runtime, maybeCatchFunc);
-    then(runtime, JsiWrapper::wrap(runtime, jsi::Value::undefined(), getUseProxiesForUnwrapping()), thenFn,
-         catchFn);
+    then(runtime,
+         JsiWrapper::wrap(runtime, jsi::Value::undefined(),
+                          getUseProxiesForUnwrapping()),
+         thenFn, catchFn);
   } else {
     // Only have then function
-    then(runtime, JsiWrapper::wrap(runtime, jsi::Value::undefined(), getUseProxiesForUnwrapping()), thenFn,
-         nullptr);
+    then(runtime,
+         JsiWrapper::wrap(runtime, jsi::Value::undefined(),
+                          getUseProxiesForUnwrapping()),
+         thenFn, nullptr);
   }
 }
 

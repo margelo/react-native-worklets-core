@@ -74,7 +74,8 @@ public:
     };
 
     // Do not Wrap this Value - replace with undefined
-    auto thisValuePtr = JsiWrapper::wrap(runtime, jsi::Value::undefined(), true);
+    auto thisValuePtr =
+        JsiWrapper::wrap(runtime, jsi::Value::undefined(), true);
 
     auto dispatcher = JsiDispatcher::createDispatcher(
         runtime, thisValuePtr, functionPtr, nullptr,

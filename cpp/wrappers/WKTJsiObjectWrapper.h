@@ -62,14 +62,14 @@ public:
     }
     updateNativeState(runtime, object);
   }
-                           
-   void updateNativeState(jsi::Runtime& runtime, jsi::Object& obj) {
-     if (obj.hasNativeState(runtime)) {
-       _nativeState = obj.getNativeState(runtime);
-     } else {
-       _nativeState = nullptr;
-     }
-   }
+
+  void updateNativeState(jsi::Runtime &runtime, jsi::Object &obj) {
+    if (obj.hasNativeState(runtime)) {
+      _nativeState = obj.getNativeState(runtime);
+    } else {
+      _nativeState = nullptr;
+    }
+  }
 
   /**
    * Overridden get value where we convert from the internal representation to
@@ -84,23 +84,23 @@ public:
     }
     return obj;
   }
-                           
-   jsi::Object getObject(jsi::Runtime& runtime) {
-     switch (getType()) {
-     case JsiWrapperType::HostObject:
-       return jsi::Object::createFromHostObject(runtime, _hostObject);
-     case JsiWrapperType::HostFunction:
-       return jsi::Function::createFromHostFunction(
-           runtime, jsi::PropNameID::forUtf8(runtime, "fn"), 0,
-           *_hostFunction.get());
-     case JsiWrapperType::Object:
-         return jsi::Object::createFromHostObject(runtime, shared_from_this());
-     case JsiWrapperType::Promise:
-       throw jsi::JSError(runtime, "Promise type not supported.");
-     default:
-       throw jsi::JSError(runtime, "Value type not supported.");
-     }
-   }
+
+  jsi::Object getObject(jsi::Runtime &runtime) {
+    switch (getType()) {
+    case JsiWrapperType::HostObject:
+      return jsi::Object::createFromHostObject(runtime, _hostObject);
+    case JsiWrapperType::HostFunction:
+      return jsi::Function::createFromHostFunction(
+          runtime, jsi::PropNameID::forUtf8(runtime, "fn"), 0,
+          *_hostFunction.get());
+    case JsiWrapperType::Object:
+      return jsi::Object::createFromHostObject(runtime, shared_from_this());
+    case JsiWrapperType::Promise:
+      throw jsi::JSError(runtime, "Promise type not supported.");
+    default:
+      throw jsi::JSError(runtime, "Value type not supported.");
+    }
+  }
 
   /**
    * jsi::HostObject's overridden set function

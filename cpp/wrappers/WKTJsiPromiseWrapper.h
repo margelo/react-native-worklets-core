@@ -62,8 +62,7 @@ public:
                        PromiseComputationFunction computation);
 
   JsiPromiseWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping)
-      : JsiWrapper(parent, useProxiesForUnwrapping, JsiWrapperType::Promise) {
-  }
+      : JsiWrapper(parent, useProxiesForUnwrapping, JsiWrapperType::Promise) {}
 
   ~JsiPromiseWrapper() {}
   /**

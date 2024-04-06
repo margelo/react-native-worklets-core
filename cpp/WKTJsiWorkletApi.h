@@ -124,26 +124,26 @@ public:
     if (count == 0) {
       throw jsi::JSError(runtime, "__getTypeIsArray expects one parameter.");
     }
-    
-    if(arguments[0].isObject()) {
+
+    if (arguments[0].isObject()) {
       auto obj = arguments[0].asObject(runtime);
       arguments[0].asObject(runtime).isArray(runtime);
       auto isArray = obj.isArray(runtime);
       return isArray;
     }
-    
+
     return false;
   }
-  
+
   JSI_HOST_FUNCTION(__jsi_is_object) {
     if (count == 0) {
       throw jsi::JSError(runtime, "__getTypeIsObject expects one parameter.");
     }
-    
-    if(arguments[0].isObject()) {
+
+    if (arguments[0].isObject()) {
       return true;
     }
-    
+
     return false;
   }
 
@@ -161,9 +161,10 @@ public:
 
   JSI_PROPERTY_GET(currentContext) {
     auto current = JsiWorkletContext::getCurrent(runtime);
-    if (!current) return jsi::Value::undefined();
-    return jsi::Object::createFromHostObject(
-        runtime, current->shared_from_this());
+    if (!current)
+      return jsi::Value::undefined();
+    return jsi::Object::createFromHostObject(runtime,
+                                             current->shared_from_this());
   }
 
   JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorkletApi,
