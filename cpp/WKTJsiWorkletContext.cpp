@@ -1,6 +1,7 @@
 
 #include "WKTJsiWorkletContext.h"
 #include "WKTJsiWorkletApi.h"
+#include "WKTRuntimeAwareCache.h"
 
 #include "WKTArgumentsWrapper.h"
 #include "WKTDispatchQueue.h"
@@ -70,6 +71,10 @@ void JsiWorkletContext::initialize(
     const std::string &name, jsi::Runtime *jsRuntime,
     std::function<void(std::function<void()> &&)> jsCallInvoker,
     std::function<void(std::function<void()> &&)> workletCallInvoker) {
+
+  // Register main runtime
+  BaseRuntimeAwareCache::setMainJsRuntime(jsRuntime);
+  
   _name = name;
   _jsRuntime = jsRuntime;
   _jsCallInvoker = jsCallInvoker;

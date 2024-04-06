@@ -92,13 +92,22 @@ public:
                   std::function<void(std::function<void()> &&)> jsCallInvoker);
 
   /**
-   Static / singleton default context
+   Get the default context
    */
-  static std::shared_ptr<JsiWorkletContext> getDefaultInstance() {
+  static std::shared_ptr<JsiWorkletContext> getDefaultInstanceAsShared() {
     if (defaultInstance == nullptr) {
       defaultInstance = std::make_shared<JsiWorkletContext>();
     }
     return defaultInstance;
+  }
+
+/**
+ * @brief Get the Default Instance object
+ * 
+ * @return JsiWorkletContext* 
+ */
+  static JsiWorkletContext *getDefaultInstance() {
+    return JsiWorkletContext::getDefaultInstanceAsShared().get();
   }
 
   /**

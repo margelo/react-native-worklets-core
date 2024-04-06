@@ -23,7 +23,7 @@ std::shared_ptr<JsiWorkletApi> JsiWorkletApi::instance;
  * Installs the worklet API into the provided runtime
  */
 void JsiWorkletApi::installApi(jsi::Runtime &runtime) {
-  auto context = JsiWorkletContext::getDefaultInstance();
+  JsiWorkletContext::getDefaultInstance();
   auto existingApi = (runtime.global().getProperty(runtime, WorkletsApiName));
   if (existingApi.isObject()) {
     return;

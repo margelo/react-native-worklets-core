@@ -62,12 +62,20 @@ public:
   }
 
   JSI_HOST_FUNCTION(push) {
-    // Push all arguments to the array
-    auto lastIndex = _array.size();
+    // Push all arguments to the array end
     for (size_t i = 0; i < count; i++) {
-      std::string indexString = std::to_string(lastIndex++);
       _array.push_back(JsiWrapper::wrap(runtime, arguments[i], this,
                                         getUseProxiesForUnwrapping()));
+    }
+    notify();
+    return static_cast<double>(_array.size());
+  };
+
+  JSI_HOST_FUNCTION(unshift) {
+    // Insert all arguments to the array beginning
+    for (size_t i = 0; i < count; i++) {
+      _array.insert(_array.begin(), JsiWrapper::wrap(runtime, arguments[i], this,
+                                                     getUseProxiesForUnwrapping()));
     }
     notify();
     return static_cast<double>(_array.size());
@@ -288,6 +296,7 @@ public:
   JSI_EXPORT_FUNCTIONS(
       JSI_EXPORT_FUNC(JsiArrayWrapper, push),
       JSI_EXPORT_FUNC(JsiArrayWrapper, pop),
+      JSI_EXPORT_FUNC(JsiArrayWrapper, unshift),
       JSI_EXPORT_FUNC(JsiArrayWrapper, shift),
       JSI_EXPORT_FUNC(JsiArrayWrapper, forEach),
       JSI_EXPORT_FUNC(JsiArrayWrapper, map),

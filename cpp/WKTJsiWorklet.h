@@ -10,6 +10,7 @@
 #include "WKTJsiHostObject.h"
 #include "WKTJsiWorkletContext.h"
 #include "WKTJsiWrapper.h"
+#include "WKTRuntimeAwareCache.h"
 
 namespace RNWorklet {
 
@@ -359,51 +360,17 @@ public:
   WorkletInvoker(jsi::Runtime &runtime, const jsi::Value &value)
       : WorkletInvoker(std::make_shared<JsiWorklet>(runtime, value)) {}
 
-  ~WorkletInvoker() {
-    // RUNTIME TEARDOWN:
-    // Ensure we destruct in the same runtime / context as we
-    // created the workletFunction. The way we do this is that
-    // when we save the _workletFunction we also save a shared_ptr
-    // to the current context - and then in the destructor we make
-    // sure that we destroy the _workletFunction (jsi::Function) from
-    // within the same context as we created it.
-    if (_workletFunction) {
-      // Save to temp and remove current value so that the
-      // reference count goes down to 1 before we move it into
-      // the contexts.
-      auto tmp = _workletFunction;
-      _workletFunction = nullptr;
-
-      if (_owningContext == nullptr) {
-        // Javascript
-        JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
-            [tmp = std::move(tmp)](jsi::Runtime &) mutable { tmp = nullptr; });
-      } else {
-        _owningContext->invokeOnWorkletThread(
-            [tmp = std::move(tmp)](JsiWorkletContext *,
-                                   jsi::Runtime &) mutable { tmp = nullptr; });
-      }
-    }
-  }
-
   jsi::Value call(jsi::Runtime &runtime, const jsi::Value &thisValue,
                   const jsi::Value *arguments, size_t count) {
-    if (_workletFunction == nullptr) {
-      _workletFunction = _worklet->createWorkletJsFunction(runtime);
-      auto owningContext = JsiWorkletContext::getCurrent(runtime);
-      if (owningContext) {
-        _owningContext = owningContext->shared_from_this();
-      } else {
-        _owningContext = nullptr;
-      }
+    if (_workletFunction.get(runtime) == nullptr) {
+      _workletFunction.get(runtime) = _worklet->createWorkletJsFunction(runtime);      
     }
-    return _worklet->call(_workletFunction, runtime, thisValue, arguments,
+    return _worklet->call(_workletFunction.get(runtime), runtime, thisValue, arguments,
                           count);
   }
 
 private:
-  std::shared_ptr<JsiWorkletContext> _owningContext;
+  RuntimeAwareCache<std::shared_ptr<jsi::Function>> _workletFunction;
   std::shared_ptr<JsiWorklet> _worklet;
-  std::shared_ptr<jsi::Function> _workletFunction;
 };
 } // namespace RNWorklet
