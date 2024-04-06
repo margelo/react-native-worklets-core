@@ -229,6 +229,7 @@ private:
   }
 
   std::mutex *_readWriteMutex;
+
   JsiWrapper *_parent;
 
   JsiWrapperType _type;

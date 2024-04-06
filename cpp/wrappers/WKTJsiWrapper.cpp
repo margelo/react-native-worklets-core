@@ -8,7 +8,7 @@ namespace RNWorklet {
 namespace jsi = facebook::jsi;
 
 jsi::Value JsiWrapper::getValue(jsi::Runtime &runtime) {
-  std::unique_lock<std::mutex> lock(*_readWriteMutex);
+  std::unique_lock<std::mutex> lock(_readWriteMutex);
   switch (_type) {
   case JsiWrapperType::Undefined:
     return jsi::Value::undefined();
@@ -79,7 +79,7 @@ void JsiWrapper::setValue(jsi::Runtime &runtime, const jsi::Value &value) {
 }
 
 void JsiWrapper::updateValue(jsi::Runtime &runtime, const jsi::Value &value) {
-  std::unique_lock<std::mutex> lock(*_readWriteMutex);
+  std::unique_lock<std::mutex> lock(_readWriteMutex);
   setValue(runtime, value);
   // Notify changes
   notify();
