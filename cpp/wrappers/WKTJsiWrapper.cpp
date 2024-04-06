@@ -33,16 +33,16 @@ std::shared_ptr<JsiWrapper> JsiWrapper::wrap(jsi::Runtime &runtime,
 
   if (value.isUndefined() || value.isNull() || value.isBool() ||
       value.isNumber() || value.isString()) {
-    retVal = std::make_shared<JsiWrapper>(runtime, value, parent);
+    retVal = std::make_shared<JsiWrapper>(parent);
   } else if (value.isObject()) {
     auto obj = value.asObject(runtime);
     if (obj.isArray(runtime)) {
-      retVal = std::make_shared<JsiArrayWrapper>(runtime, value, parent);
+      retVal = std::make_shared<JsiArrayWrapper>(parent);
     } else if (!obj.isHostObject(runtime) &&
                JsiPromiseWrapper::isThenable(runtime, obj)) {
-      retVal = std::make_shared<JsiPromiseWrapper>(runtime, value, parent);
+      retVal = std::make_shared<JsiPromiseWrapper>(parent);
     } else {
-      retVal = std::make_shared<JsiObjectWrapper>(runtime, value, parent);
+      retVal = std::make_shared<JsiObjectWrapper>(parent);
     }
   }
 

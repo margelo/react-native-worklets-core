@@ -30,26 +30,21 @@ enum JsiWrapperType {
 class JsiWrapper {
 public:
   /**
-   * Constructor - called from static members
-   * @param runtime Calling runtime
-   * @param value Value to wrap
-   * @param parent Optional parent wrapper
-   * @paran type Type of wrapper
+   * Base Constructor
+   * @param parent Parent wrapper
    */
-  JsiWrapper(jsi::Runtime &runtime, const jsi::Value &value, JsiWrapper *parent,
-             JsiWrapperType type)
-      : JsiWrapper(parent) {
-    _type = type;
+  explicit JsiWrapper(JsiWrapper *parent) : _parent(parent) {
+    _readWriteMutex = new std::mutex();
   }
-
+  
   /**
-   * Constructor - called from static members
-   * @param runtime Calling runtime
-   * @param value Value to wrap
-   * @param parent Optional parent wrapper
+   * Constructor
+   * @param parent Parent Wrapper
+   * @param type Type of wrapper
    */
-  JsiWrapper(jsi::Runtime &runtime, const jsi::Value &value, JsiWrapper *parent)
-      : JsiWrapper(parent) {}
+  JsiWrapper(JsiWrapper *parent, JsiWrapperType type) : JsiWrapper(parent) {
+    _type = type;
+ }
 
   /**
    * Returns a wrapper for the a jsi value
@@ -246,14 +241,6 @@ private:
     for (auto listener : _listeners) {
       (*listener.second)();
     }
-  }
-
-  /**
-   * Base Constructor
-   * @param parent Parent wrapper
-   */
-  explicit JsiWrapper(JsiWrapper *parent) : _parent(parent) {
-    _readWriteMutex = new std::mutex();
   }
 
   std::mutex *_readWriteMutex;

@@ -22,13 +22,10 @@ class JsiObjectWrapper : public JsiHostObject,
 public:
   /**
    * Constructor
-   * @param runtime Calling runtie
-   * @param value value to wrap
    * @param parent optional parent wrapper
    */
-  JsiObjectWrapper(jsi::Runtime &runtime, const jsi::Value &value,
-                   JsiWrapper *parent)
-      : JsiWrapper(runtime, value, parent) {}
+  JsiObjectWrapper(JsiWrapper *parent)
+      : JsiWrapper(parent) {}
 
   JSI_HOST_FUNCTION(toStringImpl) {
     return jsi::String::createFromUtf8(runtime, toString(runtime));

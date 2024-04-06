@@ -24,13 +24,10 @@ class JsiArrayWrapper : public JsiHostObject,
 public:
   /**
    * Constructs a new array wrapper
-   * @param runtime In runtime
-   * @param value Value to wrap
    * @param parent Parent wrapper object
    */
-  JsiArrayWrapper(jsi::Runtime &runtime, const jsi::Value &value,
-                  JsiWrapper *parent)
-      : JsiWrapper(runtime, value, parent, JsiWrapperType::Array) {}
+  JsiArrayWrapper(JsiWrapper *parent)
+      : JsiWrapper(parent, JsiWrapperType::Array) {}
 
   JSI_HOST_FUNCTION(toStringImpl) {
     return jsi::String::createFromUtf8(runtime, toString(runtime));

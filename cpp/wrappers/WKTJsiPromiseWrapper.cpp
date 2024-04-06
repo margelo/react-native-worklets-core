@@ -10,13 +10,11 @@ namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
 
-size_t JsiPromiseWrapper::Counter = 1000;
-
 std::shared_ptr<JsiPromiseWrapper> JsiPromiseWrapper::createPromiseWrapper(
     jsi::Runtime &runtime, PromiseComputationFunction computation) {
 
   // Create promise wrapper
-  auto result = std::make_shared<JsiPromiseWrapper>(runtime);
+  auto result = std::make_shared<JsiPromiseWrapper>(nullptr);
   result->runComputation(runtime, computation);
   return result;
 }
@@ -52,16 +50,6 @@ void JsiPromiseWrapper::runComputation(jsi::Runtime &runtime,
   }
 }
 
-JsiPromiseWrapper::JsiPromiseWrapper(jsi::Runtime &runtime)
-    : JsiWrapper(runtime, jsi::Value::undefined(), nullptr) {
-
-  _counter = ++Counter;
-  // printf("promise: CTOR JsiPromiseWrapper %zu\n", _counter);
-
-  // Set type
-  setType(JsiWrapperType::Promise);
-}
-
 /**
  Returns true if the object is a thenable object - ie. an object with a then
  function. Which is basically what a promise is.
@@ -95,8 +83,7 @@ bool JsiPromiseWrapper::isThenable(jsi::Runtime &runtime, jsi::Value &value) {
 std::shared_ptr<JsiPromiseWrapper>
 JsiPromiseWrapper::resolve(jsi::Runtime &runtime,
                            std::shared_ptr<JsiWrapper> value) {
-  auto retVal = std::make_shared<JsiPromiseWrapper>(
-      runtime, jsi::Value::undefined(), nullptr);
+  auto retVal = std::make_shared<JsiPromiseWrapper>(nullptr);
   retVal->setType(JsiWrapperType::Promise);
   retVal->onFulfilled(runtime, value->unwrap(runtime));
   return retVal;
@@ -108,8 +95,7 @@ JsiPromiseWrapper::resolve(jsi::Runtime &runtime,
 std::shared_ptr<JsiPromiseWrapper>
 JsiPromiseWrapper::reject(jsi::Runtime &runtime,
                           std::shared_ptr<JsiWrapper> reason) {
-  auto retVal = std::make_shared<JsiPromiseWrapper>(
-      runtime, jsi::Value::undefined(), nullptr);
+  auto retVal = std::make_shared<JsiPromiseWrapper>(nullptr);
   retVal->setType(JsiWrapperType::Promise);
   retVal->onRejected(runtime, reason->unwrap(runtime));
   return retVal;
@@ -146,7 +132,7 @@ std::shared_ptr<JsiPromiseWrapper> JsiPromiseWrapper::then(
     jsi::Runtime &runtime, std::shared_ptr<JsiWrapper> thisValue,
     const jsi::HostFunctionType &thenFn, const jsi::HostFunctionType &catchFn) {
 
-  auto controlledPromise = std::make_shared<JsiPromiseWrapper>(runtime, this);
+  auto controlledPromise = std::make_shared<JsiPromiseWrapper>(this);
 
   _thenQueue.push_back({
       .controlledPromise = controlledPromise,
@@ -184,7 +170,7 @@ jsi::Value JsiPromiseWrapper::finally(jsi::Runtime &runtime,
                : JsiPromiseWrapper::reject(runtime, _reason)->unwrap(runtime);
   }
 
-  auto controlledPromise = std::make_shared<JsiPromiseWrapper>(runtime, this);
+  auto controlledPromise = std::make_shared<JsiPromiseWrapper>(this);
 
   _finallyQueue.push_back({
       .controlledPromise = controlledPromise,
