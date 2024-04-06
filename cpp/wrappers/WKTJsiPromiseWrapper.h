@@ -61,8 +61,8 @@ public:
   createPromiseWrapper(jsi::Runtime &runtime,
                        PromiseComputationFunction computation);
 
-  explicit JsiPromiseWrapper(JsiWrapper *parent)
-      : JsiWrapper(parent, JsiWrapperType::Promise) {
+  JsiPromiseWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping)
+      : JsiWrapper(parent, useProxiesForUnwrapping, JsiWrapperType::Promise) {
   }
 
   ~JsiPromiseWrapper() {}

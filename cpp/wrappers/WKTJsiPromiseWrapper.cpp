@@ -14,7 +14,7 @@ std::shared_ptr<JsiPromiseWrapper> JsiPromiseWrapper::createPromiseWrapper(
     jsi::Runtime &runtime, PromiseComputationFunction computation) {
 
   // Create promise wrapper
-  auto result = std::make_shared<JsiPromiseWrapper>(nullptr);
+  auto result = std::make_shared<JsiPromiseWrapper>(nullptr, false);
   result->runComputation(runtime, computation);
   return result;
 }
@@ -83,7 +83,7 @@ bool JsiPromiseWrapper::isThenable(jsi::Runtime &runtime, jsi::Value &value) {
 std::shared_ptr<JsiPromiseWrapper>
 JsiPromiseWrapper::resolve(jsi::Runtime &runtime,
                            std::shared_ptr<JsiWrapper> value) {
-  auto retVal = std::make_shared<JsiPromiseWrapper>(nullptr);
+  auto retVal = std::make_shared<JsiPromiseWrapper>(nullptr, false);
   retVal->setType(JsiWrapperType::Promise);
   retVal->onFulfilled(runtime, value->unwrap(runtime));
   return retVal;
@@ -95,7 +95,7 @@ JsiPromiseWrapper::resolve(jsi::Runtime &runtime,
 std::shared_ptr<JsiPromiseWrapper>
 JsiPromiseWrapper::reject(jsi::Runtime &runtime,
                           std::shared_ptr<JsiWrapper> reason) {
-  auto retVal = std::make_shared<JsiPromiseWrapper>(nullptr);
+  auto retVal = std::make_shared<JsiPromiseWrapper>(nullptr, false);
   retVal->setType(JsiWrapperType::Promise);
   retVal->onRejected(runtime, reason->unwrap(runtime));
   return retVal;
@@ -112,7 +112,7 @@ jsi::Value JsiPromiseWrapper::then(jsi::Runtime &runtime,
     thenHostFn = JsiWorkletContext::createInvoker(runtime, thenFn);
   } else {
     thenHostFn = JSI_HOST_FUNCTION_LAMBDA {
-      return JsiWrapper::wrap(runtime, arguments[0])->unwrap(runtime);
+      return JsiWrapper::wrap(runtime, arguments[0], getUseProxiesForUnwrapping())->unwrap(runtime);
     };
   }
 
@@ -122,7 +122,7 @@ jsi::Value JsiPromiseWrapper::then(jsi::Runtime &runtime,
     catchHostFn = JsiWorkletContext::createInvoker(runtime, catchFn);
   }
 
-  auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
+  auto thisWrapper = JsiWrapper::wrap(runtime, thisValue, getUseProxiesForUnwrapping());
   return jsi::Object::createFromHostObject(
       runtime, then(runtime, std::move(thisWrapper), std::move(thenHostFn),
                     std::move(catchHostFn)));
@@ -132,7 +132,7 @@ std::shared_ptr<JsiPromiseWrapper> JsiPromiseWrapper::then(
     jsi::Runtime &runtime, std::shared_ptr<JsiWrapper> thisValue,
     const jsi::HostFunctionType &thenFn, const jsi::HostFunctionType &catchFn) {
 
-  auto controlledPromise = std::make_shared<JsiPromiseWrapper>(this);
+  auto controlledPromise = std::make_shared<JsiPromiseWrapper>(this, getUseProxiesForUnwrapping());
 
   _thenQueue.push_back({
       .controlledPromise = controlledPromise,
@@ -170,7 +170,7 @@ jsi::Value JsiPromiseWrapper::finally(jsi::Runtime &runtime,
                : JsiPromiseWrapper::reject(runtime, _reason)->unwrap(runtime);
   }
 
-  auto controlledPromise = std::make_shared<JsiPromiseWrapper>(this);
+  auto controlledPromise = std::make_shared<JsiPromiseWrapper>(this, getUseProxiesForUnwrapping());
 
   _finallyQueue.push_back({
       .controlledPromise = controlledPromise,
@@ -210,11 +210,11 @@ void JsiPromiseWrapper::setValue(jsi::Runtime &runtime,
       maybeCatchFunc.asObject(runtime).isFunction(runtime)) {
     // We have catch and then
     auto catchFn = callingContext->createCallInContext(runtime, maybeCatchFunc);
-    then(runtime, JsiWrapper::wrap(runtime, jsi::Value::undefined()), thenFn,
+    then(runtime, JsiWrapper::wrap(runtime, jsi::Value::undefined(), getUseProxiesForUnwrapping()), thenFn,
          catchFn);
   } else {
     // Only have then function
-    then(runtime, JsiWrapper::wrap(runtime, jsi::Value::undefined()), thenFn,
+    then(runtime, JsiWrapper::wrap(runtime, jsi::Value::undefined(), getUseProxiesForUnwrapping()), thenFn,
          nullptr);
   }
 }
@@ -331,7 +331,7 @@ void JsiPromiseWrapper::onFulfilled(jsi::Runtime &runtime,
                                     const jsi::Value &val) {
   if (_state == PromiseState::Pending) {
     _state = PromiseState::Fulfilled;
-    _value = JsiWrapper::wrap(runtime, val);
+    _value = JsiWrapper::wrap(runtime, val, getUseProxiesForUnwrapping());
     // printf("promise %zu: onFulfilled: %s\n", _counter,
     //        _value->toString(runtime).c_str());
     propagateFulfilled(runtime);
@@ -342,7 +342,7 @@ void JsiPromiseWrapper::onRejected(jsi::Runtime &runtime,
                                    const jsi::Value &reason) {
   if (_state == PromiseState::Pending) {
     _state = PromiseState::Rejected;
-    _reason = JsiWrapper::wrap(runtime, reason);
+    _reason = JsiWrapper::wrap(runtime, reason, getUseProxiesForUnwrapping());
     // printf("promise %zu: onRejected: %s\n", _counter,
     //        _reason->toString(runtime).c_str());
     propagateRejected(runtime);

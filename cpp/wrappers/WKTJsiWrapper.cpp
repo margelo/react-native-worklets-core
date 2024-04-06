@@ -28,21 +28,22 @@ jsi::Value JsiWrapper::getValue(jsi::Runtime &runtime) {
 
 std::shared_ptr<JsiWrapper> JsiWrapper::wrap(jsi::Runtime &runtime,
                                              const jsi::Value &value,
-                                             JsiWrapper *parent) {
+                                             JsiWrapper *parent,
+                                             bool useProxiesForUnwrapping) {
   std::shared_ptr<JsiWrapper> retVal = nullptr;
 
   if (value.isUndefined() || value.isNull() || value.isBool() ||
       value.isNumber() || value.isString()) {
-    retVal = std::make_shared<JsiWrapper>(parent);
+    retVal = std::make_shared<JsiWrapper>(parent, useProxiesForUnwrapping);
   } else if (value.isObject()) {
     auto obj = value.asObject(runtime);
     if (obj.isArray(runtime)) {
-      retVal = std::make_shared<JsiArrayWrapper>(parent);
+      retVal = std::make_shared<JsiArrayWrapper>(parent, useProxiesForUnwrapping);
     } else if (!obj.isHostObject(runtime) &&
                JsiPromiseWrapper::isThenable(runtime, obj)) {
-      retVal = std::make_shared<JsiPromiseWrapper>(parent);
+      retVal = std::make_shared<JsiPromiseWrapper>(parent, useProxiesForUnwrapping);
     } else {
-      retVal = std::make_shared<JsiObjectWrapper>(parent);
+      retVal = std::make_shared<JsiObjectWrapper>(parent, useProxiesForUnwrapping);
     }
   }
 

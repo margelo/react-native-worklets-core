@@ -23,9 +23,10 @@ public:
   /**
    * Constructor
    * @param parent optional parent wrapper
+   * @param useProxiesForUnwrapping unwraps using proxies
    */
-  JsiObjectWrapper(JsiWrapper *parent)
-      : JsiWrapper(parent) {}
+  JsiObjectWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping)
+      : JsiWrapper(parent, useProxiesForUnwrapping) {}
 
   JSI_HOST_FUNCTION(toStringImpl) {
     return jsi::String::createFromUtf8(runtime, toString(runtime));

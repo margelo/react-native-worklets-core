@@ -25,9 +25,10 @@ public:
   /**
    * Constructs a new array wrapper
    * @param parent Parent wrapper object
+   * @param useProxiesForUnwrapping use proxies when unwrapping
    */
-  JsiArrayWrapper(JsiWrapper *parent)
-      : JsiWrapper(parent, JsiWrapperType::Array) {}
+  JsiArrayWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping)
+      : JsiWrapper(parent, useProxiesForUnwrapping, JsiWrapperType::Array) {}
 
   JSI_HOST_FUNCTION(toStringImpl) {
     return jsi::String::createFromUtf8(runtime, toString(runtime));
@@ -159,7 +160,7 @@ public:
   };
 
   JSI_HOST_FUNCTION(indexOf) {
-    auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0]);
+    auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0], getUseProxiesForUnwrapping());
     for (size_t i = 0; i < _array.size(); i++) {
       // TODO: Add == operator to JsiWrapper
       if (wrappedArg->getType() == _array[i]->getType()) {
@@ -205,7 +206,7 @@ public:
   };
 
   JSI_HOST_FUNCTION(includes) {
-    auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0]);
+    auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0], getUseProxiesForUnwrapping());
     for (size_t i = 0; i < _array.size(); i++) {
       // TODO: Add == operator to JsiWrapper!!!
       if (wrappedArg->getType() == _array[i]->getType()) {
@@ -250,9 +251,9 @@ public:
   JSI_HOST_FUNCTION(reduce) {
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     std::shared_ptr<JsiWrapper> acc =
-        JsiWrapper::wrap(runtime, jsi::Value::undefined());
+        JsiWrapper::wrap(runtime, jsi::Value::undefined(), getUseProxiesForUnwrapping());
     if (count > 1) {
-      acc = JsiWrapper::wrap(runtime, arguments[1]);
+      acc = JsiWrapper::wrap(runtime, arguments[1], getUseProxiesForUnwrapping());
     }
     for (size_t i = 0; i < _array.size(); i++) {
       std::vector<jsi::Value> args(3);
@@ -262,7 +263,7 @@ public:
       acc = JsiWrapper::wrap(
           runtime,
           callFunction(runtime, callbackFn, thisValue,
-                       static_cast<const jsi::Value *>(args.data()), 3));
+                       static_cast<const jsi::Value *>(args.data()), 3), getUseProxiesForUnwrapping());
     }
     return JsiWrapper::unwrapAsProxyOrValue(runtime, acc);
   }
@@ -359,7 +360,7 @@ public:
         _array.resize(index + 1);
       }
       // Set value
-      _array[index] = JsiWrapper::wrap(runtime, value);
+      _array[index] = JsiWrapper::wrap(runtime, value, getUseProxiesForUnwrapping());
       notify();
     } else {
       // This is an edge case where the array is used as a

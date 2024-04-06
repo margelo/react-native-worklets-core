@@ -44,12 +44,12 @@ public:
               arguments[0].asObject(runtime).asFunction(runtime));
 
           // Save this
-          auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
+          auto thisWrapper = JsiWrapper::wrap(runtime, thisValue, false);
 
           // Save args
           std::vector<std::shared_ptr<JsiWrapper>> argsWrapper(count - 1);
           for (size_t i = 1; i < count; i++) {
-            argsWrapper[i - 1] = JsiWrapper::wrap(runtime, arguments[i]);
+            argsWrapper[i - 1] = JsiWrapper::wrap(runtime, arguments[i], false);
           }
 
           // Create dispatcher

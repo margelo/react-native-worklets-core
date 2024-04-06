@@ -27,7 +27,7 @@ public:
 
   JSI_HOST_FUNCTION(log) {
     ArgumentsWrapper argsWrapper(runtime, arguments, count);
-    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
+    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue, false);
     JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
         [weakSelf = weak_from_this(), argsWrapper, thisWrapper,
          count](jsi::Runtime &runtime) {
@@ -48,7 +48,7 @@ public:
 
   JSI_HOST_FUNCTION(warn) {
     ArgumentsWrapper argsWrapper(runtime, arguments, count);
-    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
+    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue, false);
     JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
         [weakSelf = weak_from_this(), argsWrapper, thisWrapper,
          count](jsi::Runtime &runtime) {
@@ -70,7 +70,7 @@ public:
 
   JSI_HOST_FUNCTION(error) {
     ArgumentsWrapper argsWrapper(runtime, arguments, count);
-    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
+    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue, false);
     JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
         [weakSelf = weak_from_this(), argsWrapper, thisWrapper,
          count](jsi::Runtime &runtime) {
@@ -93,7 +93,7 @@ public:
 
   JSI_HOST_FUNCTION(info) {
     ArgumentsWrapper argsWrapper(runtime, arguments, count);
-    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
+    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue, false);
     JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
         [weakSelf = weak_from_this(), argsWrapper, thisWrapper,
          count](jsi::Runtime &runtime) {

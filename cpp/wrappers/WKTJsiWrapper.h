@@ -32,17 +32,19 @@ public:
   /**
    * Base Constructor
    * @param parent Parent wrapper
+   * @param useProxiesForUnwrapping Uses proxies when unwrapping
    */
-  explicit JsiWrapper(JsiWrapper *parent) : _parent(parent) {
+  explicit JsiWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping) : _parent(parent), _useProxiesForUnwrapping(useProxiesForUnwrapping) {
     _readWriteMutex = new std::mutex();
   }
   
   /**
    * Constructor
    * @param parent Parent Wrapper
+   * @param useProxiesForUnwrapping Uses proxies when unwrapping
    * @param type Type of wrapper
    */
-  JsiWrapper(JsiWrapper *parent, JsiWrapperType type) : JsiWrapper(parent) {
+  JsiWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping, JsiWrapperType type) : JsiWrapper(parent, useProxiesForUnwrapping) {
     _type = type;
  }
 
@@ -50,11 +52,13 @@ public:
    * Returns a wrapper for the a jsi value
    * @param runtime Runtime to wrap value in
    * @param value Value to wrap
+   * @param useProxiesForUnwrapping Uses proxies when unwrapping
    * @return A new JsiWrapper
    */
   static std::shared_ptr<JsiWrapper> wrap(jsi::Runtime &runtime,
-                                          const jsi::Value &value) {
-    return JsiWrapper::wrap(runtime, value, nullptr);
+                                          const jsi::Value &value,
+                                          bool useProxiesForUnwrapping) {
+    return JsiWrapper::wrap(runtime, value, nullptr, useProxiesForUnwrapping);
   }
 
   /**
@@ -138,10 +142,11 @@ protected:
    * @param runtime Runtime to wrap value in
    * @param value Value to wrap
    * @param parent Parent wrapper (for nested hierarchies)
+   * @param useProxiesForUnwrapping Uses proxies when unwrapping
    * @return A new JsiWrapper
    */
   static std::shared_ptr<JsiWrapper>
-  wrap(jsi::Runtime &runtime, const jsi::Value &value, JsiWrapper *parent);
+  wrap(jsi::Runtime &runtime, const jsi::Value &value, JsiWrapper *parent, bool useProxiesForUnwrapping);
 
   /**
    * Call to notify parent that something has changed
@@ -171,6 +176,11 @@ protected:
    * @return The parent object
    */
   JsiWrapper *getParent() { return _parent; }
+  
+  /**
+   Returns true if proxies should be used when unwrapping
+   */
+  bool getUseProxiesForUnwrapping() { return _useProxiesForUnwrapping; }
 
   /**
    Calls the Function and returns its value. This function will call the
@@ -254,6 +264,8 @@ private:
 
   size_t _listenerId = 1000;
   std::map<size_t, std::shared_ptr<std::function<void()>>> _listeners;
+  
+  bool _useProxiesForUnwrapping;
 };
 
 } // namespace RNWorklet

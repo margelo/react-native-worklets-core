@@ -22,7 +22,7 @@ public:
    */
   JsiSharedValue(const jsi::Value &value,
                  std::shared_ptr<JsiWorkletContext> context)
-      : _valueWrapper(JsiWrapper::wrap(*context->getJsRuntime(), value)),
+      : _valueWrapper(JsiWrapper::wrap(*context->getJsRuntime(), value, true)),
         _context(context) {}
 
   /**
@@ -43,7 +43,7 @@ public:
     if (_valueWrapper->canUpdateValue(runtime, value)) {
       _valueWrapper->updateValue(runtime, value);
     } else {
-      _valueWrapper = JsiWrapper::wrap(runtime, value);
+      _valueWrapper = JsiWrapper::wrap(runtime, value, true);
     }
   }
 
@@ -74,7 +74,7 @@ public:
     };
 
     // Do not Wrap this Value - replace with undefined
-    auto thisValuePtr = JsiWrapper::wrap(runtime, jsi::Value::undefined());
+    auto thisValuePtr = JsiWrapper::wrap(runtime, jsi::Value::undefined(), true);
 
     auto dispatcher = JsiDispatcher::createDispatcher(
         runtime, thisValuePtr, functionPtr, nullptr,
