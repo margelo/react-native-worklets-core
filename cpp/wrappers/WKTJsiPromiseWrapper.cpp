@@ -112,7 +112,7 @@ jsi::Value JsiPromiseWrapper::then(jsi::Runtime &runtime,
     thenHostFn = JsiWorkletContext::createInvoker(runtime, thenFn);
   } else {
     thenHostFn = JSI_HOST_FUNCTION_LAMBDA {
-      return JsiWrapper::wrap(runtime, arguments[0],
+      return JsiWrapper::wrap(runtime, arguments[0], nullptr,
                               getUseProxiesForUnwrapping())
           ->unwrap(runtime);
     };
@@ -124,8 +124,8 @@ jsi::Value JsiPromiseWrapper::then(jsi::Runtime &runtime,
     catchHostFn = JsiWorkletContext::createInvoker(runtime, catchFn);
   }
 
-  auto thisWrapper =
-      JsiWrapper::wrap(runtime, thisValue, getUseProxiesForUnwrapping());
+  auto thisWrapper = JsiWrapper::wrap(runtime, thisValue, nullptr,
+                                      getUseProxiesForUnwrapping());
   return jsi::Object::createFromHostObject(
       runtime, then(runtime, std::move(thisWrapper), std::move(thenHostFn),
                     std::move(catchHostFn)));
@@ -216,13 +216,13 @@ void JsiPromiseWrapper::setValue(jsi::Runtime &runtime,
     // We have catch and then
     auto catchFn = callingContext->createCallInContext(runtime, maybeCatchFunc);
     then(runtime,
-         JsiWrapper::wrap(runtime, jsi::Value::undefined(),
+         JsiWrapper::wrap(runtime, jsi::Value::undefined(), nullptr,
                           getUseProxiesForUnwrapping()),
          thenFn, catchFn);
   } else {
     // Only have then function
     then(runtime,
-         JsiWrapper::wrap(runtime, jsi::Value::undefined(),
+         JsiWrapper::wrap(runtime, jsi::Value::undefined(), nullptr,
                           getUseProxiesForUnwrapping()),
          thenFn, nullptr);
   }
@@ -340,7 +340,8 @@ void JsiPromiseWrapper::onFulfilled(jsi::Runtime &runtime,
                                     const jsi::Value &val) {
   if (_state == PromiseState::Pending) {
     _state = PromiseState::Fulfilled;
-    _value = JsiWrapper::wrap(runtime, val, getUseProxiesForUnwrapping());
+    _value =
+        JsiWrapper::wrap(runtime, val, nullptr, getUseProxiesForUnwrapping());
     // printf("promise %zu: onFulfilled: %s\n", _counter,
     //        _value->toString(runtime).c_str());
     propagateFulfilled(runtime);
@@ -351,7 +352,8 @@ void JsiPromiseWrapper::onRejected(jsi::Runtime &runtime,
                                    const jsi::Value &reason) {
   if (_state == PromiseState::Pending) {
     _state = PromiseState::Rejected;
-    _reason = JsiWrapper::wrap(runtime, reason, getUseProxiesForUnwrapping());
+    _reason = JsiWrapper::wrap(runtime, reason, nullptr,
+                               getUseProxiesForUnwrapping());
     // printf("promise %zu: onRejected: %s\n", _counter,
     //        _reason->toString(runtime).c_str());
     propagateRejected(runtime);

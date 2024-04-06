@@ -218,7 +218,7 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
     ArgumentsWrapper argsWrapper(runtime, arguments, count);
 
     // Wrap the this value
-    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue, false);
+    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
 
     // If we are calling directly from/to the JS context or within the same
     // context, we can just dispatch everything directly.
@@ -356,7 +356,7 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
                                     argsWrapper.getCount());
               }
 
-              auto retVal = JsiWrapper::wrap(runtime, result, false);
+              auto retVal = JsiWrapper::wrap(runtime, result);
 
               // Callback with the results
               callback([retVal, promise](jsi::Runtime &runtime) {
@@ -422,7 +422,7 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
     }
 
     // We're about to cross contexts and will need to wrap args
-    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue, false);
+    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
     ArgumentsWrapper argsWrapper(runtime, arguments, count);
 
     if (ctx != nullptr) {

@@ -78,6 +78,14 @@ public:
    * @return Value converted to a jsi::Value
    */
   jsi::Value getValue(jsi::Runtime &runtime) override {
+    if (getUseProxiesForUnwrapping()) {
+      if (getType() == JsiWrapperType::Object) {
+        return getObjectAsProxy(runtime, shared_from_this());
+      } else if (getType() == JsiWrapperType::HostObject) {
+        return jsi::Object::createFromHostObject(runtime, _hostObject);
+      }
+    }
+
     jsi::Object obj = getObject(runtime);
     if (_nativeState != nullptr) {
       obj.setNativeState(runtime, _nativeState);
@@ -112,7 +120,9 @@ public:
            const jsi::Value &value) override {
     auto nameStr = name.utf8(runtime);
     if (_properties.count(nameStr) == 0) {
-      _properties.emplace(nameStr, JsiWrapper::wrap(runtime, value, this));
+      _properties.emplace(
+          nameStr,
+          JsiWrapper::wrap(runtime, value, this, getUseProxiesForUnwrapping()));
     } else {
       _properties.at(nameStr)->updateValue(runtime, value);
     }
@@ -170,16 +180,6 @@ public:
     }
   }
 
-protected:
-  jsi::Value getAsProxyOrValue(jsi::Runtime &runtime) override {
-    if (getType() == JsiWrapperType::Object) {
-      return getObjectAsProxy(runtime, shared_from_this());
-    } else if (getType() == JsiWrapperType::HostObject) {
-      return jsi::Object::createFromHostObject(runtime, _hostObject);
-    }
-    return JsiWrapper::getAsProxyOrValue(runtime);
-  }
-
 private:
   void setArrayBufferValue(jsi::Runtime &runtime, jsi::Object &obj) {
     throw jsi::JSError(runtime,
@@ -195,7 +195,9 @@ private:
           propNames.getValueAtIndex(runtime, i).asString(runtime).utf8(runtime);
 
       auto value = obj.getProperty(runtime, nameString.c_str());
-      _properties.emplace(nameString, JsiWrapper::wrap(runtime, value, this));
+      _properties.emplace(
+          nameString,
+          JsiWrapper::wrap(runtime, value, this, getUseProxiesForUnwrapping()));
     }
   }
 

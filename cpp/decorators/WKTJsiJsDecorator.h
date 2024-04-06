@@ -15,7 +15,7 @@ class JsiJsDecorator : public JsiBaseDecorator {
 public:
   JsiJsDecorator(jsi::Runtime &runtime, const std::string &propertyName,
                  const jsi::Value &value) {
-    _objectWrapper = JsiWrapper::wrap(runtime, value.asObject(runtime), false);
+    _objectWrapper = JsiWrapper::wrap(runtime, value.asObject(runtime));
     _propertyName = propertyName;
   }
 

@@ -16,7 +16,7 @@ public:
       : _count(count) {
     _arguments.resize(count);
     for (size_t i = 0; i < count; ++i) {
-      _arguments[i] = JsiWrapper::wrap(runtime, arguments[i], false);
+      _arguments[i] = JsiWrapper::wrap(runtime, arguments[i]);
     }
   }
 

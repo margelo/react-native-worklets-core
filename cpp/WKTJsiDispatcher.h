@@ -86,7 +86,7 @@ public:
 
         // Wrap the result from calling the function
         if (onSuccess != nullptr) {
-          onSuccess(JsiWrapper::wrap(runtime, retVal, false));
+          onSuccess(JsiWrapper::wrap(runtime, retVal));
         }
       } catch (const jsi::JSError &err) {
         if (onError != nullptr)

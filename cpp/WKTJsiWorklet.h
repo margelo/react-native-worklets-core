@@ -326,7 +326,7 @@ private:
     _isWorklet = true;
 
     // Create closure wrapper so it will be accessible across runtimes
-    _closureWrapper = JsiWrapper::wrap(runtime, closure, false);
+    _closureWrapper = JsiWrapper::wrap(runtime, closure);
 
     // Try get the name of the function
     auto nameProp = func->getProperty(runtime, PropFunctionName);

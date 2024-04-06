@@ -60,8 +60,18 @@ public:
    */
   static std::shared_ptr<JsiWrapper> wrap(jsi::Runtime &runtime,
                                           const jsi::Value &value,
-                                          bool useProxiesForUnwrapping) {
-    return JsiWrapper::wrap(runtime, value, nullptr, useProxiesForUnwrapping);
+                                          JsiWrapper *parent,
+                                          bool useProxiesForUnwrapping);
+
+  /**
+   * Returns a wrapper for the a jsi value without a partner and with
+   * useProxiesForUnwrapping set to false
+   * @param runtime Runtime to wrap value in
+   * @param value Value to wrap
+   */
+  static std::shared_ptr<JsiWrapper> wrap(jsi::Runtime &runtime,
+                                          const jsi::Value &value) {
+    return JsiWrapper::wrap(runtime, value, nullptr, false);
   }
 
   /**
@@ -80,25 +90,6 @@ public:
    @param runtime Runtime
    */
   jsi::Value unwrap(jsi::Runtime &runtime) { return this->getValue(runtime); }
-
-  /**
-   * Returns the value as a javascript proxy or value depending on need on the
-   * provided runtime
-   * @param runtime Runtime
-   * @param wrapper Wrapper to get value for
-   * @return A new js value in the provided runtime with the wrapped value
-   */
-  static jsi::Value unwrapAsProxyOrValue(jsi::Runtime &runtime,
-                                         std::shared_ptr<JsiWrapper> wrapper) {
-    return wrapper->getAsProxyOrValue(runtime);
-  }
-
-  /**
-   Unwraps to a proxy if needed, to value if not.
-   */
-  jsi::Value unwrapAsProxyOrValue(jsi::Runtime &runtime) {
-    return getAsProxyOrValue(runtime);
-  }
 
   /**
    * Updates the value from a JS value
@@ -141,19 +132,6 @@ public:
 
 protected:
   /**
-   * Returns a wrapper for the value
-   * @param runtime Runtime to wrap value in
-   * @param value Value to wrap
-   * @param parent Parent wrapper (for nested hierarchies)
-   * @param useProxiesForUnwrapping Uses proxies when unwrapping
-   * @return A new JsiWrapper
-   */
-  static std::shared_ptr<JsiWrapper> wrap(jsi::Runtime &runtime,
-                                          const jsi::Value &value,
-                                          JsiWrapper *parent,
-                                          bool useProxiesForUnwrapping);
-
-  /**
    * Call to notify parent that something has changed
    */
   void notify() {
@@ -161,14 +139,6 @@ protected:
       _parent->notify();
     }
     notifyListeners();
-  }
-
-  /**
-   Returns self as a proxy object or a regular value, depending on wether the
-   value needs to be a proxy.
-   */
-  virtual jsi::Value getAsProxyOrValue(jsi::Runtime &runtime) {
-    return getValue(runtime);
   }
 
   /**
