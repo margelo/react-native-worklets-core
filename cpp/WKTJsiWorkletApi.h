@@ -120,10 +120,39 @@ public:
         });
   }
 
+  JSI_HOST_FUNCTION(__jsi_is_array) {
+    if (count == 0) {
+      throw jsi::JSError(runtime, "__getTypeIsArray expects one parameter.");
+    }
+    
+    if(arguments[0].isObject()) {
+      auto obj = arguments[0].asObject(runtime);
+      arguments[0].asObject(runtime).isArray(runtime);
+      auto isArray = obj.isArray(runtime);
+      return isArray;
+    }
+    
+    return false;
+  }
+  
+  JSI_HOST_FUNCTION(__jsi_is_object) {
+    if (count == 0) {
+      throw jsi::JSError(runtime, "__getTypeIsObject expects one parameter.");
+    }
+    
+    if(arguments[0].isObject()) {
+      return true;
+    }
+    
+    return false;
+  }
+
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletApi, createSharedValue),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createContext),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createRunInContextFn),
-                       JSI_EXPORT_FUNC(JsiWorkletApi, createRunInJsFn))
+                       JSI_EXPORT_FUNC(JsiWorkletApi, createRunInJsFn),
+                       JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_array),
+                       JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_object))
 
   JSI_PROPERTY_GET(defaultContext) {
     return jsi::Object::createFromHostObject(
