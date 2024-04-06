@@ -51,6 +51,12 @@ export const wrapper_tests = {
     return ExpectValue(array.value[2], 300);
   },
 
+  array_push_length: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    array.value.push(300);
+    return ExpectValue(array.value.length, 3);
+  },
+
   array_pop: () => {
     const array = Worklets.createSharedValue([100, 200]);
     array.value.pop();
@@ -73,6 +79,18 @@ export const wrapper_tests = {
     const array = Worklets.createSharedValue([100, 200]);
     array.value.shift();
     return ExpectValue(array.value[0], 200);
+  },
+
+  array_unshift: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    array.value.unshift(300);
+    return ExpectValue(array.value[0], 300);
+  },
+
+  array_unshift_length: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    array.value.unshift(300, 500);
+    return ExpectValue(array.value.length, 4);
   },
 
   array_forEach: () => {
