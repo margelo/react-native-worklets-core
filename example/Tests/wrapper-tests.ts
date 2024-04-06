@@ -239,6 +239,29 @@ export const wrapper_tests = {
     return ExpectValue(sum, 300);
   },
 
+  array_proxy_has_same_methods_as_normal_array: () => {
+    const array = [100, 200];
+    const proxy = Worklets.createSharedValue([100, 200]);
+
+    const arrayKeys = Object.keys(array);
+    const proxyKeys = Object.keys(proxy);
+    return ExpectValue(arrayKeys, proxyKeys);
+  },
+
+  array_proxy_all_methods_are_same_type_as_normal_array: () => {
+    // compares if all properties in a normal array have the same type (e.g. function)
+    // as in our proxy arrays.
+    const array = [100, 200];
+    const proxy = Worklets.createSharedValue([100, 200]);
+
+    const arrayKeys = Object.keys(array);
+    return ExpectValue(
+      // @ts-expect-error these properties are accessed differently
+      arrayKeys.every((k) => typeof array[k] === proxy.value[k]),
+      true
+    );
+  },
+
   convert_array_FAILS: convert([123, "abc"]),
   convert_array_of_objects_FAILS: convert([
     { x: 1, y: 2 },
