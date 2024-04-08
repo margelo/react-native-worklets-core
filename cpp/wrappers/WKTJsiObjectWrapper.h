@@ -64,7 +64,7 @@ public:
     }
     updateNativeState(runtime, object);
   }
-                           
+
    void updateNativeState(jsi::Runtime& runtime, jsi::Object& obj) {
      if (obj.hasNativeState(runtime)) {
        _nativeState = obj.getNativeState(runtime);
@@ -86,7 +86,7 @@ public:
     }
     return obj;
   }
-                           
+
    jsi::Object getObject(jsi::Runtime& runtime) {
      switch (getType()) {
      case JsiWrapperType::HostObject:
@@ -112,6 +112,8 @@ public:
    */
   void set(jsi::Runtime &runtime, const jsi::PropNameID &name,
            const jsi::Value &value) override {
+    std::unique_lock lock(_readWriteMutex);
+
     auto nameStr = name.utf8(runtime);
     if (_properties.count(nameStr) == 0) {
       _properties.emplace(nameStr, JsiWrapper::wrap(runtime, value, this));
@@ -127,6 +129,8 @@ public:
    * @return Property value or undefined.
    */
   jsi::Value get(jsi::Runtime &runtime, const jsi::PropNameID &name) override {
+    std::unique_lock lock(_readWriteMutex);
+
     auto nameStr = name.utf8(runtime);
     if (_properties.count(nameStr) != 0) {
       auto prop = _properties.at(nameStr);

@@ -238,6 +238,12 @@ protected:
     return retVal;
   }
 
+protected:
+  /**
+   * Used for locking calls from multiple runtimes.
+   */
+  std::recursive_mutex _readWriteMutex;
+
 private:
   /**
    * Notify listeners that the value has changed
@@ -254,7 +260,6 @@ private:
    */
   explicit JsiWrapper(JsiWrapper *parent) : _parent(parent) {}
 
-  std::mutex _readWriteMutex;
   JsiWrapper *_parent;
 
   JsiWrapperType _type;
