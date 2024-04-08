@@ -10,7 +10,7 @@ import { DependencyList, useMemo } from "react";
  */
 export function useRunInJS<
   TResult,
-  TArguments extends [],
+  TArguments extends any[],
   T extends (...args: TArguments) => TResult
 >(
   callback: T,
