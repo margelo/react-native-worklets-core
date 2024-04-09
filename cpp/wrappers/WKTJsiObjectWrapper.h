@@ -118,6 +118,8 @@ public:
    */
   void set(jsi::Runtime &runtime, const jsi::PropNameID &name,
            const jsi::Value &value) override {
+    std::unique_lock lock(_readWriteMutex);
+
     auto nameStr = name.utf8(runtime);
     if (_properties.count(nameStr) == 0) {
       _properties.emplace(
@@ -135,6 +137,8 @@ public:
    * @return Property value or undefined.
    */
   jsi::Value get(jsi::Runtime &runtime, const jsi::PropNameID &name) override {
+    std::unique_lock lock(_readWriteMutex);
+
     auto nameStr = name.utf8(runtime);
     if (_properties.count(nameStr) != 0) {
       auto prop = _properties.at(nameStr);

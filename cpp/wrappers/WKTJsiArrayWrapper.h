@@ -34,7 +34,10 @@ public:
     return jsi::String::createFromUtf8(runtime, toString(runtime));
   }
 
-  JSI_PROPERTY_GET(length) { return static_cast<double>(_array.size()); }
+  JSI_PROPERTY_GET(length) {
+    std::unique_lock lock(_readWriteMutex);
+    return static_cast<double>(_array.size());
+  }
 
   JSI_HOST_FUNCTION(iterator) {
     int index = 0;
@@ -42,6 +45,8 @@ public:
     auto next = [index,
                  this](jsi::Runtime &runtime, const jsi::Value &thisValue,
                        const jsi::Value *arguments, size_t count) mutable {
+      std::unique_lock lock(_readWriteMutex);
+
       auto retVal = jsi::Object(runtime);
       if (index < _array.size()) {
         retVal.setProperty(runtime, "value", _array[index]->unwrap(runtime));
@@ -62,6 +67,8 @@ public:
   }
 
   JSI_HOST_FUNCTION(push) {
+    std::unique_lock lock(_readWriteMutex);
+
     // Push all arguments to the array end
     for (size_t i = 0; i < count; i++) {
       _array.push_back(JsiWrapper::wrap(runtime, arguments[i], this,
@@ -72,6 +79,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(unshift) {
+    std::unique_lock lock(_readWriteMutex);
+
     // Insert all arguments to the array beginning
     for (size_t i = 0; i < count; i++) {
       _array.insert(_array.begin(),
@@ -83,6 +92,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(pop) {
+    std::unique_lock lock(_readWriteMutex);
+
     // Pop last element from array
     if (_array.empty()) {
       return jsi::Value::undefined();
@@ -94,6 +105,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(shift) {
+    std::unique_lock lock(_readWriteMutex);
+
     // Shift first element from array
     if (_array.empty()) {
       return jsi::Value::undefined();
@@ -105,6 +118,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(forEach) {
+    std::unique_lock lock(_readWriteMutex);
+
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     for (size_t i = 0; i < _array.size(); i++) {
       auto arg = _array.at(i)->unwrap(runtime);
@@ -114,6 +129,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(map) {
+    std::unique_lock lock(_readWriteMutex);
+
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     auto result = jsi::Array(runtime, _array.size());
     for (size_t i = 0; i < _array.size(); i++) {
@@ -125,6 +142,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(filter) {
+    std::unique_lock lock(_readWriteMutex);
+
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     std::vector<std::shared_ptr<JsiWrapper>> result;
 
@@ -143,6 +162,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(find) {
+    std::unique_lock lock(_readWriteMutex);
+
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     for (size_t i = 0; i < _array.size(); i++) {
       auto arg = _array.at(i)->unwrap(runtime);
@@ -155,6 +176,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(every) {
+    std::unique_lock lock(_readWriteMutex);
+
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     for (size_t i = 0; i < _array.size(); i++) {
       auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
@@ -167,6 +190,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(findIndex) {
+    std::unique_lock lock(_readWriteMutex);
+
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     for (size_t i = 0; i < _array.size(); i++) {
       auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
@@ -179,6 +204,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(indexOf) {
+    std::unique_lock lock(_readWriteMutex);
+
     auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0], nullptr,
                                        getUseProxiesForUnwrapping());
     for (size_t i = 0; i < _array.size(); i++) {
@@ -214,6 +241,8 @@ public:
   }
 
   JSI_HOST_FUNCTION(flat) {
+    std::unique_lock lock(_readWriteMutex);
+
     auto depth = count > 0 ? arguments[0].asNumber() : -1;
     std::vector<std::shared_ptr<JsiWrapper>> result =
         flat_internal(depth, _array);
@@ -226,6 +255,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(includes) {
+    std::unique_lock lock(_readWriteMutex);
+
     auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0], nullptr,
                                        getUseProxiesForUnwrapping());
     for (size_t i = 0; i < _array.size(); i++) {
@@ -240,6 +271,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(concat) {
+    std::unique_lock lock(_readWriteMutex);
+
     auto nextArray = arguments[0].asObject(runtime).asArray(runtime);
     auto results = jsi::Array(
         runtime, static_cast<size_t>(_array.size() + nextArray.size(runtime)));
@@ -256,6 +289,8 @@ public:
   }
 
   JSI_HOST_FUNCTION(join) {
+    std::unique_lock lock(_readWriteMutex);
+
     auto separator =
         count > 0 ? arguments[0].asString(runtime).utf8(runtime) : ",";
     auto result = std::string("");
@@ -270,6 +305,8 @@ public:
   }
 
   JSI_HOST_FUNCTION(reduce) {
+    std::unique_lock lock(_readWriteMutex);
+
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     std::shared_ptr<JsiWrapper> acc =
         JsiWrapper::wrap(runtime, jsi::Value::undefined(), nullptr,
@@ -344,6 +381,8 @@ public:
    * @param value Value to set
    */
   void setValue(jsi::Runtime &runtime, const jsi::Value &value) override {
+    std::unique_lock lock(_readWriteMutex);
+
     assert(value.isObject());
     auto object = value.asObject(runtime);
     assert(object.isArray(runtime));
@@ -369,6 +408,8 @@ public:
     auto nameStr = name.utf8(runtime);
     if (!nameStr.empty() &&
         std::all_of(nameStr.begin(), nameStr.end(), ::isdigit)) {
+      std::unique_lock lock(_readWriteMutex);
+
       // Return property by index
       auto index = std::stoi(nameStr.c_str());
       // Ensure we have the required length
@@ -398,6 +439,8 @@ public:
     auto nameStr = name.utf8(runtime);
     if (!nameStr.empty() &&
         std::all_of(nameStr.begin(), nameStr.end(), ::isdigit)) {
+      std::unique_lock lock(_readWriteMutex);
+
       // Return property by index
       auto index = std::stoi(nameStr.c_str());
       auto prop = _array[index];
@@ -413,6 +456,8 @@ public:
    * @return Array as string
    */
   std::string toString(jsi::Runtime &runtime) override {
+    std::unique_lock lock(_readWriteMutex);
+
     std::string retVal = "";
     // Return array contents
     for (size_t i = 0; i < _array.size(); i++) {
@@ -424,7 +469,10 @@ public:
 
   std::vector<jsi::PropNameID>
   getPropertyNames(jsi::Runtime &runtime) override {
+    std::unique_lock lock(_readWriteMutex);
+
     std::vector<jsi::PropNameID> propNames;
+    propNames.reserve(_array.size());
     for (size_t i = 0; i < _array.size(); i++) {
       propNames.push_back(jsi::PropNameID::forUtf8(runtime, std::to_string(i)));
     }
