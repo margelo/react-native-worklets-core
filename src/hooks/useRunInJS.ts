@@ -13,7 +13,7 @@ export function useRunInJS<T extends (...args: any[]) => any>(
   dependencyList: DependencyList
 ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
   const worklet = useMemo(
-    () => Worklets.createRunInJsFn(callback),
+    () => Worklets.prepareRunOnJS(callback),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     dependencyList
   );
