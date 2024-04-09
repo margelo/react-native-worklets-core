@@ -10,15 +10,11 @@ import type { IWorkletContext } from "src/types";
  * @param dependencyList The React dependencies of this Worklet.
  * @returns A memoized Worklet
  */
-export function useWorklet<
-  TResult,
-  TArguments extends [],
-  T extends (...args: TArguments) => TResult
->(
+export function useWorklet<T extends (...args: any[]) => any>(
   context: IWorkletContext | "default",
   callback: T,
   dependencyList: DependencyList
-): (...args: TArguments) => Promise<TResult> {
+): (...args: Parameters<T>) => Promise<ReturnType<T>> {
   const worklet = useMemo(
     () => {
       if (context === "default") {

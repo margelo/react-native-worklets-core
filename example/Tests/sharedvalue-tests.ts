@@ -68,7 +68,7 @@ export const sharedvalue_tests = {
     return ExpectValue(sharedValue.value, 100);
   },
 
-  box_string_to_array_FAILS: () => {
+  box_string_to_array: () => {
     const sharedValue = Worklets.createSharedValue("100");
     // @ts-ignore
     sharedValue.value = [100, 200];
@@ -89,7 +89,7 @@ export const sharedvalue_tests = {
     return ExpectValue(sharedValue.value, { a: 100, b: 200 });
   },
 
-  box_object_to_array_FAILS: () => {
+  box_object_to_array: () => {
     const sharedValue = Worklets.createSharedValue({ a: 100, b: 200 });
     // @ts-ignore
     sharedValue.value = [100.34, 200];
@@ -159,7 +159,7 @@ export const sharedvalue_tests = {
     );
   },
 
-  set_function_fails_when_calling_function: () => {
+  set_function_when_calling_function: () => {
     return ExpectException(() => {
       Worklets.createSharedValue(() => {}).value();
     });

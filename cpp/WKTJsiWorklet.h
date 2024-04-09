@@ -237,9 +237,7 @@ public:
   /**
    Returns true if the character is a whitespace character
    */
-  static bool isWhitespace(unsigned char c) {
-    return std::isspace(c);
-  }
+  static bool isWhitespace(unsigned char c) { return std::isspace(c); }
 
 private:
   /**
@@ -309,14 +307,19 @@ private:
                       .asString(runtime)
                       .utf8(runtime);
     }
-    
+
     // Double-check if the code property is valid.
     bool isCodeEmpty = std::all_of(_code.begin(), _code.end(), isWhitespace);
     if (isCodeEmpty) {
-      std::string error = "Failed to create Worklet, the provided code is empty. Tips:\n"
-        "* Is the babel plugin correctly installed?\n"
-        "* If you are using react-native-reanimated, make sure the react-native-reanimated plugin does not override the react-native-worklets-core/plugin.\n"
-        "* Make sure the JS Worklet contains a \"" + std::string(PropNameWorkletInitDataCode) + "\" property with the function's code.";
+      std::string error =
+          "Failed to create Worklet, the provided code is empty. Tips:\n"
+          "* Is the babel plugin correctly installed?\n"
+          "* If you are using react-native-reanimated, make sure the "
+          "react-native-reanimated plugin does not override the "
+          "react-native-worklets-core/plugin.\n"
+          "* Make sure the JS Worklet contains a \"" +
+          std::string(PropNameWorkletInitDataCode) +
+          "\" property with the function's code.";
       throw jsi::JSError(runtime, error);
     }
 
@@ -360,10 +363,11 @@ public:
   jsi::Value call(jsi::Runtime &runtime, const jsi::Value &thisValue,
                   const jsi::Value *arguments, size_t count) {
     if (_workletFunction.get(runtime) == nullptr) {
-      _workletFunction.get(runtime) = _worklet->createWorkletJsFunction(runtime);      
+      _workletFunction.get(runtime) =
+          _worklet->createWorkletJsFunction(runtime);
     }
-    return _worklet->call(_workletFunction.get(runtime), runtime, thisValue, arguments,
-                          count);
+    return _worklet->call(_workletFunction.get(runtime), runtime, thisValue,
+                          arguments, count);
   }
 
 private:

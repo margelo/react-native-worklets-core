@@ -30,36 +30,46 @@ enum JsiWrapperType {
 class JsiWrapper {
 public:
   /**
-   * Constructor - called from static members
-   * @param runtime Calling runtime
-   * @param value Value to wrap
-   * @param parent Optional parent wrapper
-   * @paran type Type of wrapper
+   * Base Constructor
+   * @param parent Parent wrapper
+   * @param useProxiesForUnwrapping Uses proxies when unwrapping
    */
-  JsiWrapper(jsi::Runtime &runtime, const jsi::Value &value, JsiWrapper *parent,
-             JsiWrapperType type)
-      : JsiWrapper(parent) {
-    _type = type;
-  }
+  explicit JsiWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping)
+      : _parent(parent), _useProxiesForUnwrapping(useProxiesForUnwrapping) {}
 
   /**
-   * Constructor - called from static members
-   * @param runtime Calling runtime
-   * @param value Value to wrap
-   * @param parent Optional parent wrapper
+   * Constructor
+   * @param parent Parent Wrapper
+   * @param useProxiesForUnwrapping Uses proxies when unwrapping
+   * @param type Type of wrapper
    */
-  JsiWrapper(jsi::Runtime &runtime, const jsi::Value &value, JsiWrapper *parent)
-      : JsiWrapper(parent) {}
+  JsiWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping,
+             JsiWrapperType type)
+      : JsiWrapper(parent, useProxiesForUnwrapping) {
+    _type = type;
+  }
 
   /**
    * Returns a wrapper for the a jsi value
    * @param runtime Runtime to wrap value in
    * @param value Value to wrap
+   * @param useProxiesForUnwrapping Uses proxies when unwrapping
    * @return A new JsiWrapper
    */
   static std::shared_ptr<JsiWrapper> wrap(jsi::Runtime &runtime,
+                                          const jsi::Value &value,
+                                          JsiWrapper *parent,
+                                          bool useProxiesForUnwrapping);
+
+  /**
+   * Returns a wrapper for the a jsi value without a partner and with
+   * useProxiesForUnwrapping set to false
+   * @param runtime Runtime to wrap value in
+   * @param value Value to wrap
+   */
+  static std::shared_ptr<JsiWrapper> wrap(jsi::Runtime &runtime,
                                           const jsi::Value &value) {
-    return JsiWrapper::wrap(runtime, value, nullptr);
+    return JsiWrapper::wrap(runtime, value, nullptr, false);
   }
 
   /**
@@ -74,29 +84,10 @@ public:
   }
 
   /**
-   Non-static variant of unwrapAsProxyOrValue
+   Non-static variant of unwrap
    @param runtime Runtime
    */
   jsi::Value unwrap(jsi::Runtime &runtime) { return this->getValue(runtime); }
-
-  /**
-   * Returns the value as a javascript proxy or value depending on need on the
-   * provided runtime
-   * @param runtime Runtime
-   * @param wrapper Wrapper to get value for
-   * @return A new js value in the provided runtime with the wrapped value
-   */
-  static jsi::Value unwrapAsProxyOrValue(jsi::Runtime &runtime,
-                                         std::shared_ptr<JsiWrapper> wrapper) {
-    return wrapper->getAsProxyOrValue(runtime);
-  }
-
-  /**
-   Unwraps to a proxy if needed, to value if not.
-   */
-  jsi::Value unwrapAsProxyOrValue(jsi::Runtime &runtime) {
-    return getAsProxyOrValue(runtime);
-  }
 
   /**
    * Updates the value from a JS value
@@ -139,16 +130,6 @@ public:
 
 protected:
   /**
-   * Returns a wrapper for the value
-   * @param runtime Runtime to wrap value in
-   * @param value Value to wrap
-   * @param parent Parent wrapper (for nested hierarchies)
-   * @return A new JsiWrapper
-   */
-  static std::shared_ptr<JsiWrapper>
-  wrap(jsi::Runtime &runtime, const jsi::Value &value, JsiWrapper *parent);
-
-  /**
    * Call to notify parent that something has changed
    */
   void notify() {
@@ -156,14 +137,6 @@ protected:
       _parent->notify();
     }
     notifyListeners();
-  }
-
-  /**
-   Returns self as a proxy object or a regular value, depending on wether the
-   value needs to be a proxy.
-   */
-  virtual jsi::Value getAsProxyOrValue(jsi::Runtime &runtime) {
-    return getValue(runtime);
   }
 
   /**
@@ -176,6 +149,11 @@ protected:
    * @return The parent object
    */
   JsiWrapper *getParent() { return _parent; }
+
+  /**
+   Returns true if proxies should be used when unwrapping
+   */
+  bool getUseProxiesForUnwrapping() { return _useProxiesForUnwrapping; }
 
   /**
    Calls the Function and returns its value. This function will call the
@@ -254,12 +232,6 @@ private:
     }
   }
 
-  /**
-   * Base Constructor
-   * @param parent Parent wrapper
-   */
-  explicit JsiWrapper(JsiWrapper *parent) : _parent(parent) {}
-
   JsiWrapper *_parent;
 
   JsiWrapperType _type;
@@ -270,6 +242,8 @@ private:
 
   size_t _listenerId = 1000;
   std::map<size_t, std::shared_ptr<std::function<void()>>> _listeners;
+
+  bool _useProxiesForUnwrapping;
 };
 
 } // namespace RNWorklet

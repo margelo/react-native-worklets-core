@@ -8,14 +8,10 @@ import { DependencyList, useMemo } from "react";
  * @param dependencyList The React dependencies of this Worklet.
  * @returns A memoized Worklet
  */
-export function useRunInJS<
-  TResult,
-  TArguments extends any[],
-  T extends (...args: TArguments) => TResult
->(
+export function useRunInJS<T extends (...args: any[]) => any>(
   callback: T,
   dependencyList: DependencyList
-): (...args: TArguments) => Promise<TResult> {
+): (...args: Parameters<T>) => Promise<ReturnType<T>> {
   const worklet = useMemo(
     () => Worklets.createRunInJsFn(callback),
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -74,7 +74,7 @@ void JsiWorkletContext::initialize(
 
   // Register main runtime
   BaseRuntimeAwareCache::setMainJsRuntime(jsRuntime);
-  
+
   _name = name;
   _jsRuntime = jsRuntime;
   _jsCallInvoker = jsCallInvoker;
