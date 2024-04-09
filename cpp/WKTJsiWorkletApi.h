@@ -69,14 +69,12 @@ public:
     // Get the worklet function
     if (!arguments[0].isObject()) {
       throw jsi::JSError(
-          runtime,
-          "prepareRunOnJS expects a function as its first parameter.");
+          runtime, "prepareRunOnJS expects a function as its first parameter.");
     }
 
     if (!arguments[0].asObject(runtime).isFunction(runtime)) {
       throw jsi::JSError(
-          runtime,
-          "prepareRunOnJS expects a function as its first parameter.");
+          runtime, "prepareRunOnJS expects a function as its first parameter.");
     }
 
     auto caller =

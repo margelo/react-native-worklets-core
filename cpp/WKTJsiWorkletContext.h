@@ -156,14 +156,14 @@ public:
 
     return jsi::Value::undefined();
   }
-        
+
   JSI_HOST_FUNCTION(prepareRunAsync) {
     if (count != 1) {
-      throw jsi::JSError(
-          runtime, "prepareRunAsync expects one parameter.");
+      throw jsi::JSError(runtime, "prepareRunAsync expects one parameter.");
     }
 
-    auto caller = JsiWorkletContext::createCallInContext(runtime, arguments[0], this);
+    auto caller =
+        JsiWorkletContext::createCallInContext(runtime, arguments[0], this);
 
     // Now let us create the caller function.
     return jsi::Function::createFromHostFunction(
@@ -172,7 +172,7 @@ public:
           return caller(runtime, thisValue, arguments, count);
         });
   }
-        
+
   JSI_HOST_FUNCTION(runAsync) {
     jsi::Value value = prepareRunAsync(runtime, thisValue, arguments, count);
     jsi::Function func = value.asObject(runtime).asFunction(runtime);
