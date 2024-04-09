@@ -24,13 +24,11 @@ class JsiArrayWrapper : public JsiHostObject,
 public:
   /**
    * Constructs a new array wrapper
-   * @param runtime In runtime
-   * @param value Value to wrap
    * @param parent Parent wrapper object
+   * @param useProxiesForUnwrapping use proxies when unwrapping
    */
-  JsiArrayWrapper(jsi::Runtime &runtime, const jsi::Value &value,
-                  JsiWrapper *parent)
-      : JsiWrapper(runtime, value, parent, JsiWrapperType::Array) {}
+  JsiArrayWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping)
+      : JsiWrapper(parent, useProxiesForUnwrapping, JsiWrapperType::Array) {}
 
   JSI_HOST_FUNCTION(toStringImpl) {
     return jsi::String::createFromUtf8(runtime, toString(runtime));
@@ -46,8 +44,7 @@ public:
                        const jsi::Value *arguments, size_t count) mutable {
       auto retVal = jsi::Object(runtime);
       if (index < _array.size()) {
-        retVal.setProperty(runtime, "value",
-                           _array[index]->unwrapAsProxyOrValue(runtime));
+        retVal.setProperty(runtime, "value", _array[index]->unwrap(runtime));
         retVal.setProperty(runtime, "done", false);
         index++;
       } else {
@@ -67,7 +64,8 @@ public:
   JSI_HOST_FUNCTION(push) {
     // Push all arguments to the array end
     for (size_t i = 0; i < count; i++) {
-      _array.push_back(JsiWrapper::wrap(runtime, arguments[i], this));
+      _array.push_back(JsiWrapper::wrap(runtime, arguments[i], this,
+                                        getUseProxiesForUnwrapping()));
     }
     notify();
     return static_cast<double>(_array.size());
@@ -76,7 +74,9 @@ public:
   JSI_HOST_FUNCTION(unshift) {
     // Insert all arguments to the array beginning
     for (size_t i = 0; i < count; i++) {
-      _array.insert(_array.begin(), JsiWrapper::wrap(runtime, arguments[i], this));
+      _array.insert(_array.begin(),
+                    JsiWrapper::wrap(runtime, arguments[i], this,
+                                     getUseProxiesForUnwrapping()));
     }
     notify();
     return static_cast<double>(_array.size());
@@ -90,7 +90,7 @@ public:
     auto lastEl = _array.at(_array.size() - 1);
     _array.pop_back();
     notify();
-    return lastEl->unwrapAsProxyOrValue(runtime);
+    return lastEl->unwrap(runtime);
   };
 
   JSI_HOST_FUNCTION(shift) {
@@ -101,13 +101,13 @@ public:
     auto firstEl = _array.at(0);
     _array.erase(_array.begin());
     notify();
-    return firstEl->unwrapAsProxyOrValue(runtime);
+    return firstEl->unwrap(runtime);
   };
 
   JSI_HOST_FUNCTION(forEach) {
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     for (size_t i = 0; i < _array.size(); i++) {
-      auto arg = _array.at(i)->unwrapAsProxyOrValue(runtime);
+      auto arg = _array.at(i)->unwrap(runtime);
       callFunction(runtime, callbackFn, thisValue, &arg, 1);
     }
     return jsi::Value::undefined();
@@ -117,7 +117,7 @@ public:
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     auto result = jsi::Array(runtime, _array.size());
     for (size_t i = 0; i < _array.size(); i++) {
-      auto arg = _array.at(i)->unwrapAsProxyOrValue(runtime);
+      auto arg = _array.at(i)->unwrap(runtime);
       auto retVal = callFunction(runtime, callbackFn, thisValue, &arg, 1);
       result.setValueAtIndex(runtime, i, retVal);
     }
@@ -129,7 +129,7 @@ public:
     std::vector<std::shared_ptr<JsiWrapper>> result;
 
     for (size_t i = 0; i < _array.size(); i++) {
-      auto arg = _array.at(i)->unwrapAsProxyOrValue(runtime);
+      auto arg = _array.at(i)->unwrap(runtime);
       auto retVal = callFunction(runtime, callbackFn, thisValue, &arg, 1);
       if (retVal.getBool() == true) {
         result.push_back(_array.at(i));
@@ -137,8 +137,7 @@ public:
     }
     auto returnValue = jsi::Array(runtime, result.size());
     for (size_t i = 0; i < result.size(); i++) {
-      returnValue.setValueAtIndex(runtime, i,
-                                  result.at(i)->unwrapAsProxyOrValue(runtime));
+      returnValue.setValueAtIndex(runtime, i, result.at(i)->unwrap(runtime));
     }
     return returnValue;
   };
@@ -146,7 +145,7 @@ public:
   JSI_HOST_FUNCTION(find) {
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     for (size_t i = 0; i < _array.size(); i++) {
-      auto arg = _array.at(i)->unwrapAsProxyOrValue(runtime);
+      auto arg = _array.at(i)->unwrap(runtime);
       auto retVal = callFunction(runtime, callbackFn, thisValue, &arg, 1);
       if (retVal.getBool() == true) {
         return arg;
@@ -158,7 +157,7 @@ public:
   JSI_HOST_FUNCTION(every) {
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     for (size_t i = 0; i < _array.size(); i++) {
-      auto arg = JsiWrapper::unwrapAsProxyOrValue(runtime, _array.at(i));
+      auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
       auto retVal = callFunction(runtime, callbackFn, thisValue, &arg, 1);
       if (retVal.getBool() == false) {
         return false;
@@ -170,7 +169,7 @@ public:
   JSI_HOST_FUNCTION(findIndex) {
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     for (size_t i = 0; i < _array.size(); i++) {
-      auto arg = JsiWrapper::unwrapAsProxyOrValue(runtime, _array.at(i));
+      auto arg = JsiWrapper::unwrap(runtime, _array.at(i));
       auto retVal = callFunction(runtime, callbackFn, thisValue, &arg, 1);
       if (retVal.getBool() == true) {
         return static_cast<int>(i);
@@ -180,7 +179,8 @@ public:
   };
 
   JSI_HOST_FUNCTION(indexOf) {
-    auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0]);
+    auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0], nullptr,
+                                       getUseProxiesForUnwrapping());
     for (size_t i = 0; i < _array.size(); i++) {
       // TODO: Add == operator to JsiWrapper
       if (wrappedArg->getType() == _array[i]->getType()) {
@@ -219,14 +219,15 @@ public:
         flat_internal(depth, _array);
     auto returnValue = jsi::Array(runtime, result.size());
     for (size_t i = 0; i < result.size(); i++) {
-      returnValue.setValueAtIndex(
-          runtime, i, JsiWrapper::unwrapAsProxyOrValue(runtime, result.at(i)));
+      returnValue.setValueAtIndex(runtime, i,
+                                  JsiWrapper::unwrap(runtime, result.at(i)));
     }
     return returnValue;
   };
 
   JSI_HOST_FUNCTION(includes) {
-    auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0]);
+    auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0], nullptr,
+                                       getUseProxiesForUnwrapping());
     for (size_t i = 0; i < _array.size(); i++) {
       // TODO: Add == operator to JsiWrapper!!!
       if (wrappedArg->getType() == _array[i]->getType()) {
@@ -243,8 +244,8 @@ public:
     auto results = jsi::Array(
         runtime, static_cast<size_t>(_array.size() + nextArray.size(runtime)));
     for (size_t i = 0; i < _array.size(); i++) {
-      results.setValueAtIndex(
-          runtime, i, JsiWrapper::unwrapAsProxyOrValue(runtime, _array[i]));
+      results.setValueAtIndex(runtime, i,
+                              JsiWrapper::unwrap(runtime, _array[i]));
     }
     auto startIndex = std::max<size_t>(0, _array.size() - 1);
     for (size_t i = 0; i < nextArray.size(runtime); i++) {
@@ -259,7 +260,7 @@ public:
         count > 0 ? arguments[0].asString(runtime).utf8(runtime) : ",";
     auto result = std::string("");
     for (size_t i = 0; i < _array.size(); i++) {
-      auto arg = _array.at(i)->unwrapAsProxyOrValue(runtime);
+      auto arg = _array.at(i)->unwrap(runtime);
       result += arg.toString(runtime).utf8(runtime);
       if (i < _array.size() - 1) {
         result += separator;
@@ -271,21 +272,24 @@ public:
   JSI_HOST_FUNCTION(reduce) {
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     std::shared_ptr<JsiWrapper> acc =
-        JsiWrapper::wrap(runtime, jsi::Value::undefined());
+        JsiWrapper::wrap(runtime, jsi::Value::undefined(), nullptr,
+                         getUseProxiesForUnwrapping());
     if (count > 1) {
-      acc = JsiWrapper::wrap(runtime, arguments[1]);
+      acc = JsiWrapper::wrap(runtime, arguments[1], nullptr,
+                             getUseProxiesForUnwrapping());
     }
     for (size_t i = 0; i < _array.size(); i++) {
       std::vector<jsi::Value> args(3);
-      args[0] = acc->unwrapAsProxyOrValue(runtime);
-      args[1] = _array.at(i)->unwrapAsProxyOrValue(runtime);
+      args[0] = acc->unwrap(runtime);
+      args[1] = _array.at(i)->unwrap(runtime);
       args[2] = jsi::Value(static_cast<int>(i));
       acc = JsiWrapper::wrap(
           runtime,
           callFunction(runtime, callbackFn, thisValue,
-                       static_cast<const jsi::Value *>(args.data()), 3));
+                       static_cast<const jsi::Value *>(args.data()), 3),
+          nullptr, getUseProxiesForUnwrapping());
     }
-    return JsiWrapper::unwrapAsProxyOrValue(runtime, acc);
+    return JsiWrapper::unwrap(runtime, acc);
   }
 
   JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiArrayWrapper, length))
@@ -318,7 +322,16 @@ public:
    * @return jsi::Value representing this array
    */
   jsi::Value getValue(jsi::Runtime &runtime) override {
-    return getArrayProxy(runtime, shared_from_this());
+    if (getUseProxiesForUnwrapping()) {
+      return getArrayProxy(runtime, shared_from_this());
+    }
+
+    // Copy array if we're not using proxies (shared values)
+    auto result = jsi::Array(runtime, _array.size());
+    for (size_t i = 0; i < _array.size(); i++) {
+      result.setValueAtIndex(runtime, i, _array.at(i)->unwrap(runtime));
+    }
+    return result;
   }
 
   bool canUpdateValue(jsi::Runtime &runtime, const jsi::Value &value) override {
@@ -340,28 +353,9 @@ public:
     _array.resize(size);
 
     for (size_t i = 0; i < size; i++) {
-      _array[i] =
-          JsiWrapper::wrap(runtime, array.getValueAtIndex(runtime, i), this);
+      _array[i] = JsiWrapper::wrap(runtime, array.getValueAtIndex(runtime, i),
+                                   this, getUseProxiesForUnwrapping());
     }
-
-    /* / Update prototype
-    auto objectCtor = runtime.global().getProperty(runtime, "Object");
-    if (!objectCtor.isUndefined()) {
-      // Get setPrototypeOf
-      auto setPrototypeOf =
-          objectCtor.asObject(runtime).getProperty(runtime, "setPrototypeOf");
-      if (!setPrototypeOf.isUndefined()) {
-        auto array = runtime.global().getProperty(runtime, "Array");
-        if (!array.isUndefined()) {
-          auto arrayPrototype =
-              array.asObject(runtime).getProperty(runtime, "prototype");
-          auto selfObject =
-              jsi::Object::createFromHostObject(runtime, shared_from_this());
-          setPrototypeOf.asObject(runtime).asFunction(runtime).call(
-              runtime, selfObject, arrayPrototype);
-        }
-      }
-    }*/
   }
 
   /**
@@ -377,7 +371,13 @@ public:
         std::all_of(nameStr.begin(), nameStr.end(), ::isdigit)) {
       // Return property by index
       auto index = std::stoi(nameStr.c_str());
-      _array[index] = JsiWrapper::wrap(runtime, value);
+      // Ensure we have the required length
+      if (index >= _array.size()) {
+        _array.resize(index + 1);
+      }
+      // Set value
+      _array[index] = JsiWrapper::wrap(runtime, value, nullptr,
+                                       getUseProxiesForUnwrapping());
       notify();
     } else {
       // This is an edge case where the array is used as a
@@ -401,7 +401,7 @@ public:
       // Return property by index
       auto index = std::stoi(nameStr.c_str());
       auto prop = _array[index];
-      return JsiWrapper::unwrapAsProxyOrValue(runtime, prop);
+      return JsiWrapper::unwrap(runtime, prop);
     }
     // Return super JsiHostObject's get
     return JsiHostObject::get(runtime, name);
@@ -440,45 +440,58 @@ private:
    */
   jsi::Value getArrayProxy(jsi::Runtime &runtime,
                            std::shared_ptr<jsi::HostObject> hostObj) {
-    // return jsi::Object::createFromHostObject(runtime, hostObj);
-
     auto createArrayProxy =
         runtime.global().getProperty(runtime, WorkletArrayProxyName);
+
+    // Install factory for creating an array proxy
     if (createArrayProxy.isUndefined()) {
       // Install worklet proxy helper into runtime
       static std::string code =
-          "function (obj) {"
-          "return new Proxy(obj, {"
-          "    ownKeys: function (target) {"
-          "      return Reflect.ownKeys(target).concat(['length']);"
-          "    },"
-          "    getPrototypeOf: function () {"
-          "      return Reflect.getPrototypeOf([]);"
-          "    },"
-          "    getOwnPropertyDescriptor: function (_, prop) {"
-          "      return {"
-          "        configurable: true,"
-          "        writable: true,"
-          "        enumerable: prop !== 'length',"
-          "      };"
-          "    },"
-          "    set: function(target, prop, value) { return "
-          "Reflect.set(target,prop,value); },"
-          "    get: function(target, prop) { return Reflect.get(target, prop); "
-          "}"
-          "  })"
-          "}";
+          "function (target) {"
+          "        const dummy = [];"
+          "        return new Proxy(dummy, {"
+          "          ownKeys: function (_target) {"
+          "            return Reflect.ownKeys(target).concat(['length']);"
+          "          },"
+          "          getOwnPropertyDescriptor: function (_target, prop) {"
+          "            return {"
+          "              ...Reflect.getOwnPropertyDescriptor(target, prop),"
+          "              configurable: prop !== 'length',"
+          "              writable: true,"
+          "              enumerable: prop !== 'length',"
+          "            };"
+          "          },"
+          "          set: function (_target, prop, value, _receiver) {"
+          "            return Reflect.set(target, prop, value, target);"
+          "          },"
+          "          get: function (_target, prop, receiver) {"
+          "            if (prop === 'length') return "
+          "Object.keys(target).length;"
+          "            if (prop === 'keys') return Object.keys(target);"
+          "            if (prop === 'values') return Object.values(target);"
+          "            return Reflect.get(target, prop, receiver);"
+          "          },"
+          "        });"
+          "      }";
 
+      // Format code as an installable function
       auto codeBuffer =
           std::make_shared<const jsi::StringBuffer>("(" + code + "\n)");
+
+      // Create function
       createArrayProxy =
           runtime.evaluateJavaScript(codeBuffer, WorkletArrayProxyName);
+
+      // Set in runtime
       runtime.global().setProperty(runtime, WorkletArrayProxyName,
                                    createArrayProxy);
     }
 
+    // Get the create proxy factory function
     auto createProxyFunc =
         createArrayProxy.asObject(runtime).asFunction(runtime);
+
+    // Create the proxy that converts the HostObject to an Array
     return createProxyFunc.call(
         runtime, jsi::Object::createFromHostObject(runtime, hostObj));
   }

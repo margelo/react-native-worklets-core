@@ -109,4 +109,58 @@ export const worklet_tests = {
       undefined
     );
   },
+  check_pure_array_is_passed_as_array: () => {
+    const array = [0, 1, 2, 3, 4];
+    const f = () => {
+      "worklet";
+      return Array.isArray(array);
+    };
+    const w = Worklets.createRunInContextFn(f);
+    return ExpectValue(w(), true);
+  },
+  check_pure_array_is_passed_as_jsi_array: () => {
+    const array = [0, 1, 2, 3, 4];
+    const f = () => {
+      "worklet";
+      return Worklets.__jsi_is_array(array);
+    };
+    const w = Worklets.createRunInContextFn(f);
+    return ExpectValue(w(), true);
+  },
+  check_pure_array_inside_object_is_passed_as_jsi_array: () => {
+    const obj = { a: [0, 1, 2, 3, 4] };
+    const f = () => {
+      "worklet";
+      return Worklets.__jsi_is_array(obj.a);
+    };
+    const w = Worklets.createRunInContextFn(f);
+    return ExpectValue(w(), true);
+  },
+  check_pure_array_nested_argument_is_passed_as_jsi_array: () => {
+    const obj = { a: [0, 1, 2, 3, 4] };
+    const f = (t: typeof obj) => {
+      "worklet";
+      return Worklets.__jsi_is_array(t.a);
+    };
+    const w = Worklets.createRunInContextFn(f);
+    return ExpectValue(w(obj), true);
+  },
+  check_shared_value_array_is_not_passed_as_jsi_array: () => {
+    const obj = Worklets.createSharedValue([0, 1, 2, 3, 4]);
+    const f = () => {
+      "worklet";
+      return Worklets.__jsi_is_array(obj.value);
+    };
+    const w = Worklets.createRunInContextFn(f);
+    return ExpectValue(w(), false);
+  },
+  check_shared_value_nested_array_is_not_passed_as_jsi_array: () => {
+    const obj = Worklets.createSharedValue({ a: [0, 1, 2, 3, 4] });
+    const f = () => {
+      "worklet";
+      return Worklets.__jsi_is_array(obj.value.a);
+    };
+    const w = Worklets.createRunInContextFn(f);
+    return ExpectValue(w(), false);
+  },
 };
