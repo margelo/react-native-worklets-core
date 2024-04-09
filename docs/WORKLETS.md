@@ -35,7 +35,7 @@ await Worklets.defaultContext.runAsync(sayHello)
 Worklets can take parameters and return results. Results are returned as promises.
 
 ```js
-function fibonacci(num: number) {
+const fibonacci = (num: number): number => {
   'worklet'
   if (num <= 1) return num;
   let prev = 0, curr = 1;

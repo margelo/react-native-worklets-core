@@ -7,7 +7,7 @@ react-native-worklets-core can be used either as a standalone library to run Wor
 To run any JS Function on a background Thread, convert it to a worklet. As an example, this is how you can compute the fibonacci sequence in JS, without blocking the main JS Thread:
 
 ```js
-function fibonacci(num: number) {
+const fibonacci = (num: number): number => {
   'worklet'
   if (num <= 1) return num;
   let prev = 0, curr = 1;
