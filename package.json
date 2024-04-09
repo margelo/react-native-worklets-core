@@ -1,6 +1,6 @@
 {
   "name": "react-native-worklets-core",
-  "version": "0.5.0",
+  "version": "1.0.0-beta.0",
   "description": "A Worklet runner for React Native",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
