@@ -80,7 +80,7 @@ public:
         // we only add listener when the secondary runtime is used, this assumes
         // that the secondary runtime is terminated first. This lets us avoid
         // additional complexity for the majority of cases when objects are not
-        // shared between runtimes. Otherwise we'd have to register all objecrts
+        // shared between runtimes. Otherwise we'd have to register all objects
         // with the RuntimeMonitor as opposed to only registering ones that are
         // used in secondary runtime. Note that we can't register listener here
         // with the primary runtime as it may run on a separate thread.
