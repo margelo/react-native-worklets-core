@@ -1,5 +1,9 @@
-import { AppRegistry } from "react-native";
-import App from "./src/App";
+import { AppRegistry, View } from "react-native";
 import { name as appName } from "./app.json";
+import { Worklets } from "react-native-worklets-core";
 
-AppRegistry.registerComponent(appName, () => App);
+Worklets.createRunInContextFn(() => {
+  "worklet";
+})();
+
+AppRegistry.registerComponent(appName, () => View);
