@@ -40,8 +40,8 @@ public:
 
   T &get(jsi::Runtime &rt) {
     if (_runtimeCaches.count(&rt) == 0) {
-      // This is the first time this Runtime has been accessed,
-      // set up a `onRuntimeDestroyed` listener for it and
+      // This is the first time this Runtime has been accessed.
+      // We set up a `onRuntimeDestroyed` listener for it and
       // initialize the cache map.
       RuntimeLifecycleMonitor::addListener(rt, this);
 
