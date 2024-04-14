@@ -13,7 +13,7 @@ export function useSharedValue<T>(initialValue: T): ISharedValue<T> {
   }
   // Free on unmount
   useEffect(() => {
-    return ref.current?.dispose();
+    return ref.current?.dispose;
   }, []);
 
   return ref.current;
