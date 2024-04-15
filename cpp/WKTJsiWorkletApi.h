@@ -83,9 +83,7 @@ public:
     // Now let us create the caller function.
     return jsi::Function::createFromHostFunction(
         runtime, jsi::PropNameID::forAscii(runtime, "createRunOnJS"), 0,
-        JSI_HOST_FUNCTION_LAMBDA {
-          return caller(runtime, thisValue, arguments, count);
-        });
+        caller);
   }
 
   JSI_HOST_FUNCTION(runOnJS) {
