@@ -45,12 +45,12 @@ export interface IWorkletContext {
    * @example
    * ```ts
    * const context = Worklets.createContext("myContext")
-   * const func = context.prepareRunAsync((name) => `hello ${name}!`)
+   * const func = context.createRunAsync((name) => `hello ${name}!`)
    * const first = await func("marc")
    * const second = await func("christian")
    * ```
    */
-  prepareRunAsync: <TArgs, TReturn>(
+  createRunAsync: <TArgs, TReturn>(
     worklet: (...args: TArgs[]) => TReturn
   ) => (...args: TArgs[]) => Promise<TReturn>;
   /**
@@ -109,14 +109,14 @@ export interface IWorkletNativeApi {
    * const [user, setUser] = useState("marc")
    *
    * const context = Worklets.defaultContext
-   * const callback = Worklets.prepareRunOnJS(setUser)
+   * const callback = Worklets.createRunOnJS(setUser)
    * context.runAsync(() => {
    *   const name = "christian"
    *   callback(name)
    * })
    * ```
    */
-  prepareRunOnJS: <TArgs, TReturn>(
+  createRunOnJS: <TArgs, TReturn>(
     func: (...args: TArgs[]) => TReturn
   ) => (...args: TArgs[]) => Promise<TReturn>;
   /**

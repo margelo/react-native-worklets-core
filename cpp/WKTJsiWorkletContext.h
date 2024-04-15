@@ -157,9 +157,9 @@ public:
     return jsi::Value::undefined();
   }
 
-  JSI_HOST_FUNCTION(prepareRunAsync) {
+  JSI_HOST_FUNCTION(createRunAsync) {
     if (count != 1) {
-      throw jsi::JSError(runtime, "prepareRunAsync expects one parameter.");
+      throw jsi::JSError(runtime, "createRunAsync expects one parameter.");
     }
 
     auto caller =
@@ -167,20 +167,20 @@ public:
 
     // Now let us create the caller function.
     return jsi::Function::createFromHostFunction(
-        runtime, jsi::PropNameID::forAscii(runtime, "prepareRunAsync"), 0,
+        runtime, jsi::PropNameID::forAscii(runtime, "createRunAsync"), 0,
         JSI_HOST_FUNCTION_LAMBDA {
           return caller(runtime, thisValue, arguments, count);
         });
   }
 
   JSI_HOST_FUNCTION(runAsync) {
-    jsi::Value value = prepareRunAsync(runtime, thisValue, arguments, count);
+    jsi::Value value = createRunAsync(runtime, thisValue, arguments, count);
     jsi::Function func = value.asObject(runtime).asFunction(runtime);
     return func.call(runtime, nullptr, 0);
   }
 
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletContext, addDecorator),
-                       JSI_EXPORT_FUNC(JsiWorkletContext, prepareRunAsync),
+                       JSI_EXPORT_FUNC(JsiWorkletContext, createRunAsync),
                        JSI_EXPORT_FUNC(JsiWorkletContext, runAsync))
 
   JSI_PROPERTY_GET(name) {

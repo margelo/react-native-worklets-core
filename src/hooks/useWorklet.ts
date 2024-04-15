@@ -19,9 +19,9 @@ export function useWorklet<T extends (...args: any[]) => any>(
   const worklet = useMemo(
     () => {
       if (context === "default") {
-        return Worklets.defaultContext.prepareRunAsync(callback);
+        return Worklets.defaultContext.createRunAsync(callback);
       } else {
-        return context.prepareRunAsync(callback);
+        return context.createRunAsync(callback);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

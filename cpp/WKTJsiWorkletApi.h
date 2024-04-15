@@ -61,20 +61,20 @@ public:
         std::make_shared<JsiSharedValue>(arguments[0]));
   };
 
-  JSI_HOST_FUNCTION(prepareRunOnJS) {
+  JSI_HOST_FUNCTION(createRunOnJS) {
     if (count != 1) {
-      throw jsi::JSError(runtime, "prepareRunOnJS expects one parameter.");
+      throw jsi::JSError(runtime, "createRunOnJS expects one parameter.");
     }
 
     // Get the worklet function
     if (!arguments[0].isObject()) {
       throw jsi::JSError(
-          runtime, "prepareRunOnJS expects a function as its first parameter.");
+          runtime, "createRunOnJS expects a function as its first parameter.");
     }
 
     if (!arguments[0].asObject(runtime).isFunction(runtime)) {
       throw jsi::JSError(
-          runtime, "prepareRunOnJS expects a function as its first parameter.");
+          runtime, "createRunOnJS expects a function as its first parameter.");
     }
 
     auto caller =
@@ -82,14 +82,14 @@ public:
 
     // Now let us create the caller function.
     return jsi::Function::createFromHostFunction(
-        runtime, jsi::PropNameID::forAscii(runtime, "prepareRunOnJS"), 0,
+        runtime, jsi::PropNameID::forAscii(runtime, "createRunOnJS"), 0,
         JSI_HOST_FUNCTION_LAMBDA {
           return caller(runtime, thisValue, arguments, count);
         });
   }
 
   JSI_HOST_FUNCTION(runOnJS) {
-    jsi::Value value = prepareRunOnJS(runtime, thisValue, arguments, count);
+    jsi::Value value = createRunOnJS(runtime, thisValue, arguments, count);
     jsi::Function func = value.asObject(runtime).asFunction(runtime);
     return func.call(runtime, nullptr, 0);
   }
@@ -123,7 +123,7 @@ public:
 
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletApi, createSharedValue),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createContext),
-                       JSI_EXPORT_FUNC(JsiWorkletApi, prepareRunOnJS),
+                       JSI_EXPORT_FUNC(JsiWorkletApi, createRunOnJS),
                        JSI_EXPORT_FUNC(JsiWorkletApi, runOnJS),
                        JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_array),
                        JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_object))

@@ -40,7 +40,7 @@ function something() {
 
 ### Memoize
 
-Both the `runAsync` and `runOnJS` functions are convenience methods for `prepareRunAsync` and `prepareRunOnJS`. For frequent calls, prefer the `prepare...` equivalent instead to memoize the caller function.
+Both the `runAsync` and `runOnJS` functions are convenience methods for `createRunAsync` and `createRunOnJS`. For frequent calls, prefer the `prepare...` equivalent instead to memoize the caller function.
 
 ### Hooks
 

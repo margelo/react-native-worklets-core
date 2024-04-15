@@ -3,7 +3,7 @@ import { ExpectException, ExpectValue, getWorkletInfo } from "./utils";
 
 export const worklet_tests = {
   check_is_not_worklet: () => {
-    const fn = Worklets.defaultContext.prepareRunAsync((a: number) => {
+    const fn = Worklets.defaultContext.createRunAsync((a: number) => {
       return a * 200;
     });
     return ExpectValue(typeof fn, "function");
@@ -26,14 +26,14 @@ export const worklet_tests = {
         return c + cl.x;
       };
       const nestedWorkletFn =
-        Worklets.defaultContext.prepareRunAsync(nestedWorklet);
+        Worklets.defaultContext.createRunAsync(nestedWorklet);
       return nestedWorkletFn(100);
     };
     const fw = () => {
       "worklet";
       return rootWorklet();
     };
-    let wf = Worklets.defaultContext.prepareRunAsync(fw);
+    let wf = Worklets.defaultContext.createRunAsync(fw);
     return ExpectValue(wf(), 200);
   },
   check_worklet_closure_shared_value: () => {
@@ -61,7 +61,7 @@ export const worklet_tests = {
       "worklet";
       return api.someFunc(100);
     };
-    const w = Worklets.defaultContext.prepareRunAsync(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectException(w);
   },
   check_js_promise_resolves: () => {
@@ -76,7 +76,7 @@ export const worklet_tests = {
       "worklet";
       return a + 100;
     };
-    const w = Worklets.defaultContext.prepareRunAsync(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(
       new Promise((resolve) => {
         w(100).then(resolve);
@@ -89,7 +89,7 @@ export const worklet_tests = {
       "worklet";
       return a + 100;
     };
-    const w = Worklets.defaultContext.prepareRunAsync(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(
       new Promise<void>((resolve) => {
         w(100).finally(resolve);
@@ -102,7 +102,7 @@ export const worklet_tests = {
       "worklet";
       return a + 100;
     };
-    const w = Worklets.defaultContext.prepareRunAsync(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(
       new Promise<void>((resolve) => {
         w(100).then().finally(resolve);
@@ -116,7 +116,7 @@ export const worklet_tests = {
       "worklet";
       return Array.isArray(array);
     };
-    const w = Worklets.defaultContext.prepareRunAsync(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(w(), true);
   },
   check_pure_array_is_passed_as_jsi_array: () => {
@@ -125,7 +125,7 @@ export const worklet_tests = {
       "worklet";
       return Worklets.__jsi_is_array(array);
     };
-    const w = Worklets.defaultContext.prepareRunAsync(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(w(), true);
   },
   check_pure_array_inside_object_is_passed_as_jsi_array: () => {
@@ -134,7 +134,7 @@ export const worklet_tests = {
       "worklet";
       return Worklets.__jsi_is_array(obj.a);
     };
-    const w = Worklets.defaultContext.prepareRunAsync(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(w(), true);
   },
   check_pure_array_nested_argument_is_passed_as_jsi_array: () => {
@@ -143,7 +143,7 @@ export const worklet_tests = {
       "worklet";
       return Worklets.__jsi_is_array(t.a);
     };
-    const w = Worklets.defaultContext.prepareRunAsync(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(w(obj), true);
   },
   check_shared_value_array_is_not_passed_as_jsi_array: () => {
@@ -152,7 +152,7 @@ export const worklet_tests = {
       "worklet";
       return Worklets.__jsi_is_array(obj.value);
     };
-    const w = Worklets.defaultContext.prepareRunAsync(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(w(), false);
   },
   check_shared_value_nested_array_is_not_passed_as_jsi_array: () => {
@@ -161,7 +161,7 @@ export const worklet_tests = {
       "worklet";
       return Worklets.__jsi_is_array(obj.value.a);
     };
-    const w = Worklets.defaultContext.prepareRunAsync(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(w(), false);
   },
   check_called_directly: () => {

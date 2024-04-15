@@ -24,7 +24,7 @@ export const worklet_context_tests = {
       "worklet";
       return a + x;
     };
-    const w = Worklets.defaultContext.prepareRunAsync(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(w(100), 200);
   },
 
@@ -34,7 +34,7 @@ export const worklet_context_tests = {
       "worklet";
       return a;
     };
-    const w = context.prepareRunAsync(f);
+    const w = context.createRunAsync(f);
     return ExpectValue(w(100), 100);
   },
 
@@ -43,7 +43,7 @@ export const worklet_context_tests = {
       "worklet";
       throw new Error("Test error");
     };
-    const w = Worklets.defaultContext.prepareRunAsync(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectException(w, "Test error");
   },
 
@@ -53,7 +53,7 @@ export const worklet_context_tests = {
       "worklet";
       throw new Error("Test error");
     };
-    const w = context.prepareRunAsync(f);
+    const w = context.createRunAsync(f);
     return ExpectException(w, "Test error");
   },
 
@@ -69,7 +69,7 @@ export const worklet_context_tests = {
       workletB(a);
     };
 
-    const w = Worklets.defaultContext.prepareRunAsync(workletA);
+    const w = Worklets.defaultContext.createRunAsync(workletA);
     return Expect(w(100), () => {
       return sharedValue.value === 100
         ? undefined
@@ -84,14 +84,14 @@ export const worklet_context_tests = {
       sharedValue.value = a;
     };
 
-    const js1 = Worklets.prepareRunOnJS(setSharedValue);
+    const js1 = Worklets.createRunOnJS(setSharedValue);
 
     const w1 = function (a: number) {
       "worklet";
       return js1(a);
     };
 
-    const w = Worklets.defaultContext.prepareRunAsync(w1);
+    const w = Worklets.defaultContext.createRunAsync(w1);
     return Expect(w(100), () => {
       return sharedValue.value === 100
         ? undefined
@@ -100,12 +100,12 @@ export const worklet_context_tests = {
   },
 
   call_async_to_js_from_worklet_with_retval: () => {
-    const workletB = Worklets.prepareRunOnJS(function (a: number) {
+    const workletB = Worklets.createRunOnJS(function (a: number) {
       "worklet";
       return a;
     });
 
-    const workletA = Worklets.defaultContext.prepareRunAsync((a: number) => {
+    const workletA = Worklets.defaultContext.createRunAsync((a: number) => {
       "worklet";
       return workletB(a);
     });
@@ -113,12 +113,12 @@ export const worklet_context_tests = {
   },
 
   call_async_to_js_from_worklet_with_error: () => {
-    const callback = Worklets.prepareRunOnJS(() => {
+    const callback = Worklets.createRunOnJS(() => {
       "worklet";
       throw new Error("Test error");
     });
 
-    const workletA = Worklets.defaultContext.prepareRunAsync(() => {
+    const workletA = Worklets.defaultContext.createRunAsync(() => {
       "worklet";
       return callback();
     });
@@ -131,7 +131,7 @@ export const worklet_context_tests = {
       return a + a;
     };
 
-    const w_square = Worklets.defaultContext.prepareRunAsync((a: number) => {
+    const w_square = Worklets.defaultContext.createRunAsync((a: number) => {
       "worklet";
       return Math.sqrt(adder(a));
     });
@@ -146,7 +146,7 @@ export const worklet_context_tests = {
       sharedValue.value = b;
     };
 
-    const workletA = Worklets.defaultContext.prepareRunAsync((a: number) => {
+    const workletA = Worklets.defaultContext.createRunAsync((a: number) => {
       "worklet";
       return workletB(a);
     });
@@ -163,7 +163,7 @@ export const worklet_context_tests = {
       "worklet";
       return 1000;
     };
-    const workletA = Worklets.defaultContext.prepareRunAsync(() => {
+    const workletA = Worklets.defaultContext.createRunAsync(() => {
       "worklet";
       return workletB();
     });
@@ -175,7 +175,7 @@ export const worklet_context_tests = {
       "worklet";
       return 1000;
     };
-    const workletA = Worklets.defaultContext.prepareRunAsync(function () {
+    const workletA = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       let r = 0;
       for (let i = 0; i < 100; i++) {
@@ -191,7 +191,7 @@ export const worklet_context_tests = {
       "worklet";
       throw Error("Test error");
     };
-    const workletA = Worklets.defaultContext.prepareRunAsync(function () {
+    const workletA = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       return workletB();
     });
@@ -203,7 +203,7 @@ export const worklet_context_tests = {
       "worklet";
       return a.current;
     };
-    const workletA = Worklets.defaultContext.prepareRunAsync(function () {
+    const workletA = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       return workletB({ current: 100 });
     });
@@ -212,7 +212,7 @@ export const worklet_context_tests = {
 
   fail_when_calling_a_regular_function_from_a_worklet: () => {
     const func = (a: number) => a;
-    const worklet = Worklets.defaultContext.prepareRunAsync(function () {
+    const worklet = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       return func(100);
     });
@@ -228,27 +228,27 @@ export const worklet_context_tests = {
       },
     };
     const sharedValue = Worklets.createSharedValue(obj);
-    const worklet = Worklets.defaultContext.prepareRunAsync(function () {
+    const worklet = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       return sharedValue.value.f();
     });
     return ExpectValue(worklet(), 200);
   },
-  call_prepareRunOnJS_inside_worklet: () => {
+  call_createRunOnJS_inside_worklet: () => {
     const fn = function (b: number) {
       "worklet";
       return b * 2;
     };
     const f = function (a: number) {
       "worklet";
-      const wjs = Worklets.prepareRunOnJS(fn);
+      const wjs = Worklets.createRunOnJS(fn);
       return wjs(a);
     };
-    const w = Worklets.defaultContext.prepareRunAsync(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(w(100), 200);
   },
   call_worklet_in_same_context: () => {
-    const workletInTest = Worklets.defaultContext.prepareRunAsync(function (
+    const workletInTest = Worklets.defaultContext.createRunAsync(function (
       a: number
     ) {
       "worklet";
@@ -256,7 +256,7 @@ export const worklet_context_tests = {
       return 100 + a;
     });
 
-    const worklet = Worklets.defaultContext.prepareRunAsync(function () {
+    const worklet = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       console.log("ctx: worklet: calling workletInTest(100)");
       const a = workletInTest(100);
@@ -273,21 +273,21 @@ export const worklet_context_tests = {
       return 100 + a;
     }
     calcInCtx.name = "calcInCtx";
-    const workletInCtx = ctx.prepareRunAsync(calcInCtx);
+    const workletInCtx = ctx.createRunAsync(calcInCtx);
 
     function calcInDefaultCtx() {
       "worklet";
       return workletInCtx(100);
     }
     calcInDefaultCtx.name = "calcInDefaultCtx";
-    const worklet = Worklets.defaultContext.prepareRunAsync(calcInDefaultCtx);
+    const worklet = Worklets.defaultContext.createRunAsync(calcInDefaultCtx);
 
     return ExpectValue(worklet(), 200);
   },
-  call_prepareRunAsync_from_context: () => {
-    const worklet = Worklets.defaultContext.prepareRunAsync(() => {
+  call_createRunAsync_from_context: () => {
+    const worklet = Worklets.defaultContext.createRunAsync(() => {
       "worklet";
-      const workletInTest = Worklets.defaultContext.prepareRunAsync(
+      const workletInTest = Worklets.defaultContext.createRunAsync(
         (a: number) => {
           "worklet";
           return 100 + a;
@@ -297,12 +297,12 @@ export const worklet_context_tests = {
     });
     return ExpectValue(worklet(), 200);
   },
-  call_prepareRunAsync_between_contexts: () => {
+  call_createRunAsync_between_contexts: () => {
     const ctx = Worklets.createContext("test");
 
-    const worklet = Worklets.defaultContext.prepareRunAsync(() => {
+    const worklet = Worklets.defaultContext.createRunAsync(() => {
       "worklet";
-      const workletInTest = ctx.prepareRunAsync((a: number) => {
+      const workletInTest = ctx.createRunAsync((a: number) => {
         "worklet";
         return 100 + a;
       });
@@ -315,7 +315,7 @@ export const worklet_context_tests = {
       "worklet";
       return a * 2;
     };
-    let wf: any = Worklets.defaultContext.prepareRunAsync(f);
+    let wf: any = Worklets.defaultContext.createRunAsync(f);
     wf(100);
     wf = undefined;
     return ExpectValue(true, true);
@@ -329,7 +329,7 @@ export const worklet_context_tests = {
       "worklet";
       return f(100);
     };
-    let wf = Worklets.defaultContext.prepareRunAsync(fw);
+    let wf = Worklets.defaultContext.createRunAsync(fw);
     return ExpectValue(wf(), 200);
   },
   call_run_async_directly: () => {
@@ -347,7 +347,7 @@ export const worklet_context_tests = {
         return a * 2;
       });
     };
-    const w = Worklets.defaultContext.prepareRunAsync(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(w(100), 200);
   },
   call_run_async_and_run_on_js_directly: () => {
