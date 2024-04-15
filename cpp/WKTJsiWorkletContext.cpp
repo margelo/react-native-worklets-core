@@ -72,9 +72,6 @@ void JsiWorkletContext::initialize(
     std::function<void(std::function<void()> &&)> jsCallInvoker,
     std::function<void(std::function<void()> &&)> workletCallInvoker) {
 
-  // Register main runtime
-  BaseRuntimeAwareCache::setMainJsRuntime(jsRuntime);
-
   _name = name;
   _jsRuntime = jsRuntime;
   _jsCallInvoker = jsCallInvoker;

@@ -49,10 +49,11 @@ void JsiHostObject::set(jsi::Runtime &rt, const jsi::PropNameID &name,
 jsi::Value JsiHostObject::get(jsi::Runtime &runtime,
                               const jsi::PropNameID &name) {
   auto nameStr = name.utf8(runtime);
+  auto& cache = _hostFunctionCache.get(runtime);
 
   // Check function cache
-  auto cachedFunc = _hostFunctionCache.get(runtime).find(nameStr);
-  if (cachedFunc != _hostFunctionCache.get(runtime).end()) {
+  auto cachedFunc = cache.find(nameStr);
+  if (cachedFunc != cache.end()) {
     return cachedFunc->second.asFunction(runtime);
   }
 
@@ -75,7 +76,7 @@ jsi::Value JsiHostObject::get(jsi::Runtime &runtime,
 
     // Add to cache - it is important to cache the results from the
     // createFromHostFunction function which takes some time.
-    return _hostFunctionCache.get(runtime)
+    return cache
         .emplace(nameStr, jsi::Function::createFromHostFunction(runtime, name,
                                                                 0, dispatcher))
         .first->second.asFunction(runtime);
