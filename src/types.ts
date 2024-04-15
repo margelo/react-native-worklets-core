@@ -1,3 +1,10 @@
+/**
+ * Represents a value that can be shared between multiple contexts.
+ *
+ * Getting and setting the `value` is thread-safe.
+ *
+ * Objects and Arrays are wrapped as custom C++ Proxies instead of copied by value.
+ */
 export interface ISharedValue<T> {
   get value(): T;
   set value(v: T);
@@ -28,6 +35,36 @@ export interface IWorkletContext {
    * @param propertyObject
    */
   addDecorator: <T>(propertyName: string, propertyObject: T) => void;
+  /**
+   * Creates a function that can be executed asynchronously on the Worklet context.
+   *
+   * The resulting function is memoized, so this is merely just a bit more efficient than {@linkcode runAsync}.
+   * @worklet
+   * @param worklet The worklet to run on this Context. It needs to be decorated with the `'worklet'` directive.
+   * @returns A function that can be called to execute the Worklet function on this context.
+   * @example
+   * ```ts
+   * const context = Worklets.createContext("myContext")
+   * const func = context.createRunAsync((name) => `hello ${name}!`)
+   * const first = await func("marc")
+   * const second = await func("christian")
+   * ```
+   */
+  createRunAsync: <TArgs, TReturn>(
+    worklet: (...args: TArgs[]) => TReturn
+  ) => (...args: TArgs[]) => Promise<TReturn>;
+  /**
+   * Runs the given Function asynchronously on this Worklet context.
+   * @worklet
+   * @param worklet The worklet to run on this Context. It needs to be decorated with the `'worklet'` directive.
+   * @returns A Promise that resolves once the Worklet function has completed executing.
+   * @example
+   * ```ts
+   * const context = Worklets.createContext("myContext")
+   * const string = await context.runAsync(() => "hello!")
+   * ```
+   */
+  runAsync: <T>(worklet: () => T) => Promise<T>;
 }
 
 export type ContextType = {
@@ -54,33 +91,50 @@ export interface IWorkletNativeApi {
    */
   createContext: (name: string) => IWorkletContext;
   /**
-   * Creates a value that can be shared between runtimes
+   * Creates a value that can be shared between runtimes.
+   *
+   * Arrays and Objects are wrapped in C++ Proxies instead of copied by value.
+   * Array and Objects reads and writes are thread-safe.
    */
   createSharedValue: <T>(value: T) => ISharedValue<T>;
+
   /**
-   * Creates a function that will be executed in the worklet context. The function
-   * will return a promise that will be resolved when the function has been
-   * executed on the worklet thread.
+   * Creates a function that can be executed asynchronously on the default React-JS context.
    *
-   * Used to create a function to call from the JS thread to the worklet thread.
-   * @param worklet Decorated function that will be called in the context
-   * @param context Context to call function in, or default context if not set.
-   * @returns A function that will be called in the worklet context
+   * The resulting function is memoized, so this is merely just a bit more efficient than {@linkcode runOnJS}.
+   * @param func The function to run on the default React-JS context.
+   * @returns A function that can be called to execute the function on the default React-JS .
+   * @example
+   * ```ts
+   * const [user, setUser] = useState("marc")
+   *
+   * const context = Worklets.defaultContext
+   * const callback = Worklets.createRunOnJS(setUser)
+   * context.runAsync(() => {
+   *   const name = "christian"
+   *   callback(name)
+   * })
+   * ```
    */
-  createRunInContextFn: <C extends ContextType, T, A extends Array<unknown>>(
-    fn: (this: C, ...args: A) => T,
-    context?: IWorkletContext
-  ) => (...args: A) => Promise<T>;
+  createRunOnJS: <TArgs, TReturn>(
+    func: (...args: TArgs[]) => TReturn
+  ) => (...args: TArgs[]) => Promise<TReturn>;
   /**
-   * Creates a function that will be executed in the javascript context.
+   * Runs the given Function asynchronously on the default React-JS context.
+   * @param func The function to run on the default React-JS context.
+   * @returns A Promise that resolves once the function has completed executing.
+   * @example
+   * ```ts
+   * const [user, setUser] = useState("marc")
    *
-   * Used to create a function to call back to the JS context from a worklet context.
-   * @param worklet Decorated function that will be called in the JS context
-   * @returns A function that will be called in the JS context
+   * const context = Worklets.defaultContext
+   * context.runAsync(() => {
+   *   const name = "christian"
+   *   Worklets.runOnJS(() => setUser(name))
+   * })
+   * ```
    */
-  createRunInJsFn: <C extends ContextType, T, A extends Array<unknown>>(
-    fn: (this: C, ...args: A) => T
-  ) => (...args: A) => Promise<T>;
+  runOnJS: <T>(func: () => T) => Promise<T>;
 
   /**
    * Get the default Worklet context.

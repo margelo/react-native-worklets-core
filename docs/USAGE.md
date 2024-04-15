@@ -9,25 +9,38 @@ To run any JS Function on a background Thread, convert it to a worklet. As an ex
 ```js
 const fibonacci = (num: number): number => {
   'worklet'
-  if (num <= 1) return 1
-  return fibonacci(num - 1) + fibonacci(num - 2)
+  if (num <= 1) return num;
+  let prev = 0, curr = 1;
+  for (let i = 2; i <= num; i++) {
+    let next = prev + curr;
+    prev = curr;
+    curr = next;
+  }
+  return curr;
 }
 
-const worklet = Worklets.createRunInContextFn(fibonacci)
-const result = await worklet(50)
+const context = Worklets.defaultContext
+const result = await context.runAsync(() => {
+  'worklet'
+  return fibonacci(50)
+})
 console.log(`Fibonacci of 50 is ${result}`)
 ```
 
-Use `createRunInJsFn` to call back to JS:
+Use `runOnJS` to call back to JS:
 
 ```js
-const setAgeJS = Worklets.createRunInJsFn(setAge)
+const [age, setAge] = useState(30)
 
 function something() {
   'worklet'
-  setAgeJS(50)
+  Worklets.runOnJS(() => setAge(50))
 }
 ```
+
+### Memoize
+
+Both the `runAsync` and `runOnJS` functions are convenience methods for `createRunAsync` and `createRunOnJS`. For frequent calls, prefer the `prepare...` equivalent instead to memoize the caller function.
 
 ### Hooks
 
@@ -82,18 +95,18 @@ function App() {
 }
 ```
 
+The SharedValue will create a C++ based Proxy implementation for Arrays and Objects, so that any read- or write-operations on the Array/Object are thread-safe.
+
 ### Separate Contexts
 
 You can also create specific contexts (Threads) to run Worklets on:
 
 ```js
 const context1 = Worklets.createContext('my-new-thread-1')
-const run = Worklets.createRunInContextFn(() => {
+context1.runAsync(() => {
   'worklet'
   console.log("Hello from context #1!")
-}, context1)
-
-run()
+})
 ```
 
 ...and even nest them without ever crossing the JavaScript Thread:
@@ -101,17 +114,14 @@ run()
 ```js
 const context1 = Worklets.createContext('my-new-thread-1')
 const context2 = Worklets.createContext('my-new-thread-2')
-const run1 = Worklets.createRunInContextFn(() => {
+context1.runAsync(() => {
   'worklet'
   console.log("Hello from context #1!")
-}, context1)
-const run2 = Worklets.createRunInContextFn(() => {
-  'worklet'
-  console.log("Hello from context #2!")
-  run1()
-}, context2)
-
-run2()
+  context2.runAsync(() => {
+    'worklet'
+    console.log("Hello from context #2!")
+  })
+})
 ```
 
 ## Integration

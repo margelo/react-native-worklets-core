@@ -3495,6 +3495,11 @@ pkg-up@^3.1.0:
   dependencies:
     find-up "^3.0.0"
 
+pod-install@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/pod-install/-/pod-install-0.2.0.tgz#11f87e919f83bbd4deaa159aa5ce2f617ee0ff9d"
+  integrity sha512-NxNEq5OpIFn0UjS9hznBNDMvQw2+3diEegChIr2Zv2XlWaNRcOoUp6Kc2zrD372C49QXoZRwzc0Aqf6605Ftjg==
+
 posix-character-classes@^0.1.0:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/posix-character-classes/-/posix-character-classes-0.1.1.tgz#01eac0fe3b5af71a2a6c02feabb8c1fef7e00eab"

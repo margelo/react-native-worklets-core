@@ -147,7 +147,7 @@ export const sharedvalue_tests = {
 
   set_value_from_worklet: () => {
     const sharedValue = Worklets.createSharedValue("hello world");
-    const worklet = Worklets.createRunInContextFn(function () {
+    const worklet = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       sharedValue.value = "hello worklet";
     });
@@ -177,7 +177,7 @@ export const sharedvalue_tests = {
   add_listener_from_worklet: () => {
     const sharedValue = Worklets.createSharedValue(100);
     const didChange = Worklets.createSharedValue(false);
-    const w = Worklets.createRunInContextFn(function () {
+    const w = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       const unsubscribe = sharedValue.addListener(
         () => (didChange.value = true)

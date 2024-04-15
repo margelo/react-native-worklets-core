@@ -49,7 +49,7 @@ void JsiHostObject::set(jsi::Runtime &rt, const jsi::PropNameID &name,
 jsi::Value JsiHostObject::get(jsi::Runtime &runtime,
                               const jsi::PropNameID &name) {
   auto nameStr = name.utf8(runtime);
-  auto& cache = _hostFunctionCache.get(runtime);
+  auto &cache = _hostFunctionCache.get(runtime);
 
   // Check function cache
   auto cachedFunc = cache.find(nameStr);
