@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <thread>
 
 #include "WKTJsiHostObject.h"
 #include "WKTJsiJsDecorator.h"
@@ -90,6 +91,13 @@ public:
     jsi::Value value = createRunOnJS(runtime, thisValue, arguments, count);
     jsi::Function func = value.asObject(runtime).asFunction(runtime);
     return func.call(runtime, nullptr, 0);
+  }
+  
+  JSI_HOST_FUNCTION(getCurrentThreadId) {
+    std::thread::id threadId = std::this_thread::get_id();
+    std::hash<std::thread::id> hasher;
+    std::size_t id_hash = hasher(threadId);
+    return jsi::Value(static_cast<double>(id_hash));
   }
 
   JSI_HOST_FUNCTION(__jsi_is_array) {
