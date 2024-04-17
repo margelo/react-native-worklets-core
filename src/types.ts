@@ -50,9 +50,9 @@ export interface IWorkletContext {
    * const second = await func("christian")
    * ```
    */
-  createRunAsync: <TArgs, TReturn>(
-    worklet: (...args: TArgs[]) => TReturn
-  ) => (...args: TArgs[]) => Promise<TReturn>;
+  createRunAsync: <TArgs extends unknown[], TReturn>(
+    worklet: (...args: TArgs) => TReturn
+  ) => (...args: TArgs) => Promise<TReturn>;
   /**
    * Runs the given Function asynchronously on this Worklet context.
    * @worklet
@@ -116,9 +116,9 @@ export interface IWorkletNativeApi {
    * })
    * ```
    */
-  createRunOnJS: <TArgs, TReturn>(
-    func: (...args: TArgs[]) => TReturn
-  ) => (...args: TArgs[]) => Promise<TReturn>;
+  createRunOnJS: <TArgs extends unknown[], TReturn>(
+    func: (...args: TArgs) => TReturn
+  ) => (...args: TArgs) => Promise<TReturn>;
   /**
    * Runs the given Function asynchronously on the default React-JS context.
    * @param func The function to run on the default React-JS context.
