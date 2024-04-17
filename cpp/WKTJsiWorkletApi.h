@@ -2,6 +2,7 @@
 
 #include <jsi/jsi.h>
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <thread>
@@ -110,7 +111,7 @@ public:
   }
 
   JSI_HOST_FUNCTION(getCurrentThreadId) {
-    static int threadCounter = 0;
+    static std::atomic<int> threadCounter = 0;
     static thread_local int thisThreadId = -1;
     if (thisThreadId == -1) {
       thisThreadId = threadCounter++;
