@@ -3,7 +3,9 @@
 #include <jsi/jsi.h>
 
 #include <memory>
+#include <sstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "WKTJsiHostObject.h"
@@ -92,6 +94,14 @@ public:
     return func.call(runtime, nullptr, 0);
   }
 
+  JSI_HOST_FUNCTION(getCurrentThreadId) {
+    std::thread::id threadId = std::this_thread::get_id();
+    std::stringstream stream;
+    stream << threadId;
+    std::string string = stream.str();
+    return jsi::String::createFromUtf8(runtime, string);
+  }
+
   JSI_HOST_FUNCTION(__jsi_is_array) {
     if (count == 0) {
       throw jsi::JSError(runtime, "__getTypeIsArray expects one parameter.");
@@ -123,6 +133,7 @@ public:
                        JSI_EXPORT_FUNC(JsiWorkletApi, createContext),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createRunOnJS),
                        JSI_EXPORT_FUNC(JsiWorkletApi, runOnJS),
+                       JSI_EXPORT_FUNC(JsiWorkletApi, getCurrentThreadId),
                        JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_array),
                        JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_object))
 

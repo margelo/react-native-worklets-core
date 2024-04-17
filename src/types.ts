@@ -137,6 +137,10 @@ export interface IWorkletNativeApi {
   runOnJS: <T>(func: () => T) => Promise<T>;
 
   /**
+   * Returns the current C++ Thread ID this method was called on.
+   */
+  getCurrentThreadId(): string;
+  /**
    * Get the default Worklet context.
    */
   defaultContext: IWorkletContext;
