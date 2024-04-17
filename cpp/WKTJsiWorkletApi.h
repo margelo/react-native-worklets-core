@@ -3,7 +3,9 @@
 #include <jsi/jsi.h>
 
 #include <memory>
+#include <sstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "WKTJsiHostObject.h"
@@ -107,6 +109,14 @@ public:
                        "deprecated in favor of context.createRunAsync(..) or "
                        "context.runAsync(..) - please migrate to the new API!");
   }
+    
+  JSI_HOST_FUNCTION(getCurrentThreadId) {
+    std::thread::id threadId = std::this_thread::get_id();
+    std::stringstream stream;
+    stream << threadId;
+    std::string string = stream.str();
+    return jsi::String::createFromUtf8(runtime, string);
+  }
 
   JSI_HOST_FUNCTION(__jsi_is_array) {
     if (count == 0) {
@@ -143,6 +153,7 @@ public:
                                        createRunInContextFn), // <-- deprecated
                        JSI_EXPORT_FUNC(JsiWorkletApi,
                                        createRunInJsFn), // <-- deprecated
+                       JSI_EXPORT_FUNC(JsiWorkletApi, getCurrentThreadId),
                        JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_array),
                        JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_object))
 

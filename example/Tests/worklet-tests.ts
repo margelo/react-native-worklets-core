@@ -119,6 +119,32 @@ export const worklet_tests = {
     const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(w(), true);
   },
+  check_thread_id_exists: () => {
+    const threadId = Worklets.getCurrentThreadId();
+    return ExpectValue(threadId.length > 0, true);
+  },
+  check_thread_id_consecutive_calls_are_equal: () => {
+    const first = Worklets.getCurrentThreadId();
+    const second = Worklets.getCurrentThreadId();
+    return ExpectValue(first, second);
+  },
+  check_thread_id_consecutive_calls_in_worklet_are_equal: async () => {
+    const [first, second] = await Worklets.defaultContext.runAsync(() => {
+      "worklet";
+      const firstId = Worklets.getCurrentThreadId();
+      const secondId = Worklets.getCurrentThreadId();
+      return [firstId, secondId];
+    });
+    return ExpectValue(first, second);
+  },
+  check_thread_ids_are_different: async () => {
+    const jsThreadId = Worklets.getCurrentThreadId();
+    const workletThreadId = await Worklets.defaultContext.runAsync(() => {
+      "worklet";
+      return Worklets.getCurrentThreadId();
+    });
+    return await ExpectValue(jsThreadId !== workletThreadId, true);
+  },
   check_pure_array_is_passed_as_jsi_array: () => {
     const array = [0, 1, 2, 3, 4];
     const f = () => {
