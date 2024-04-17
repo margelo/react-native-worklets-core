@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <string>
+#include <sstream>
 #include <thread>
 #include <vector>
 
@@ -95,9 +96,10 @@ public:
 
   JSI_HOST_FUNCTION(getCurrentThreadId) {
     std::thread::id threadId = std::this_thread::get_id();
-    std::hash<std::thread::id> hasher;
-    std::size_t id_hash = hasher(threadId);
-    return jsi::Value(static_cast<double>(id_hash));
+    std::stringstream stream;
+    stream << threadId;
+    std::string string = stream.str();
+    return jsi::String::createFromUtf8(runtime, string);
   }
 
   JSI_HOST_FUNCTION(__jsi_is_array) {

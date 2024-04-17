@@ -139,7 +139,7 @@ export interface IWorkletNativeApi {
   /**
    * Returns the current C++ Thread ID this method was called on.
    */
-  getCurrentThreadId(): number;
+  getCurrentThreadId(): string;
   /**
    * Get the default Worklet context.
    */
