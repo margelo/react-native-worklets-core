@@ -3,7 +3,6 @@
 #include <jsi/jsi.h>
 
 #include <memory>
-#include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
@@ -109,13 +108,14 @@ public:
                        "deprecated in favor of context.createRunAsync(..) or "
                        "context.runAsync(..) - please migrate to the new API!");
   }
-    
+
   JSI_HOST_FUNCTION(getCurrentThreadId) {
-    std::thread::id threadId = std::this_thread::get_id();
-    std::stringstream stream;
-    stream << threadId;
-    std::string string = stream.str();
-    return jsi::String::createFromUtf8(runtime, string);
+    static int threadCounter = 0;
+    static thread_local int thisThreadId = -1;
+    if (thisThreadId == -1) {
+      thisThreadId = threadCounter++;
+    }
+    return jsi::Value(thisThreadId);
   }
 
   JSI_HOST_FUNCTION(__jsi_is_array) {
