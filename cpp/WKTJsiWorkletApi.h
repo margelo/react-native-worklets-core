@@ -4,8 +4,8 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 #include <thread>
+#include <vector>
 
 #include "WKTJsiHostObject.h"
 #include "WKTJsiJsDecorator.h"
@@ -92,7 +92,7 @@ public:
     jsi::Function func = value.asObject(runtime).asFunction(runtime);
     return func.call(runtime, nullptr, 0);
   }
-  
+
   JSI_HOST_FUNCTION(getCurrentThreadId) {
     std::thread::id threadId = std::this_thread::get_id();
     std::hash<std::thread::id> hasher;
