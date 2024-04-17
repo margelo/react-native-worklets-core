@@ -10,6 +10,13 @@ import type { IWorkletContext } from "src/types";
  * @param callback The Worklet. Must be marked with the `'worklet'` directive.
  * @param dependencyList The React dependencies of this Worklet.
  * @returns A memoized Worklet
+ * ```ts
+ * const sayHello = useWorklet('default', (name: string) => {
+ *   'worklet'
+ *   console.log(`Hello ${name}, I am running on the Worklet Thread!`)
+ * }, [])
+ * sayHello()
+ * ```
  */
 export function useWorklet<T extends (...args: any[]) => any>(
   context: IWorkletContext | "default",

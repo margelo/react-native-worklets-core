@@ -61,13 +61,13 @@ function App() {
 }
 ```
 
-#### `useRunInJS`
+#### `useRunOnJS`
 
 Uses a memoized callback to the JS context that can be called from within a Worklet context:
 
 ```ts
 function App() {
-  const sayHello = useRunInJS(() => {
+  const sayHello = useRunOnJS(() => {
     console.log("hello from JS!")
   }, [])
 
