@@ -131,6 +131,7 @@ public:
                        JSI_EXPORT_FUNC(JsiWorkletApi, createContext),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createRunOnJS),
                        JSI_EXPORT_FUNC(JsiWorkletApi, runOnJS),
+                       JSI_EXPORT_FUNC(JsiWorkletApi, getCurrentThreadId),
                        JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_array),
                        JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_object))
 
