@@ -94,6 +94,22 @@ public:
     return func.call(runtime, nullptr, 0);
   }
 
+  JSI_HOST_FUNCTION(createRunInJsFn) {
+    // TODO: Remove these deprecated APIs after one or two versions.
+    throw jsi::JSError(runtime,
+                       "Worklets.createRunInJsFn(..) has been deprecated in "
+                       "favor of Worklets.createRunOnJS(..) or "
+                       "Worklets.runOnJS(..) - please migrate to the new API!");
+  }
+
+  JSI_HOST_FUNCTION(createRunInContextFn) {
+    // TODO: Remove these deprecated APIs after one or two versions.
+    throw jsi::JSError(runtime,
+                       "Worklets.createRunInContextFn(context, ..) has been "
+                       "deprecated in favor of context.createRunAsync(..) or "
+                       "context.runAsync(..) - please migrate to the new API!");
+  }
+    
   JSI_HOST_FUNCTION(getCurrentThreadId) {
     std::thread::id threadId = std::this_thread::get_id();
     std::stringstream stream;
@@ -133,6 +149,10 @@ public:
                        JSI_EXPORT_FUNC(JsiWorkletApi, createContext),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createRunOnJS),
                        JSI_EXPORT_FUNC(JsiWorkletApi, runOnJS),
+                       JSI_EXPORT_FUNC(JsiWorkletApi,
+                                       createRunInContextFn), // <-- deprecated
+                       JSI_EXPORT_FUNC(JsiWorkletApi,
+                                       createRunInJsFn), // <-- deprecated
                        JSI_EXPORT_FUNC(JsiWorkletApi, getCurrentThreadId),
                        JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_array),
                        JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_object))

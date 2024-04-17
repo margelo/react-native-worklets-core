@@ -99,6 +99,15 @@ export interface IWorkletNativeApi {
   createSharedValue: <T>(value: T) => ISharedValue<T>;
 
   /**
+   * @deprecated This API has been deprecated, use {@linkcode IWorkletContext.createRunAsync()} instead
+   */
+  createRunInContextFn: never;
+  /**
+   * @deprecated This API has been deprecated, use {@linkcode createRunOnJS()} instead
+   */
+  createRunInJsFn: never;
+
+  /**
    * Creates a function that can be executed asynchronously on the default React-JS context.
    *
    * The resulting function is memoized, so this is merely just a bit more efficient than {@linkcode runOnJS}.
