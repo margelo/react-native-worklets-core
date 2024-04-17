@@ -146,9 +146,12 @@ export interface IWorkletNativeApi {
   runOnJS: <T>(func: () => T) => Promise<T>;
 
   /**
-   * Returns the current C++ Thread ID this method was called on.
+   * Returns a unique identifier for the Thread this method is called on.
+   *
+   * Thread-IDs start at 0 and use `thread_local` storage to store their IDs
+   * which are incremented everytime a new Thread calls `getCurrentThreadId()`.
    */
-  getCurrentThreadId(): string;
+  getCurrentThreadId(): number;
   /**
    * Get the default Worklet context.
    */

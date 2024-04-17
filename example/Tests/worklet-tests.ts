@@ -121,7 +121,7 @@ export const worklet_tests = {
   },
   check_thread_id_exists: () => {
     const threadId = Worklets.getCurrentThreadId();
-    return ExpectValue(threadId.length > 0, true);
+    return ExpectValue(Number.isSafeInteger(threadId), true);
   },
   check_thread_id_consecutive_calls_are_equal: () => {
     const first = Worklets.getCurrentThreadId();
