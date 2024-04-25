@@ -219,9 +219,8 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
     // Start by wrapping the arguments
     ArgumentsWrapper argsWrapper(runtime, arguments, count);
 
-    // In hermes-engine, "thisValue" appears to always be an undefined value, but in jsc it's the globalThis object...
-    // It's just easier to wrap an undefined and provide that as the "this" context.
-    auto thisWrapper = JsiWrapper::wrap(runtime, jsi::Value::undefined());
+    // Wrap the this value
+    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
 
     // If we are calling directly from/to the JS context or within the same
     // context, we can just dispatch everything directly.
