@@ -343,7 +343,7 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
           // Create callback wrapper
           callIntoCorrectContext([callback, workletInvoker, thisWrapper,
                                   argsWrapper, promise,
-                                  func](jsi::Runtime &runtime) {
+                                  func](jsi::Runtime &runtime) mutable {
             try {
 
               auto args = argsWrapper.getArguments(runtime);
@@ -399,6 +399,10 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
                                     runtime, "Unknown error in promise."));
               });
             }
+            
+            // We need to explicitly clear the func shared pointer here to avoid it being
+            // deleted on another thread
+            promise = nullptr;
           });
         });
 
@@ -417,7 +421,7 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
           func = std::make_shared<jsi::Function>(
               maybeFunc->asObject(runtime).asFunction(runtime))](
              jsi::Runtime &runtime, const jsi::Value &thisValue,
-             const jsi::Value *arguments, size_t count) {
+             const jsi::Value *arguments, size_t count) mutable {
     // If we are in the same context let's just call the function directly
     if (&runtime == rtPtr) {
       return func->call(runtime, arguments, count);
@@ -439,13 +443,17 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
           });
     } else {
       JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
-          [argsWrapper, rtPtr, func = std::move(func)](jsi::Runtime &runtime) {
+          [argsWrapper, rtPtr, func](jsi::Runtime &runtime) {
             assert(&runtime == rtPtr && "Expected same runtime ptr!");
             auto args = argsWrapper.getArguments(runtime);
             func->call(runtime, ArgumentsWrapper::toArgs(args),
                        argsWrapper.getCount());
           });
     }
+               
+    // We need to explicitly clear the func shared pointer here to avoid it being
+    // deleted on another thread
+    func = nullptr;
 
     return jsi::Value::undefined();
   };
