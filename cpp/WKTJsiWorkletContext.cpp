@@ -343,7 +343,7 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
           // Create callback wrapper
           callIntoCorrectContext([callback, workletInvoker, thisWrapper,
                                   argsWrapper, promise,
-                                  func](jsi::Runtime &runtime) {
+                                  func](jsi::Runtime &runtime) mutable {
             try {
 
               auto args = argsWrapper.getArguments(runtime);
@@ -399,6 +399,10 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
                                     runtime, "Unknown error in promise."));
               });
             }
+            
+            // We need to explicitly clear the func shared pointer here to avoid it being
+            // deleted on another thread
+            promise = nullptr;
           });
         });
 
@@ -430,20 +434,22 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
     if (ctx != nullptr) {
       // We are on a worklet thread
       ctx->invokeOnWorkletThread(
-          [argsWrapper, rtPtr, func](JsiWorkletContext *,
-                                     jsi::Runtime &runtime) {
+          [argsWrapper, rtPtr, func = std::move(func)](JsiWorkletContext *,
+                                     jsi::Runtime &runtime) mutable {
             assert(&runtime == rtPtr && "Expected same runtime ptr!");
             auto args = argsWrapper.getArguments(runtime);
             func->call(runtime, ArgumentsWrapper::toArgs(args),
                        argsWrapper.getCount());
+            func = nullptr;
           });
     } else {
       JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
-          [argsWrapper, rtPtr, func = std::move(func)](jsi::Runtime &runtime) {
+          [argsWrapper, rtPtr, func = std::move(func)](jsi::Runtime &runtime) mutable {
             assert(&runtime == rtPtr && "Expected same runtime ptr!");
             auto args = argsWrapper.getArguments(runtime);
             func->call(runtime, ArgumentsWrapper::toArgs(args),
                        argsWrapper.getCount());
+            func = nullptr;
           });
     }
 
