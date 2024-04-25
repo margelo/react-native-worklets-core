@@ -60,6 +60,12 @@ export const wrapper_tests = {
     return ExpectValue(array.value.length, 3);
   },
 
+  array_push_multiple: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    array.value.push(300, 400);
+    return ExpectValue(array.value.length, 4);
+  },
+
   array_pop: () => {
     const array = Worklets.createSharedValue([100, 200]);
     array.value.pop();
@@ -76,6 +82,18 @@ export const wrapper_tests = {
     const array = Worklets.createSharedValue([100, 200]);
     array.value.shift();
     return ExpectValue(array.value.length, 1);
+  },
+
+  array_shift_return: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    const retVal = array.value.shift();
+    return ExpectValue(retVal, 100);
+  },
+
+  array_shift_return_undefined: () => {
+    const array = Worklets.createSharedValue([]);
+    const retVal = array.value.shift();
+    return ExpectValue(retVal, undefined);
   },
 
   array_shift_values: () => {
@@ -105,9 +123,24 @@ export const wrapper_tests = {
     return ExpectValue(sum, 300);
   },
 
+  array_forEach_with_index_and_array_params: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    let sum = 0;
+    array.value.forEach((_, index, arr) => {
+      sum += arr[index] ?? 0;
+    });
+    return ExpectValue(sum, 300);
+  },
+
   array_filter: () => {
     const array = Worklets.createSharedValue([100, 200]);
     const lessThan150 = array.value.filter((value) => value < 150);
+    return ExpectValue(lessThan150.length, 1);
+  },
+
+  array_filter_with_index_and_array_params: () => {
+    const array = Worklets.createSharedValue([100, 200, 300]);
+    const lessThan150 = array.value.filter((_, i, arr) => (arr[i] ?? 0) < 150);
     return ExpectValue(lessThan150.length, 1);
   },
 
@@ -117,15 +150,38 @@ export const wrapper_tests = {
     return ExpectValue(copy, [100, 200]);
   },
 
+  array_map_with_index_and_arra_params: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    const copy = array.value.map((_, i, arr) => arr[i]);
+    return ExpectValue(copy, [100, 200]);
+  },
+
   array_concat: () => {
     const array = Worklets.createSharedValue([100, 200]);
     const next = [300, 400];
     return ExpectValue(array.value.concat(next).length, 4);
   },
 
+  array_concat_multiple: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    return ExpectValue(array.value.concat(300, 400)[3], 400);
+  },
+
+  array_concat_not_mutate: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    const next = array.value.concat([300, 400]);
+    return ExpectValue(next === array.value, false);
+  },
+
   array_find: () => {
     const array = Worklets.createSharedValue([100, 200]);
     const result = array.value.find((p) => p === 100);
+    return ExpectValue(result, 100);
+  },
+
+  array_find_with_index_and_array_params: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    const result = array.value.find((_, i, arr) => arr[i] === 100);
     return ExpectValue(result, 100);
   },
 
@@ -135,15 +191,45 @@ export const wrapper_tests = {
     return ExpectValue(result, true);
   },
 
+  array_every_index_array_params: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    const result = array.value.every((_, i, arr) => (arr[i] ?? 0) > 50);
+    return ExpectValue(result, true);
+  },
+
   array_every_false: () => {
     const array = Worklets.createSharedValue([100, 200]);
     const result = array.value.every((p) => p > 100);
     return ExpectValue(result, false);
   },
 
+  array_some: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    const result = array.value.some((p) => p < 200);
+    return ExpectValue(result, true);
+  },
+
+  array_some_index_array_params: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    const result = array.value.some((_, i, arr) => (arr[i] ?? 0) < 200);
+    return ExpectValue(result, true);
+  },
+
+  array_some_false: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    const result = array.value.some((p) => p > 300);
+    return ExpectValue(result, false);
+  },
+
   array_findIndex: () => {
     const array = Worklets.createSharedValue([100, 200]);
     const result = array.value.findIndex((p) => p === 200);
+    return ExpectValue(result, 1);
+  },
+
+  array_findIndex_with_index_array_params: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    const result = array.value.findIndex((_, i, arr) => arr[i] === 200);
     return ExpectValue(result, 1);
   },
 
@@ -188,6 +274,11 @@ export const wrapper_tests = {
     return ExpectValue(array.value.includes(200), true);
   },
 
+  array_includes_with_fromIndex_param: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    return ExpectValue(array.value.includes(100, 1), false);
+  },
+
   array_includes_false: () => {
     const array = Worklets.createSharedValue([100, 200]);
     return ExpectValue(array.value.includes(900), false);
@@ -196,6 +287,11 @@ export const wrapper_tests = {
   array_indexOf: () => {
     const array = Worklets.createSharedValue([100, 200]);
     return ExpectValue(array.value.indexOf(200), 1);
+  },
+
+  array_indexOf_with_fromIndex_param: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    return ExpectValue(array.value.indexOf(100, 1), -1);
   },
 
   array_indexOf_false: () => {
@@ -218,6 +314,17 @@ export const wrapper_tests = {
     return ExpectValue(
       array.value.reduce((acc, cur, index) => {
         const retVal = { ...acc, [index]: cur };
+        return retVal;
+      }, {}),
+      { 0: 100, 1: 200 }
+    );
+  },
+
+  array_reduce_with_array_param: () => {
+    const array = Worklets.createSharedValue([100, 200]);
+    return ExpectValue(
+      array.value.reduce((acc, _, index, a) => {
+        const retVal = { ...acc, [index]: a[index] };
         return retVal;
       }, {}),
       { 0: 100, 1: 200 }
