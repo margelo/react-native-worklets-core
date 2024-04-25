@@ -421,7 +421,7 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
           func = std::make_shared<jsi::Function>(
               maybeFunc->asObject(runtime).asFunction(runtime))](
              jsi::Runtime &runtime, const jsi::Value &thisValue,
-             const jsi::Value *arguments, size_t count) mutable {
+             const jsi::Value *arguments, size_t count) {
     // If we are in the same context let's just call the function directly
     if (&runtime == rtPtr) {
       return func->call(runtime, arguments, count);
@@ -434,26 +434,24 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
     if (ctx != nullptr) {
       // We are on a worklet thread
       ctx->invokeOnWorkletThread(
-          [argsWrapper, rtPtr, func](JsiWorkletContext *,
-                                     jsi::Runtime &runtime) {
+          [argsWrapper, rtPtr, func = std::move(func)](JsiWorkletContext *,
+                                     jsi::Runtime &runtime) mutable {
             assert(&runtime == rtPtr && "Expected same runtime ptr!");
             auto args = argsWrapper.getArguments(runtime);
             func->call(runtime, ArgumentsWrapper::toArgs(args),
                        argsWrapper.getCount());
+            func = nullptr;
           });
     } else {
       JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
-          [argsWrapper, rtPtr, func](jsi::Runtime &runtime) {
+          [argsWrapper, rtPtr, func = std::move(func)](jsi::Runtime &runtime) mutable {
             assert(&runtime == rtPtr && "Expected same runtime ptr!");
             auto args = argsWrapper.getArguments(runtime);
             func->call(runtime, ArgumentsWrapper::toArgs(args),
                        argsWrapper.getCount());
+            func = nullptr;
           });
     }
-               
-    // We need to explicitly clear the func shared pointer here to avoid it being
-    // deleted on another thread
-    func = nullptr;
 
     return jsi::Value::undefined();
   };
