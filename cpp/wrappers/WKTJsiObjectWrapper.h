@@ -128,13 +128,11 @@ public:
     std::unique_lock lock(_readWriteMutex);
 
     auto nameStr = name.utf8(runtime);
-    if (_properties.count(nameStr) == 0) {
-      _properties.emplace(
-          nameStr,
-          JsiWrapper::wrap(runtime, value, this, getUseProxiesForUnwrapping()));
-    } else {
-      _properties.at(nameStr)->updateValue(runtime, value);
-    }
+    // Just emplace so that we can box property values, ie. a slot can
+    // hold both an object and an int if that's what we need.
+    _properties.emplace(
+        nameStr,
+        JsiWrapper::wrap(runtime, value, this, getUseProxiesForUnwrapping()));
   }
 
   /**
