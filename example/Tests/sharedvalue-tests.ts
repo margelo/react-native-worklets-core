@@ -188,4 +188,11 @@ export const sharedvalue_tests = {
     });
     return ExpectValue(w(), true);
   },
+
+  set_object_property_to_undefined_after_being_an_object: () => {
+    const sharedValue = Worklets.createSharedValue({ a: { b: 200 } });
+    // @ts-ignore
+    sharedValue.value.a = undefined;
+    return Promise.resolve();
+  },
 };
