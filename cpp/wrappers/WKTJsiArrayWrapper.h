@@ -293,7 +293,7 @@ public:
     auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0], nullptr,
                                        getUseProxiesForUnwrapping());
     
-    double fromIndex = 0;
+    size_t fromIndex = 0;
     if (count == 2) {
       fromIndex = arguments[1].asNumber();
     }
@@ -350,7 +350,7 @@ public:
     auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0], nullptr,
                                        getUseProxiesForUnwrapping());
     
-    double fromIndex = 0;
+    size_t fromIndex = 0;
     if (count == 2) {
       fromIndex = arguments[1].asNumber();
     }
