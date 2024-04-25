@@ -155,6 +155,8 @@ public:
    */
   std::vector<jsi::PropNameID>
   getPropertyNames(jsi::Runtime &runtime) override {
+    std::unique_lock lock(_readWriteMutex);
+    
     std::vector<jsi::PropNameID> retVal;
     retVal.reserve(_properties.size());
     for (auto it = _properties.begin(); it != _properties.end(); it++) {
