@@ -379,34 +379,4 @@ export const worklet_context_tests = {
     });
     return ExpectValue(result, 1200);
   },
-  test1a: async () => {
-    const fw = () => {
-      "worklet";
-      return { a: 100 };
-    };
-    let wf = Worklets.defaultContext.createRunAsync(fw);
-    const result = await wf();
-    const firstResultSpread = { ...result };
-    return ExpectValue(firstResultSpread, { a: 100 });
-  },
-  test2a: async () => {
-    const fw = () => {
-      "worklet";
-      return { a: 100 };
-    };
-    let wf = Worklets.defaultContext.createRunAsync(fw);
-    const result = await wf();
-    const firstResultSpread = Object.assign({}, result);
-    return ExpectValue(firstResultSpread, { a: 100 });
-  },
-  test3a: async () => {
-    const fw = () => {
-      "worklet";
-      return { a: 100 };
-    };
-    let wf = Worklets.defaultContext.createRunAsync(fw);
-    const result = await wf();
-    const testingObject = { a: result.a };
-    return ExpectValue(testingObject, { a: 100 });
-  },
 };

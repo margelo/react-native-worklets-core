@@ -197,4 +197,33 @@ export const worklet_tests = {
     });
     return ExpectValue(result, 42);
   },
+  check_jsi_object_is_spreadable_after_worklet: async () => {
+    const fw = () => {
+      "worklet";
+      return { a: 100 };
+    };
+    let wf = Worklets.defaultContext.createRunAsync(fw);
+    const result = await wf();
+    const spreadObject = { ...result };
+    return ExpectValue(spreadObject, { a: 100 });
+  },
+  check_jsi_object_is_assignable_after_worklet: async () => {
+    const fw = () => {
+      "worklet";
+      return { a: 100 };
+    };
+    let wf = Worklets.defaultContext.createRunAsync(fw);
+    const result = await wf();
+    const assignedObject = Object.assign({}, result);
+    return ExpectValue(assignedObject, { a: 100 });
+  },
+  check_jsi_object_is_returned_from_worklet: async () => {
+    const fw = () => {
+      "worklet";
+      return { a: 100, b: "200" };
+    };
+    let wf = Worklets.defaultContext.createRunAsync(fw);
+    const result = await wf();
+    return ExpectValue(result, { a: 100, b: "200" });
+  },
 };
