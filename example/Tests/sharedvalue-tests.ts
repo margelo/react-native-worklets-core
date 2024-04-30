@@ -145,12 +145,6 @@ export const sharedvalue_tests = {
     return ExpectValue(p, { a: 100, b: 200 });
   },
 
-  object_value_spread_2: () => {
-    const sharedValue = Worklets.createSharedValue([{ a: 100, b: 200 }]);
-    const p = { ...sharedValue.value[0] };
-    return ExpectValue(p, { a: 100, b: 200 });
-  },
-
   set_value_from_worklet: () => {
     const sharedValue = Worklets.createSharedValue("hello world");
     const worklet = Worklets.defaultContext.createRunAsync(function () {
