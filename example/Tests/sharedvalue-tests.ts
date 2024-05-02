@@ -193,6 +193,6 @@ export const sharedvalue_tests = {
     const sharedValue = Worklets.createSharedValue({ a: { b: 200 } });
     // @ts-ignore
     sharedValue.value.a = undefined;
-    return Promise.resolve();
+    return ExpectValue(sharedValue.value, { a: undefined });
   },
 };
