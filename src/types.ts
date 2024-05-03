@@ -67,22 +67,6 @@ export interface IWorkletContext {
   runAsync: <T>(worklet: () => T) => Promise<T>;
 }
 
-export type ContextType = {
-  [key: string]:
-    | number
-    | string
-    | boolean
-    | undefined
-    | null
-    | ISharedValue<any>
-    | ContextType
-    | ContextType[]
-    | number[]
-    | string[]
-    | boolean[]
-    | IWorklet;
-};
-
 export interface IWorkletNativeApi {
   /**
    * Creates a new worklet context with the given name. The name identifies the

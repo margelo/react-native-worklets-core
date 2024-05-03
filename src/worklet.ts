@@ -1,6 +1,6 @@
 type AnyFunc = (...args: any[]) => any;
 
-type Workletize<TFunc extends () => any> = TFunc & {
+export type Workletize<TFunc extends AnyFunc> = TFunc & {
   __closure: Record<string, unknown>;
   __initData: {
     code: string;
@@ -9,6 +9,8 @@ type Workletize<TFunc extends () => any> = TFunc & {
   };
   __workletHash: number;
 };
+export type Worklet = Workletize<AnyFunc>;
+
 const EXPECTED_KEYS: (keyof Workletize<AnyFunc>)[] = [
   "__closure",
   "__initData",
