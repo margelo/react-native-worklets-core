@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import type { ISharedValue } from "../types";
+import { Worklets } from "../NativeWorklets";
 
 /**
  * Create a Shared Value that persists between re-renders.

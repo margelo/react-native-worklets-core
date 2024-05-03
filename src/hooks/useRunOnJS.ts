@@ -1,4 +1,5 @@
 import { DependencyList, useMemo } from "react";
+import { Worklets } from "../NativeWorklets";
 
 /**
  * Create a Worklet function that runs the given function on the JS context.

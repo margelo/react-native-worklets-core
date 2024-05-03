@@ -1,15 +1,6 @@
-type AnyFunc = (...args: any[]) => any;
+import type { IWorklet } from "./types";
 
-type Workletize<TFunc extends () => any> = TFunc & {
-  __closure: Record<string, unknown>;
-  __initData: {
-    code: string;
-    location: string;
-    __sourceMap: string;
-  };
-  __workletHash: number;
-};
-const EXPECTED_KEYS: (keyof Workletize<AnyFunc>)[] = [
+const EXPECTED_KEYS: (keyof IWorklet<Function>)[] = [
   "__closure",
   "__initData",
   "__workletHash",
@@ -18,10 +9,10 @@ const EXPECTED_KEYS: (keyof Workletize<AnyFunc>)[] = [
 /**
  * Checks whether the given function is a Worklet or not.
  */
-export function isWorklet<TFunc extends AnyFunc>(
+export function isWorklet<TFunc extends Function>(
   func: TFunc
-): func is Workletize<TFunc> {
-  const maybeWorklet = func as Partial<Workletize<TFunc>> & TFunc;
+): func is IWorklet<TFunc> {
+  const maybeWorklet = func as Partial<IWorklet<TFunc>> & TFunc;
   if (typeof maybeWorklet.__workletHash !== "number") return false;
 
   if (
@@ -43,7 +34,7 @@ export function isWorklet<TFunc extends AnyFunc>(
   return true;
 }
 
-class NotAWorkletError<TFunc extends AnyFunc> extends Error {
+class NotAWorkletError<TFunc extends Function> extends Error {
   constructor(func: TFunc) {
     let funcName = func.name;
     if (funcName.length === 0) {
@@ -68,7 +59,7 @@ class NotAWorkletError<TFunc extends AnyFunc> extends Error {
  * @param func The function that should be a Worklet.
  * @returns The same function that was passed in.
  */
-export function worklet<TFunc extends AnyFunc>(func: TFunc): Workletize<TFunc> {
+export function worklet<TFunc extends Function>(func: TFunc): IWorklet<TFunc> {
   if (!isWorklet(func)) {
     throw new NotAWorkletError(func);
   }

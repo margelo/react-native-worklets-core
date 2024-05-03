@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -15,15 +15,20 @@ const App = () => {
   const { tests, categories, output, runTests, runSingleTest } =
     useTestRunner();
 
+  const [age, setAge] = useState(15);
   const dummyWorklet = useWorklet("default", (name: string): number => {
     "worklet";
     console.log(`useWorklet(${name}) called!`);
-    return name.length;
+    return name.length + age;
   });
 
   useEffect(() => {
     dummyWorklet("marc");
   }, [dummyWorklet]);
+
+  useEffect(() => {
+    setTimeout(() => setAge((a) => a * 2), 2000);
+  }, []);
 
   return (
     <View style={styles.container}>
