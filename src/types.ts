@@ -11,16 +11,41 @@ export interface ISharedValue<T> {
   addListener(listener: () => void): () => void;
 }
 
-export interface IWorklet {
+/**
+ * Represents the given function as a Worklet.
+ *
+ * Use the `worklet(...)` function to safely perform such casts with runtime checking.
+ */
+export type IWorklet<TFunc extends Function> = TFunc & {
   /**
-   * Returns the generated code for the worklet function.
+   * Contains an object of all captured values inside this Worklet.
+   *
+   * Primitives will be captured by (deep-)copy, and `SharedValues`, `HostObjects`
+   * or `HostFunctions` will be captured by reference.
    */
-  readonly code: string;
+  __closure: Record<string, unknown>;
   /**
-   * Returns true for worklets.
+   * Contains data that will be used to initialize a Worklet natively.
    */
-  readonly isWorklet: true;
-}
+  __initData: {
+    /**
+     * Contains the full JS code of the transpiled function with proper closure unwrapping.
+     */
+    code: string;
+    /**
+     * Contains the location of the function in the JS sources.
+     */
+    location: string;
+    /**
+     * Contains a source-code map of the Worklet to properly resolve stacktraces.
+     */
+    __sourceMap: string;
+  };
+  /**
+   * Holds a unique compile-time hash for the code and closure of this Worklet.
+   */
+  __workletHash: number;
+};
 
 /*
   Defines the interface for a worklet context. A worklet context is a javascript
@@ -153,8 +178,3 @@ export interface IWorkletNativeApi {
    */
   __jsi_is_object: <T>(value: T) => boolean;
 }
-declare global {
-  var Worklets: IWorkletNativeApi;
-}
-
-export const { Worklets } = globalThis;
