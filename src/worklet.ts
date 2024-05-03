@@ -9,6 +9,11 @@ type Workletize<TFunc extends () => any> = TFunc & {
   };
   __workletHash: number;
 };
+const EXPECTED_KEYS: (keyof Workletize<AnyFunc>)[] = [
+  "__closure",
+  "__initData",
+  "__workletHash",
+];
 
 /**
  * Checks whether the given function is a Worklet or not.
@@ -40,15 +45,20 @@ export function isWorklet<TFunc extends AnyFunc>(
 
 class NotAWorkletError<TFunc extends AnyFunc> extends Error {
   constructor(func: TFunc) {
+    let funcName = func.name;
+    if (funcName.length === 0) {
+      funcName = func.toString();
+    }
+
+    const expected = `[${EXPECTED_KEYS.join(", ")}]`;
+    const received = `[${Object.keys(func).join(", ")}]`;
     super(
-      `The given function ("${func.name}") is not a Worklet! ` +
+      `The function "${funcName}" is not a Worklet! \n` +
+        `- Make sure the function "${funcName}" is decorated with the 'worklet' directive! \n` +
         `- Make sure react-native-worklets-core is installed properly! \n` +
         `- Make sure to add the react-native-worklets-core babel plugin to your babel.config.js! \n` +
         `- Make sure that no other plugin overrides the react-native-worklets-core babel plugin! \n` +
-        `- Make sure the function ${func.name} is decorated with the 'worklet' directive! \n` +
-        `Expected ${func.name} to contain __workletHash and __initData, but ${
-          func.name
-        } has these properties: ${Object.keys(func)}`
+        `Expected "${funcName}" to contain ${expected}, but "${funcName}" only has these properties: ${received}`
     );
   }
 }
