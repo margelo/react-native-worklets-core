@@ -1,12 +1,13 @@
 type AnyFunc = (...args: any[]) => any;
 
 type Workletize<TFunc extends () => any> = TFunc & {
+  __closure: Record<string, unknown>;
   __initData: {
     code: string;
     location: string;
     __sourceMap: string;
   };
-  __workletHash: string;
+  __workletHash: number;
 };
 
 /**
@@ -16,9 +17,11 @@ export function isWorklet<TFunc extends AnyFunc>(
   func: TFunc
 ): func is Workletize<TFunc> {
   const maybeWorklet = func as Partial<Workletize<TFunc>> & TFunc;
+  if (typeof maybeWorklet.__workletHash !== "number") return false;
+
   if (
-    maybeWorklet.__workletHash == null ||
-    typeof maybeWorklet.__workletHash !== "string"
+    maybeWorklet.__closure == null ||
+    typeof maybeWorklet.__closure !== "object"
   )
     return false;
 
