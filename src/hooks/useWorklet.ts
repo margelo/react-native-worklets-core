@@ -33,11 +33,22 @@ export function useWorklet<T extends (...args: any[]) => any>(
   context: IWorkletContext | "default",
   callback: T
 ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
-  const ctx = context === "default" ? Worklets.defaultContext : context;
+  // Since `Worklets.defaultContext` always constructs a new jsi::Object,
+  // we cannot use it in React's dependency-list as that'd trigger a new dependency each render.
+  // Instead, we compare only it's name as a unique ID to re-trigger useMemo only when the name changes.
+  const contextName = context === "default" ? context : context.name;
+
+  // As a dependency for this use-memo we use all of the values captured inside the worklet,
+  // as well as the unique context name.
+  const dependencies = [...getWorkletDependencies(callback), contextName];
 
   return useMemo(
-    () => ctx.createRunAsync(callback),
+    () => {
+      const actualContext =
+        context === "default" ? Worklets.defaultContext : context;
+      return actualContext.createRunAsync(callback);
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [...getWorkletDependencies(callback), ctx]
+    dependencies
   );
 }
