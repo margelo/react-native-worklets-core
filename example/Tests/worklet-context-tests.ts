@@ -379,4 +379,37 @@ export const worklet_context_tests = {
     });
     return ExpectValue(result, 1200);
   },
+  call_run_async_then_js_then_async: () => {
+    const a = 150;
+    const result = Worklets.defaultContext.runAsync(() => {
+      "worklet";
+      const b = a * 2;
+      return Worklets.runOnJS(() => {
+        "worklet";
+        const c = b * 2;
+        return Worklets.defaultContext.runAsync(() => {
+          "worklet";
+          return c * 2;
+        });
+      });
+    });
+    return ExpectValue(result, 1200);
+  },
+  call_run_async_then_js_then_async_custom_context: () => {
+    const a = 150;
+    const context = Worklets.createContext("nested-context-2");
+    const result = context.runAsync(() => {
+      "worklet";
+      const b = a * 2;
+      return Worklets.runOnJS(() => {
+        "worklet";
+        const c = b * 2;
+        return context.runAsync(() => {
+          "worklet";
+          return c * 2;
+        });
+      });
+    });
+    return ExpectValue(result, 1200);
+  },
 };
