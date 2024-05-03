@@ -381,7 +381,6 @@ export const worklet_context_tests = {
   },
   call_run_async_then_js_then_async: () => {
     const a = 150;
-    const context = Worklets.createContext("nested-context2");
     const result = Worklets.defaultContext.runAsync(() => {
       "worklet";
       const b = a * 2;
