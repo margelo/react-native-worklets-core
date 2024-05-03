@@ -10,7 +10,8 @@ const WorkletsInstaller = TurboModuleRegistry.getEnforcing<Spec>("Worklets");
 
 console.log("Loading react-native-worklets-core...");
 
-if (global.Worklets === undefined || global.Worklets == null) {
+// @ts-expect-error it's an untyped JSI global.
+if (global.Worklets == null) {
   if (
     WorkletsInstaller == null ||
     typeof WorkletsInstaller.install !== "function"
