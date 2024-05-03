@@ -68,9 +68,7 @@ class NotAWorkletError<TFunc extends AnyFunc> extends Error {
  * @param func The function that should be a Worklet.
  * @returns The same function that was passed in.
  */
-export function worklet<TFunc extends () => any>(
-  func: TFunc
-): Workletize<TFunc> {
+export function worklet<TFunc extends AnyFunc>(func: TFunc): Workletize<TFunc> {
   if (!isWorklet(func)) {
     throw new NotAWorkletError(func);
   }
