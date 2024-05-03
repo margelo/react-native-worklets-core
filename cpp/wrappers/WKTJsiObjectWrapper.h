@@ -65,7 +65,7 @@ public:
     updateNativeState(runtime, object);
 #endif
   }
-                           
+
 #if JS_RUNTIME_HERMES
   void updateNativeState(jsi::Runtime &runtime, jsi::Object &obj) {
     if (obj.hasNativeState(runtime)) {
@@ -128,11 +128,7 @@ public:
     std::unique_lock lock(_readWriteMutex);
 
     auto nameStr = name.utf8(runtime);
-    // Just emplace so that we can box property values, ie. a slot can
-    // hold both an object and an int if that's what we need.
-    _properties.emplace(
-        nameStr,
-        JsiWrapper::wrap(runtime, value, this, getUseProxiesForUnwrapping()));
+    _properties[nameStr] = JsiWrapper::wrap(runtime, value, this, getUseProxiesForUnwrapping());
   }
 
   /**
@@ -161,7 +157,7 @@ public:
   std::vector<jsi::PropNameID>
   getPropertyNames(jsi::Runtime &runtime) override {
     std::unique_lock lock(_readWriteMutex);
-    
+
     std::vector<jsi::PropNameID> retVal;
     retVal.reserve(_properties.size());
     for (auto it = _properties.begin(); it != _properties.end(); it++) {
@@ -198,6 +194,8 @@ private:
   }
 
   void setObjectValue(jsi::Runtime &runtime, jsi::Object &obj) {
+    std::unique_lock lock(_readWriteMutex);
+    
     setType(JsiWrapperType::Object);
     _properties.clear();
     auto propNames = obj.getPropertyNames(runtime);

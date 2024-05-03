@@ -1,4 +1,4 @@
-import { Worklets } from "react-native-worklets-core";
+import { worklet, Worklets } from "react-native-worklets-core";
 import { ExpectException, ExpectValue, getWorkletInfo } from "./utils";
 
 export const worklet_tests = {
@@ -225,5 +225,21 @@ export const worklet_tests = {
     let wf = Worklets.defaultContext.createRunAsync(fw);
     const result = await wf();
     return ExpectValue(result, { a: 100, b: "200" });
+  },
+  check_worklet_checker_works: () => {
+    const func = () => {
+      "worklet";
+      return 42;
+    };
+    const same = worklet(func);
+    return ExpectValue(same, func);
+  },
+  check_worklet_checker_throws_invalid_worklet: () => {
+    const func = () => {
+      return "not a worklet";
+    };
+    return ExpectException(() => {
+      worklet(func);
+    });
   },
 };
