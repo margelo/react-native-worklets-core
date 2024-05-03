@@ -1,7 +1,17 @@
-import { useMemo } from "react";
-import type { IWorkletContext } from "../types";
+import { DependencyList, useMemo } from "react";
+import type { IWorklet, IWorkletContext } from "../types";
 import { worklet } from "../worklet";
 import { Worklets } from "../NativeWorklets";
+
+export function getWorkletDependencies(func: Function): DependencyList {
+  if (__DEV__) {
+    // In debug, perform runtime checks to ensure the given func is a safe worklet, and throw an error otherwise
+    const workletFunc = worklet(func);
+    return Object.values(workletFunc.__closure);
+  }
+  // in release, just cast and assume it's a worklet. if this crashes, the user saw it first in debug anyways.
+  return Object.values((func as unknown as IWorklet<Function>).__closure);
+}
 
 /**
  * Create a Worklet function that automatically memoizes itself using it's auto-captured closure.
@@ -23,12 +33,11 @@ export function useWorklet<T extends (...args: any[]) => any>(
   context: IWorkletContext | "default",
   callback: T
 ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
-  const func = worklet(callback);
   const ctx = context === "default" ? Worklets.defaultContext : context;
 
   return useMemo(
-    () => ctx.createRunAsync(func),
+    () => ctx.createRunAsync(callback),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [...Object.values(func.__closure), ctx]
+    [...getWorkletDependencies(callback), ctx]
   );
 }
