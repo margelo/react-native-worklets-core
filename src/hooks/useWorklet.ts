@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { IWorkletContext } from "../types";
 import { worklet } from "../worklet";
+import { Worklets } from "../NativeWorklets";
 
 /**
  * Create a Worklet function that automatically memoizes itself using it's auto-captured closure.
