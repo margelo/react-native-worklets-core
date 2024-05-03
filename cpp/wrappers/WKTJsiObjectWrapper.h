@@ -198,6 +198,8 @@ private:
   }
 
   void setObjectValue(jsi::Runtime &runtime, jsi::Object &obj) {
+    std::unique_lock lock(_readWriteMutex);
+    
     setType(JsiWrapperType::Object);
     _properties.clear();
     auto propNames = obj.getPropertyNames(runtime);
