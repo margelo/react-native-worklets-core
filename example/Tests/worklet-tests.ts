@@ -215,6 +215,15 @@ export const worklet_tests = {
     const assignedObject = Object.assign({}, result);
     return ExpectValue(assignedObject, { a: 100 });
   },
+  check_jsi_object_is_spreadable_inside_worklet: async () => {
+    const func = () => {
+      "worklet";
+      const testObject = { a: 100, b: "200" };
+      return { ...testObject };
+    };
+    const result = Worklets.defaultContext.runAsync(func);
+    return ExpectValue(result, { a: 100, b: "200" });
+  },
   check_jsi_object_is_returned_from_worklet: async () => {
     const func = () => {
       "worklet";
