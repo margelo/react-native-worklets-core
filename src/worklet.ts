@@ -1,3 +1,4 @@
+import type { DependencyList } from "react";
 import type { IWorklet } from "./types";
 
 const EXPECTED_KEYS: (keyof IWorklet<Function>)[] = [
@@ -64,4 +65,30 @@ export function worklet<TFunc extends Function>(func: TFunc): IWorklet<TFunc> {
     throw new NotAWorkletError(func);
   }
   return func;
+}
+
+/**
+ * Get the dependencies of the given worklet.
+ * This can be used to automatically fill the second parameter of a `useCallback` or `useMemo` to use the closure captured in the given Worklet.
+ *
+ * @throws If the given {@linkcode func} is not a Worklet.
+ * @example
+ * ```ts
+ * const valueFromOutside = 5
+ * const worklet = () => {
+ *   'worklet'
+ *   return valueFromOutside + 10
+ * }
+ * const dependencies = getWorkletDependencies(worklet) // [valueFromOutside]
+ * const memoizedWorklet = useCallback(worklet, dependencies)
+ * ```
+ */
+export function getWorkletDependencies(func: Function): DependencyList {
+  if (__DEV__) {
+    // In debug, perform runtime checks to ensure the given func is a safe worklet, and throw an error otherwise
+    const workletFunc = worklet(func);
+    return Object.values(workletFunc.__closure);
+  }
+  // in release, just cast and assume it's a worklet. if this crashes, the user saw it first in debug anyways.
+  return Object.values((func as unknown as IWorklet<Function>).__closure);
 }
