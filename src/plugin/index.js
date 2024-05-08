@@ -17,6 +17,7 @@ const globals = new Set([
   "console",
   "performance",
   "_chronoNow",
+  "BigInt",
   "Date",
   "Array",
   "ArrayBuffer",
