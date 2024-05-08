@@ -202,8 +202,7 @@ export const worklet_tests = {
       "worklet";
       return { a: 100 };
     };
-    let wf = Worklets.defaultContext.createRunAsync(func);
-    const result = await wf();
+    const result = Worklets.defaultContext.runAsync(func);
     const spreadObject = { ...result };
     return ExpectValue(spreadObject, { a: 100 });
   },
@@ -212,8 +211,7 @@ export const worklet_tests = {
       "worklet";
       return { a: 100 };
     };
-    let wf = Worklets.defaultContext.createRunAsync(func);
-    const result = await wf();
+    const result = Worklets.defaultContext.runAsync(func);
     const assignedObject = Object.assign({}, result);
     return ExpectValue(assignedObject, { a: 100 });
   },
@@ -222,8 +220,7 @@ export const worklet_tests = {
       "worklet";
       return { a: 100, b: "200" };
     };
-    let wf = Worklets.defaultContext.createRunAsync(func);
-    const result = await wf();
+    const result = Worklets.defaultContext.runAsync(func);
     return ExpectValue(result, { a: 100, b: "200" });
   },
   check_worklet_checker_works: () => {
