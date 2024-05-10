@@ -21,7 +21,7 @@ static const char *PropNameWorkletInitDataCode = "code";
 static const char *PropNameJsThis = "jsThis";
 
 static const char *PropNameWorkletInitDataLocation = "location";
-static const char *PropNameWorkletInitDataSourceMap = "__sourceMap";
+static const char *PropNameWorkletInitDataSourceMap = "sourceMap";
 
 static const char *PropNameWorkletLocation = "__location";
 static const char *PropNameWorkletAsString = "asString";
