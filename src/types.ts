@@ -39,7 +39,7 @@ export type IWorklet<TFunc extends Function> = TFunc & {
     /**
      * Contains a source-code map of the Worklet to properly resolve stacktraces.
      */
-    __sourceMap: string;
+    sourceMap: string;
   };
   /**
    * Holds a unique compile-time hash for the code and closure of this Worklet.

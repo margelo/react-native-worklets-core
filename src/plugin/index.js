@@ -517,7 +517,7 @@ function makeWorklet(t, fun, state) {
   if (sourceMapString) {
     initDataObjectExpression.properties.push(
       t.objectProperty(
-        t.identifier("__sourceMap"),
+        t.identifier("sourceMap"),
         t.stringLiteral(sourceMapString)
       )
     );
