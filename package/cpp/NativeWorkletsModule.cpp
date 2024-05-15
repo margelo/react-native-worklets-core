@@ -11,7 +11,7 @@
 namespace facebook::react {
 
 NativeWorkletsModule::NativeWorkletsModule(std::shared_ptr<CallInvoker> jsInvoker)
-    : NativeWorkletsModule(jsInvoker) {}
+    : NativeWorkletsCxxSpec(jsInvoker) {}
 
 NativeWorkletsModule::~NativeWorkletsModule() {}
 
