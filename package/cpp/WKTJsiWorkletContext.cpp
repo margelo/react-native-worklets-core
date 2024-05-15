@@ -113,9 +113,6 @@ jsi::Runtime &JsiWorkletContext::getWorkletRuntime() {
     // object.
     _workletRuntime->global().setProperty(*_workletRuntime, GlobalPropertyName,
                                           _workletRuntime->global());
-
-    // Install the WorkletAPI into the new runtime
-    JsiWorkletApi::installApi(*_workletRuntime);
   }
 
   return *_workletRuntime;

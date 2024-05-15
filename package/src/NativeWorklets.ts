@@ -21,7 +21,7 @@ try {
   // Try to find the CxxTurboModule.
   // CxxTurboModules can be autolinked on Android starting from react-native 0.74,
   // and are manually linked in WorkletsOnLoad.mm on iOS.
-  module = TurboModuleRegistry.getEnforcing<Spec>("Worklets");
+  module = TurboModuleRegistry.getEnforcing<Spec>("WorkletsCxx");
 } catch (e) {
   // User didn't enable new arch, or the module does not exist.
   throw new ModuleNotFoundError(e);
