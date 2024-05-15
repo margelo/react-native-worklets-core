@@ -11,12 +11,12 @@
 namespace facebook::react {
 
 NativeWorkletsModule::NativeWorkletsModule(std::shared_ptr<CallInvoker> jsInvoker)
-    : NativeWorkletsCxxSpec(jsInvoker) {}
+    : NativeWorkletsCxxSpec(jsInvoker), _jsCallInvoker(jsInvoker) { }
 
 NativeWorkletsModule::~NativeWorkletsModule() {}
 
 jsi::Object NativeWorkletsModule::createWorkletsApi(jsi::Runtime &runtime) {
-  auto worklets = std::make_shared<RNWorklet::JsiWorkletApi>();
+  auto worklets = std::make_shared<RNWorklet::JsiWorkletApi>(_jsCallInvoker);
   return jsi::Object::createFromHostObject(runtime, worklets);
 }
 

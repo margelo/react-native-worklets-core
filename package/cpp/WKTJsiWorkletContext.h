@@ -24,33 +24,6 @@ class JsiWorkletContext
       public std::enable_shared_from_this<JsiWorkletContext> {
 public:
   /**
-   * Creates a new worklet context that can be used to run javascript functions
-   * as worklets in a separate threads / js runtimes. After construction the
-   * context needs to be initialized.
-   */
-  JsiWorkletContext() {}
-
-  /**
-   Constructs a new worklet context using the same values and configuration as
-   the default context. No need to run initialize on the runtime. The only thing
-   not copied from the default context is the worklet invoker which will be a
-   default queue.
-   @param name Name of the context
-   */
-  explicit JsiWorkletContext(const std::string &name);
-
-  /**
-   Constructs a new worklet context using the same values and configuration as
-   the default context. No need to run initialize on the runtime.
-   @param name Name of the context
-   @param workletCallInvoker Callback for running a function on the worklet
-   thread
-   */
-  JsiWorkletContext(
-      const std::string &name,
-      std::function<void(std::function<void()> &&)> workletCallInvoker);
-
-  /**
    Constructs a new worklet context using the given runtime and call invokers.
    @param name Name of the context
    @param jsRuntime The main JS Runtime
@@ -68,47 +41,6 @@ public:
    Destructor
    */
   ~JsiWorkletContext();
-
-  /**
-   * Initialializes the worklet context
-   * @param name Name of the context
-   * @param jsRuntime Main javascript runtime.
-   * @param jsCallInvoker Callback for running a function on the JS thread.
-   * @param workletCallInvoker Callback for running a function on the worklet
-   * thread
-   */
-  void
-  initialize(const std::string &name, jsi::Runtime *jsRuntime,
-             std::function<void(std::function<void()> &&)> jsCallInvoker,
-             std::function<void(std::function<void()> &&)> workletCallInvoker);
-
-  /**
-   * Initialializes the worklet context
-   * @param name Name of the context
-   * @param jsRuntime Runtime for the main javascript runtime.
-   * @param jsCallInvoker Callback for running a function on the JS thread.
-   */
-  void initialize(const std::string &name, jsi::Runtime *jsRuntime,
-                  std::function<void(std::function<void()> &&)> jsCallInvoker);
-
-  /**
-   Get the default context
-   */
-  static std::shared_ptr<JsiWorkletContext> getDefaultInstanceAsShared() {
-    if (defaultInstance == nullptr) {
-      defaultInstance = std::make_shared<JsiWorkletContext>();
-    }
-    return defaultInstance;
-  }
-
-  /**
-   * @brief Get the Default Instance object
-   *
-   * @return JsiWorkletContext*
-   */
-  static JsiWorkletContext *getDefaultInstance() {
-    return JsiWorkletContext::getDefaultInstanceAsShared().get();
-  }
 
   /**
    Returns the worklet context for the current thread. If called from the
@@ -129,11 +61,6 @@ public:
    context.
    */
   void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator);
-
-  /**
-   Invalidates the instance
-   */
-  static void invalidateDefaultInstance() { defaultInstance = nullptr; }
 
   JSI_HOST_FUNCTION(addDecorator) {
     if (count != 2) {
@@ -259,24 +186,6 @@ public:
   static CallingConvention getCallingConvention(JsiWorkletContext *fromContext,
                                                 JsiWorkletContext *toContext);
 
-  /**
-   Verifies that the runtime is the correct runtime for the current context
-   (worklet context or js context). NOTE: Only verifies in debug mode
-   */
-  static void verifyRuntime(jsi::Runtime &runtime) {
-#if DEBUG
-    auto ctx = JsiWorkletContext::getCurrent(runtime);
-    if (ctx) {
-      assert(&ctx->getWorkletRuntime() == &runtime &&
-             "Worklet runtime is not the same as the provided runtime");
-    } else {
-      assert(JsiWorkletContext::getDefaultInstance()->getJsRuntime() ==
-                 &runtime &&
-             "Expected JS runtime, got other runtime");
-    }
-#endif
-  }
-
 private:
   jsi::Runtime *_jsRuntime;
   std::unique_ptr<jsi::Runtime> _workletRuntime;
@@ -286,7 +195,6 @@ private:
   size_t _contextId;
   std::thread::id _jsThreadId;
 
-  static std::shared_ptr<JsiWorkletContext> defaultInstance;
   static std::map<void *, JsiWorkletContext *> runtimeMappings;
   static size_t contextIdNumber;
 };

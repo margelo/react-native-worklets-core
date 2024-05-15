@@ -18,6 +18,10 @@ public:
     _objectWrapper = JsiWrapper::wrap(runtime, value.asObject(runtime));
     _propertyName = propertyName;
   }
+  
+  void decorateRuntime(jsi::Runtime &fromRuntime, JsiWorkletContext &toContext) override {
+    // TODO:
+  }
 
   void decorateRuntime(jsi::Runtime &runtime) override {
     runtime.global().setProperty(runtime, _propertyName.c_str(),

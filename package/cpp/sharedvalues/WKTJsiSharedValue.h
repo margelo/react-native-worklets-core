@@ -20,10 +20,8 @@ public:
    Constructs a shared value - which is a wrapped value that can be accessed in
    a thread safe across two javascript runtimes.
    */
-  explicit JsiSharedValue(const jsi::Value &value)
-      : _valueWrapper(JsiWrapper::wrap(
-            *JsiWorkletContext::getDefaultInstance()->getJsRuntime(), value,
-            nullptr, true)) {}
+  explicit JsiSharedValue(jsi::Runtime& runtime, const jsi::Value &value)
+      : _valueWrapper(JsiWrapper::wrap(runtime, value, nullptr, true)) {}
 
   /**
     Destructor

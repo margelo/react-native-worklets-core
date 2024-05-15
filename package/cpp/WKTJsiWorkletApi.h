@@ -16,12 +16,18 @@
 #include "WKTJsiWorkletContext.h"
 #include "WKTJsiWrapper.h"
 
+#include <ReactCommon/CallInvoker.h>
+
 namespace RNWorklet {
 
-namespace jsi = facebook::jsi;
+using namespace facebook;
 
 class JsiWorkletApi : public JsiHostObject {
 public:
+  JsiWorkletApi(std::shared_ptr<react::CallInvoker> jsCallInvoker): _jsCallInvoker(jsCallInvoker) { }
+  
+public:
+  // JSI API
   JSI_HOST_FUNCTION(createContext) {
     if (count == 0) {
       throw jsi::JSError(
@@ -40,9 +46,7 @@ public:
   };
 
   JSI_HOST_FUNCTION(createSharedValue) {
-    return jsi::Object::createFromHostObject(
-        *JsiWorkletContext::getDefaultInstance()->getJsRuntime(),
-        std::make_shared<JsiSharedValue>(arguments[0]));
+    return jsi::Object::createFromHostObject(runtime, std::make_shared<JsiSharedValue>(runtime, arguments[0]));
   };
 
   JSI_HOST_FUNCTION(createRunOnJS) {
@@ -141,8 +145,20 @@ public:
                        JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_object))
 
   JSI_PROPERTY_GET(defaultContext) {
-    return jsi::Object::createFromHostObject(
-        runtime, JsiWorkletContext::getDefaultInstanceAsShared());
+    if (_defaultContext == nullptr) {
+      // Create an arbitrary background dispatch-queue
+      auto dispatchQueue = std::make_shared<DispatchQueue>("worklets_default_queue");
+      // Capture JS callinvoker
+      auto callInvoker = _jsCallInvoker;
+      // Initialize default context
+      _defaultContext = std::make_shared<JsiWorkletContext>("default", &runtime, [callInvoker](std::function<void()>&& func) {
+        callInvoker->invokeAsync(std::move(func));
+      }, [dispatchQueue](std::function<void()>&& func) {
+        dispatchQueue->dispatch(std::move(func));
+      });
+    }
+    
+    return jsi::Object::createFromHostObject(runtime, _defaultContext);
   }
 
   JSI_PROPERTY_GET(currentContext) {
@@ -165,5 +181,10 @@ public:
    */
   std::shared_ptr<JsiWorkletContext>
   createWorkletContext(const std::string &name);
+  
+  
+private:
+  std::shared_ptr<react::CallInvoker> _jsCallInvoker;
+  std::shared_ptr<JsiWorkletContext> _defaultContext;
 };
 } // namespace RNWorklet

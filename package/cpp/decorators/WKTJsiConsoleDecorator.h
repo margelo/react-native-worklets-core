@@ -131,18 +131,14 @@ private:
  */
 class JsiConsoleDecorator : public JsiBaseDecorator {
 public:
-  void initialize(jsi::Runtime &runtime) override {
-    auto consoleObj = runtime.global().getProperty(runtime, PropNameConsole);
-    _jsiConsoleImpl = std::make_shared<JsiConsoleImpl>(runtime, consoleObj);
-  }
-
-  void decorateRuntime(jsi::Runtime &runtime) override {
-    runtime.global().setProperty(
-        runtime, PropNameConsole,
-        jsi::Object::createFromHostObject(runtime, _jsiConsoleImpl));
+  void decorateRuntime(jsi::Runtime &fromRuntime, JsiWorkletContext& toContext) override {
+    auto consoleObj = fromRuntime.global().getProperty(fromRuntime, PropNameConsole);
+    auto jsConsoleImpl = std::make_shared<JsiConsoleImpl>(runtime, consoleObj);
+    
+    toContext.invokeOnWorkletThread([jsConsoleImpl](JsiWorkletContext *, jsi::Runtime &toRuntime) {
+      toRuntime.global().setProperty(toRuntime, PropNameConsole,
+                                     jsi::Object::createFromHostObject(runtime, jsConsoleImpl));
+    });
   };
-
-private:
-  std::shared_ptr<JsiConsoleImpl> _jsiConsoleImpl;
 };
 } // namespace RNWorklet

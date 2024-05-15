@@ -24,54 +24,20 @@
 
 #include <jsi/jsi.h>
 
-#ifdef ANDROID
-#include <fbjni/fbjni.h>
-#endif
-
 namespace RNWorklet {
 
 const char *WorkletRuntimeFlag = "__rn_worklets_runtime_flag";
 const char *GlobalPropertyName = "global";
 
-std::shared_ptr<JsiWorkletContext> JsiWorkletContext::defaultInstance;
 std::map<void *, JsiWorkletContext *> JsiWorkletContext::runtimeMappings;
 size_t JsiWorkletContext::contextIdNumber = 1000;
 
 namespace jsi = facebook::jsi;
 
-JsiWorkletContext::JsiWorkletContext(const std::string &name) {
-  // Initialize context
-  initialize(name, JsiWorkletContext::getDefaultInstance()->_jsRuntime,
-             JsiWorkletContext::getDefaultInstance()->_jsCallInvoker);
-}
-
-JsiWorkletContext::JsiWorkletContext(
-    const std::string &name,
-    std::function<void(std::function<void()> &&)> workletCallInvoker) {
-  // Initialize context
-  initialize(name, JsiWorkletContext::getDefaultInstance()->_jsRuntime,
-             JsiWorkletContext::getDefaultInstance()->_jsCallInvoker,
-             workletCallInvoker);
-}
-
 JsiWorkletContext::JsiWorkletContext(
     const std::string &name, jsi::Runtime *jsRuntime,
     std::function<void(std::function<void()> &&)> jsCallInvoker,
     std::function<void(std::function<void()> &&)> workletCallInvoker) {
-  // Initialize context
-  initialize(name, jsRuntime, jsCallInvoker, workletCallInvoker);
-}
-
-JsiWorkletContext::~JsiWorkletContext() {
-  // Remove from thread contexts
-  runtimeMappings.erase(&_workletRuntime);
-}
-
-void JsiWorkletContext::initialize(
-    const std::string &name, jsi::Runtime *jsRuntime,
-    std::function<void(std::function<void()> &&)> jsCallInvoker,
-    std::function<void(std::function<void()> &&)> workletCallInvoker) {
-
   _name = name;
   _jsRuntime = jsRuntime;
   _jsCallInvoker = jsCallInvoker;
@@ -87,19 +53,9 @@ void JsiWorkletContext::initialize(
   addDecorator(std::make_shared<JsiConsoleDecorator>());
 }
 
-void JsiWorkletContext::initialize(
-    const std::string &name, jsi::Runtime *jsRuntime,
-    std::function<void(std::function<void()> &&)> jsCallInvoker) {
-  // Create queue
-  auto dispatchQueue = std::make_shared<DispatchQueue>(
-      name + "_worklet_dispatch_queue_" + std::to_string(_contextId));
-
-  // Initialize invoker
-  initialize(
-      name, jsRuntime, jsCallInvoker,
-      [dispatchQueue = std::move(dispatchQueue)](std::function<void()> &&f) {
-        dispatchQueue->dispatch(std::move(f));
-      });
+JsiWorkletContext::~JsiWorkletContext() {
+  // Remove from thread contexts
+  runtimeMappings.erase(&_workletRuntime);
 }
 
 jsi::Runtime &JsiWorkletContext::getWorkletRuntime() {
@@ -156,23 +112,10 @@ void JsiWorkletContext::invokeOnWorkletThread(
 
 void JsiWorkletContext::addDecorator(
     std::shared_ptr<JsiBaseDecorator> decorator) {
-  std::mutex mu;
-  std::condition_variable cond;
-  bool isFinished = false;
-  std::unique_lock<std::mutex> lock(mu);
-
-  decorator->initialize(*getJsRuntime());
-
-  // Execute decoration in context' worklet thread/runtime
-  _workletCallInvoker([&]() {
-    std::lock_guard<std::mutex> lock(mu);
-    decorator->decorateRuntime(getWorkletRuntime());
-    isFinished = true;
-    cond.notify_one();
-  });
-
-  // Wait untill the blocking code as finished
-  cond.wait(lock, [&]() { return isFinished; });
+  // TODO: Do we need to block until decorateRuntime(..) is done on the other thread?
+  // I _assume_ it isn't required because after this runs, and calls scheduled to the other Worklet context
+  // will be put after the decorator's `invokeOnWorkletContext` anyways as the dispatch queue is FIFO.
+  decorator->decorateRuntime(*getJsRuntime(), *this);
 }
 
 jsi::HostFunctionType
@@ -307,8 +250,7 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
                 [func](JsiWorkletContext *, jsi::Runtime &rt) { func(rt); });
             break;
           case CallingConvention::CtxToJs:
-            JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
-                [func](jsi::Runtime &rt) { func(rt); });
+            ctx->invokeOnJsThread([func](jsi::Runtime &rt) { func(rt); });
             break;
           default:
             // Not used since the two last ones are only handling
@@ -322,8 +264,7 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
                      ctx](std::function<void(jsi::Runtime & rt)> &&func) {
       // Always resolve in the calling context or the JS context if null
       if (callingCtx == nullptr) {
-        JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
-            [func](jsi::Runtime &rt) { func(rt); });
+        ctx->invokeOnJsThread([func](jsi::Runtime &rt) { func(rt); });
       } else {
         callingCtx->invokeOnWorkletThread(
             [func](JsiWorkletContext *, jsi::Runtime &rt) { func(rt); });
@@ -396,7 +337,7 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
                                     runtime, "Unknown error in promise."));
               });
             }
-            
+
             // We need to explicitly clear the func shared pointer here to avoid it being
             // deleted on another thread
             promise = nullptr;
@@ -440,7 +381,7 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
             func = nullptr;
           });
     } else {
-      JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
+      ctx->invokeOnJsThread(
           [argsWrapper, rtPtr, func = std::move(func)](jsi::Runtime &runtime) mutable {
             assert(&runtime == rtPtr && "Expected same runtime ptr!");
             auto args = argsWrapper.getArguments(runtime);
