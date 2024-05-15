@@ -60,13 +60,9 @@ public:
     } else {
       setObjectValue(runtime, object);
     }
-// NativeState functionality is also available in JSC with react-native 74+, but let's just keep this simple for now
-#if JS_RUNTIME_HERMES
     updateNativeState(runtime, object);
-#endif
   }
 
-#if JS_RUNTIME_HERMES
   void updateNativeState(jsi::Runtime &runtime, jsi::Object &obj) {
     if (obj.hasNativeState(runtime)) {
       _nativeState = obj.getNativeState(runtime);
@@ -74,7 +70,6 @@ public:
       _nativeState = nullptr;
     }
   }
-#endif
 
   /**
    * Overridden get value where we convert from the internal representation to
@@ -92,11 +87,9 @@ public:
     }
 
     jsi::Object obj = getObject(runtime);
-#if JS_RUNTIME_HERMES
     if (_nativeState != nullptr) {
       obj.setNativeState(runtime, _nativeState);
     }
-#endif
     return obj;
   }
 
@@ -195,7 +188,7 @@ private:
 
   void setObjectValue(jsi::Runtime &runtime, jsi::Object &obj) {
     std::unique_lock lock(_readWriteMutex);
-    
+
     setType(JsiWrapperType::Object);
     _properties.clear();
     auto propNames = obj.getPropertyNames(runtime);
@@ -255,8 +248,6 @@ private:
   std::map<std::string, std::shared_ptr<JsiWrapper>> _properties;
   std::shared_ptr<jsi::HostFunctionType> _hostFunction;
   std::shared_ptr<jsi::HostObject> _hostObject;
-#if JS_RUNTIME_HERMES
   std::shared_ptr<jsi::NativeState> _nativeState;
-#endif
 };
 } // namespace RNWorklet
