@@ -24,7 +24,7 @@ jobs:
     runs-on: macOS-latest
     defaults:
       run:
-        working-directory: example/ios
+        working-directory: package/example/ios
     steps:
       - uses: actions/checkout@v2
 
@@ -53,13 +53,13 @@ jobs:
         with:
           ruby-version: '2.7.6'
           bundler-cache: true
-          working-directory: example
+          working-directory: package/example
 
       - name: Restore Pods cache
         uses: actions/cache@v2
         with:
           path: |
-            example/ios/Pods
+            package/example/ios/Pods
             ~/Library/Caches/CocoaPods
             ~/.cocoapods
           key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}

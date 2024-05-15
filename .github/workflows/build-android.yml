@@ -24,6 +24,9 @@ jobs:
   build_example:
     name: Build Android Example App
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: package
     steps:
       - uses: actions/checkout@v2
 
