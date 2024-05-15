@@ -412,4 +412,25 @@ export const worklet_context_tests = {
     });
     return ExpectValue(result, 1200);
   },
+  call_run_async_then_async_between_custom_context_many_times_in_js: () => {
+    const a = Worklets.createSharedValue(10);
+    const context = Worklets.createContext("nested-context-2");
+    const context2 = Worklets.createContext("nested-context-3")
+    const result = Worklets.runOnJs(() => {
+      "worklet";
+      for(var i = 0; i < 20; i++) {
+        context.runAsync(() => {
+          "worklet";
+          a.value = a.value + 1;
+          context2.runAsync(() => {
+            "worklet";
+            a.value = a.value + 1;
+          });
+        });
+      }
+    });
+    setTimeout(() => {
+      return ExpectValue(a.value, 50); // Let async calls finish
+    }, "3000");
+  },
 };
