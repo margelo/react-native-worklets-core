@@ -11,9 +11,9 @@ module.exports = {
        * @type {import('@react-native-community/cli-types').AndroidDependencyParams}
        */
       android: {
-        cxxModuleCMakeListsModuleName: 'react-native-worklets-core',
-        cxxModuleCMakeListsPath: 'CMakeLists.txt',
-        cxxModuleHeaderName: 'NativeWorkletsModule',
+        cxxModuleCMakeListsModuleName: "react-native-worklets-core",
+        cxxModuleCMakeListsPath: "CMakeLists.txt",
+        cxxModuleHeaderName: "NativeWorkletsModule",
       },
     },
   },
