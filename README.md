@@ -13,9 +13,6 @@ const worklet = () => {
 }
 ```
 
-> [!NOTE]
-> In most cases, react-native-worklets-core shouldn't be used as a standalone dependency but rather as a peer-dependency for other modules such as [react-native-vision-camera](https://github.com/mrousavy/react-native-vision-camera), [react-native-wishlist](https://github.com/margelo/react-native-wishlist), or [react-native-skia](https://github.com/Shopify/react-native-skia).
-
 ## Installation
 
 1. Install the library from npm:
@@ -36,6 +33,12 @@ const worklet = () => {
     ```sh
     yarn start --reset-cache
     ```
+
+## Requirements
+
+- Requires react-native 0.74 or higher
+- Requires the [new architecture](https://reactnative.dev/docs/the-new-architecture/landing-page) to be enabled
+- Requires [Hermes](https://reactnative.dev/docs/hermes)
 
 ## Usage
 

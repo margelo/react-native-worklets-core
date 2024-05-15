@@ -1,96 +1,41 @@
-project("rnworklets")
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.9.0)
+project(ReactNativeWorklets)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 17)
+set(PACKAGE_NAME "react-native-worklets-core")
 
-if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-  string(APPEND CMAKE_CXX_FLAGS " -DDEBUG")
-endif()
-
-set(PACKAGE_NAME "rnworklets")
-
-
-# Pre-set Folly flags from React Native core
-include("${REACT_NATIVE_DIR}/ReactAndroid/cmake-utils/folly-flags.cmake")
-add_compile_options(${folly_FLAGS})
-
-# Consume shared libraries and headers from prefabs
-find_package(fbjni REQUIRED CONFIG)
-find_package(ReactAndroid REQUIRED CONFIG)
-
-if(${JS_RUNTIME} STREQUAL "hermes")
-  find_package(hermes-engine REQUIRED CONFIG)
-endif()
-
-file(GLOB_RECURSE SOURCES_COMMON CONFIGURE_DEPENDS "../cpp/**.cpp")
-
+# Compile sources
 add_library(
-  ${PACKAGE_NAME}
-  SHARED
-  ${SOURCES_COMMON}
-  cpp-adapter.cpp
+        ${PACKAGE_NAME}
+        SHARED
+        ../cpp/base/WKTJsiHostObject.cpp
+        ../cpp/base/WKTRuntimeLifecycleMonitor.cpp
+        ../cpp/dispatch/WKTDispatchQueue.cpp
+        ../cpp/wrappers/WKTJsiPromiseWrapper.cpp
+        ../cpp/wrappers/WKTJsiWrapper.cpp
+        ../cpp/WKTJsiWorkletApi.cpp
+        ../cpp/WKTJsiWorkletContext.cpp
 )
 
-# includes
-target_include_directories(
-  ${PACKAGE_NAME}
-  PRIVATE
-  ../cpp
-  ../cpp/base
-  ../cpp/decorators
-  ../cpp/dispatch
-  ../cpp/sharedvalues
-  ../cpp/wrappers
-  "${REACT_NATIVE_DIR}/ReactAndroid/src/main/jni/react/turbomodule"
-  "${REACT_NATIVE_DIR}/ReactCommon"
-  "${REACT_NATIVE_DIR}/ReactCommon/callinvoker"
-  "${REACT_NATIVE_DIR}/ReactCommon/runtimeexecutor"
-)
+# Add headers search paths
+target_include_directories(${PACKAGE_NAME} PUBLIC ../cpp)
 
-# build shared lib
-set_target_properties(${PACKAGE_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+# Add Hermes (from com.facebook.react:hermes-android)
+find_package(hermes-engine REQUIRED CONFIG)
 
+# Link everything together
 target_link_libraries(
-  ${PACKAGE_NAME}
-  log
-  android
+        ${PACKAGE_NAME}
+        ReactAndroid::jsi               # <-- JSI core
+        react_codegen_RNWorkletsSpec    # <-- Generated Specs from CodeGen
+        hermes-engine::libhermes        # <-- Hermes Prefab
 )
 
-target_link_libraries(
-  ${PACKAGE_NAME}
-  ReactAndroid::folly_runtime
-  ReactAndroid::glog
-  ReactAndroid::jsi
-  ReactAndroid::reactnativejni
-  fbjni::fbjni
-)
-
-if(${JS_RUNTIME} STREQUAL "hermes")
-  string(APPEND CMAKE_CXX_FLAGS " -DJS_RUNTIME_HERMES=1")
-
-  # From prefab from module `com.facebook.react:hermes-android`
-  set(HERMES_LIB hermes-engine::libhermes)
-
+# Add Hermes Debugger if enabled in Gradle CMake options
+if(${HERMES_ENABLE_DEBUGGER})
   target_link_libraries(
     ${PACKAGE_NAME}
-    ${HERMES_LIB}
+    ReactAndroid::hermes_executor
   )
-
-  if(${HERMES_ENABLE_DEBUGGER})
-    set(HERMES_EXECUTOR_LIB ReactAndroid::hermes_executor)
-
-    target_link_libraries(
-      ${PACKAGE_NAME}
-      ${HERMES_EXECUTOR_LIB}
-    )
-  endif()
-elseif(${JS_RUNTIME} STREQUAL "jsc")
-  string(APPEND CMAKE_CXX_FLAGS " -DJS_RUNTIME_JSC=1")
-
-  set(JSEXECUTOR_LIB ReactAndroid::jscexecutor)
-
-  target_link_libraries(${PACKAGE_NAME} ${JSEXECUTOR_LIB})
-else()
-  message(FATAL_ERROR "Unknown JS runtime ${JS_RUNTIME}.")
 endif()
