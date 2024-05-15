@@ -1,39 +1,40 @@
 import type { TurboModule } from "react-native";
 import { TurboModuleRegistry } from "react-native";
 import type { IWorkletNativeApi } from "./types";
+import type { UnsafeObject } from "react-native/Libraries/Types/CodegenTypes";
+import { ModuleNotFoundError } from "./ModuleNotFoundError";
+
+if (__DEV__) {
+  console.log("Loading react-native-worklets-core...");
+}
 
 export interface Spec extends TurboModule {
-  install(): boolean;
+  /**
+   * Create a new instance of the Worklets API.
+   * The returned {@linkcode UnsafeObject} is a `jsi::HostObject`.
+   */
+  createWorkletsApi(): UnsafeObject;
 }
 
-const WorkletsInstaller = TurboModuleRegistry.getEnforcing<Spec>("Worklets");
-
-console.log("Loading react-native-worklets-core...");
-
-// @ts-expect-error it's an untyped JSI global.
-if (global.Worklets == null) {
-  if (
-    WorkletsInstaller == null ||
-    typeof WorkletsInstaller.install !== "function"
-  ) {
-    console.error(
-      "Native Worklets Module cannot be found! Make sure you correctly " +
-        "installed native dependencies and rebuilt your app."
-    );
-  } else {
-    // Install the module
-    const result = WorkletsInstaller.install();
-    if (result !== true) {
-      console.error(
-        `Native Worklets Module failed to correctly install JSI Bindings! Result: ${result}`
-      );
-    } else {
-      console.log("Worklets loaded successfully");
-    }
-  }
-} else {
-  console.log("react-native-worklets-core installed.");
+let module: Spec
+try {
+  // Try to find the CxxTurboModule.
+  // CxxTurboModules can be autolinked on Android starting from react-native 0.74,
+  // and are manually linked in WorkletsOnLoad.mm on iOS.
+  module = TurboModuleRegistry.getEnforcing<Spec>("Worklets");
+} catch (e) {
+  // User didn't enable new arch, or the module does not exist.
+  throw new ModuleNotFoundError(e)
 }
 
-// @ts-expect-error It's a global injected by JSI.
-export const Worklets = global.Worklets as IWorkletNativeApi;
+/**
+ * The Worklets API.
+ * This object can be shared and accessed from multiple contexts,
+ * however it is advised to not hold unnecessary references to it.
+ */
+export const Worklets = module.createWorkletsApi() as IWorkletNativeApi
+
+
+if (__DEV__) {
+  console.log("react-native-worklets-core loaded successfully!");
+}
