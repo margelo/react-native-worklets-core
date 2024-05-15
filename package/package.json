@@ -30,7 +30,7 @@
   ],
   "scripts": {
     "test": "jest",
-    "typecheck": "tsc --noEmit",
+    "typescript": "tsc --noEmit",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "prepack": "bob build",
     "release": "release-it",
