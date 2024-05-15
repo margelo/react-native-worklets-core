@@ -416,16 +416,17 @@ export const worklet_context_tests = {
     const a = Worklets.createSharedValue(10);
     const context = Worklets.createContext("nested-context-2");
     const context2 = Worklets.createContext("nested-context-3")
+    const innerFunc = context2.createRunAsync(() => {
+      "worklet";
+      a.value = a.value + 1;
+    });
     const result = Worklets.runOnJs(() => {
       "worklet";
       for(var i = 0; i < 20; i++) {
         context.runAsync(() => {
           "worklet";
           a.value = a.value + 1;
-          context2.runAsync(() => {
-            "worklet";
-            a.value = a.value + 1;
-          });
+          innerFunc()
         });
       }
     });
