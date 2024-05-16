@@ -80,7 +80,9 @@ void FunctionInvoker::callAndForget(jsi::Runtime& fromRuntime,
                                     const jsi::Value& thisValue,
                                     const jsi::Value* arguments,
                                     size_t count,
-                                    JSCallInvoker&& runOnTargetRuntime) {
+                                    JSCallInvoker&& runOnTargetRuntime,
+                                    std::function<void(std::shared_ptr<JsiWrapper> result)>&& resolve,
+                                    std::function<void(std::exception exception)>&& reject) {
   // Start by wrapping the arguments
   ArgumentsWrapper argsWrapper(fromRuntime, arguments, count);
 
@@ -90,6 +92,8 @@ void FunctionInvoker::callAndForget(jsi::Runtime& fromRuntime,
   std::shared_ptr<FunctionInvoker> self = shared_from_this();
   runOnTargetRuntime([self,
                       thisWrapper,
+                      resolve = std::move(resolve),
+                      reject = std::move(reject),
                       argsWrapper = std::move(argsWrapper)
                      ](jsi::Runtime& targetRuntime) {
     // Now we are on the target Runtime, let's unwrap all arguments and extract them into this target Runtime.
@@ -98,23 +102,37 @@ void FunctionInvoker::callAndForget(jsi::Runtime& fromRuntime,
     
     try {
       // Call the actual function or worklet
+      jsi::Value result;
       if (self->isWorkletFunction()) {
         // It's a Worklet, so we need to inject the captured values and call it as a Worklet
         auto workletInvoker = self->_workletFunctionOrNull;
-        workletInvoker->call(targetRuntime, unwrappedThis, ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+        result = workletInvoker->call(targetRuntime, unwrappedThis, ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
       } else {
         // It's a normal JS func, so we just call it.
         auto plainFunction = self->_plainFunctionOrNull;
         if (unwrappedThis.isObject()) {
           // ...with `this`
-          plainFunction->callWithThis(targetRuntime, unwrappedThis.asObject(targetRuntime), ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+          result = plainFunction->callWithThis(targetRuntime, unwrappedThis.asObject(targetRuntime), ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
         } else {
           // ...without `this`
-          plainFunction->call(targetRuntime, ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+          result = plainFunction->call(targetRuntime, ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
         }
       }
-    } catch (...) {
-      // ignore errors.
+      
+      // Resolve the promise (potentially on the calling Thread)
+      std::shared_ptr<JsiWrapper> wrapper = JsiWrapper::wrap(targetRuntime, result);
+      resolve(wrapper);
+    } catch (std::exception& exception) {
+      // Reject the promise (potentially on the calling Thread)
+      reject(exception);
+      
+#if DEBUG
+      // TODO: Remove this?
+      std::string message = exception.what();
+      jsi::Object console = targetRuntime.global().getPropertyAsObject(targetRuntime, "console");
+      jsi::Function errorFn = console.getPropertyAsFunction(targetRuntime, "error");
+      errorFn.call(targetRuntime, jsi::String::createFromUtf8(targetRuntime, "Worklet threw an error:"), jsi::String::createFromUtf8(targetRuntime, message));
+#endif
     }
   });
 }

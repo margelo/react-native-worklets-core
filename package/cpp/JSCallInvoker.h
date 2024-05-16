@@ -12,6 +12,6 @@ namespace RNWorklet {
 
 using namespace facebook;
 
-using JSCallInvoker = std::function<void(std::function<void(jsi::Runtime& targetRuntime)>&&)>;
+using JSCallInvoker = const std::function<void(std::function<void(jsi::Runtime& targetRuntime)>&&)>;
 
 } // namespace RNWorklet

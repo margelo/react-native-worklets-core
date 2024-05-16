@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 
-#include "WKTJsiPromiseWrapper.h"
 #include "WKTJsiWorklet.h"
 #include "WKTJsiWrapper.h"
 

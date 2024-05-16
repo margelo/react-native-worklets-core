@@ -56,7 +56,9 @@ public:
                      const jsi::Value& thisValue,
                      const jsi::Value* arguments,
                      size_t count,
-                     JSCallInvoker&& runOnTargetRuntime);
+                     JSCallInvoker&& runOnTargetRuntime,
+                     std::function<void(std::shared_ptr<JsiWrapper> result)>&& resolve,
+                     std::function<void(std::exception exception)>&& reject);
   
   /**
    Calls the underlying function or worklet on the given worklet dispatcher.
