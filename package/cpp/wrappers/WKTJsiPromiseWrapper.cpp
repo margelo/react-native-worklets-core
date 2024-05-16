@@ -22,9 +22,6 @@ std::shared_ptr<JsiPromiseWrapper> JsiPromiseWrapper::createPromiseWrapper(
 void JsiPromiseWrapper::runComputation(jsi::Runtime &runtime,
                                        PromiseComputationFunction computation) {
   // Run the compute function to start resolving the promise
-  auto resolve = std::bind(&JsiPromiseWrapper::onFulfilled, this,
-                           std::placeholders::_1, std::placeholders::_2);
-
   auto reject = std::bind(&JsiPromiseWrapper::onRejected, this,
                           std::placeholders::_1, std::placeholders::_2);
   try {

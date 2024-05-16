@@ -182,28 +182,6 @@ public:
   jsi::HostFunctionType createCallInContext(jsi::Runtime &runtime,
                                             const jsi::Value &maybeFunc);
 
-  // Resolve type of call we're about to do
-  typedef enum {
-    // Main React JS -> Main React JS, no Thread hop.
-    JsToJs = 0,
-    // Context A -> Main React JS, requires Thread hop.
-    CtxToJs = 1,
-    // Context A -> Context A, no Thread hop.
-    WithinCtx = 2,
-    // Context A -> Context B, requires Thread hop.
-    CtxToCtx = 3,
-    // Main React JS -> Context A, requires Thread hop.
-    JsToCtx = 4
-  } CallingConvention;
-
-  /**
-   Returns the calling convention for a given from/to context. This method is
-   used to find out if we are calling a worklet from or to the JS context or
-   from to a Worklet context or a combination of these.
-   */
-  static CallingConvention getCallingConvention(JsiWorkletContext *fromContext,
-                                                JsiWorkletContext *toContext);
-
 private:
   jsi::Runtime *_jsRuntime;
   std::unique_ptr<jsi::Runtime> _workletRuntime;
