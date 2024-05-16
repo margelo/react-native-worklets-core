@@ -1,6 +1,7 @@
 #pragma once
 
 #include <jsi/jsi.h>
+#include <memory>
 
 namespace RNWorklet {
 
@@ -13,7 +14,7 @@ public:
   /**
    Decorates the given Worklet Context, using the given source runtime to copy the result from.
    */
-  virtual void decorateRuntime(jsi::Runtime &fromRuntime, JsiWorkletContext& toContext) = 0;
+  virtual void decorateRuntime(jsi::Runtime &fromRuntime, std::weak_ptr<JsiWorkletContext> toContext) = 0;
   virtual ~JsiBaseDecorator() {}
 };
 } // namespace RNWorklet

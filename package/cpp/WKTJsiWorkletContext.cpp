@@ -13,6 +13,7 @@
 #include "WKTJsiJsDecorator.h"
 #include "WKTJsiPerformanceDecorator.h"
 #include "WKTJsiSetImmediateDecorator.h"
+#include "WKTJsiJsDecorator.h"
 
 #include <exception>
 #include <functional>
@@ -99,13 +100,7 @@ void JsiWorkletContext::invokeOnWorkletThread(
   _workletCallInvoker([fp = std::move(fp), weakSelf = weak_from_this()]() {
     auto self = weakSelf.lock();
     if (self) {
-#ifdef ANDROID
-      facebook::jni::ThreadScope::WithClassLoader([fp = std::move(fp), self]() {
-        fp(self.get(), self->getWorkletRuntime());
-      });
-#else
       fp(self.get(), self->getWorkletRuntime());
-#endif
     }
   });
 }
@@ -115,7 +110,13 @@ void JsiWorkletContext::addDecorator(
   // TODO: Do we need to block until decorateRuntime(..) is done on the other thread?
   // I _assume_ it isn't required because after this runs, and calls scheduled to the other Worklet context
   // will be put after the decorator's `invokeOnWorkletContext` anyways as the dispatch queue is FIFO.
-  decorator->decorateRuntime(*getJsRuntime(), *this);
+  std::weak_ptr<JsiWorkletContext> weak = shared_from_this();
+  decorator->decorateRuntime(*getJsRuntime(), weak);
+}
+
+void JsiWorkletContext::addDecorator(jsi::Runtime &runtime, const std::string& propName, const jsi::Value& value) {
+  // Create a JS based decorator
+  addDecorator(std::make_shared<JsiJsDecorator>(runtime, propName, value));
 }
 
 jsi::HostFunctionType
@@ -353,6 +354,9 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
                                  const jsi::Value *maybeFunc) {
   auto rtPtr = &runtime;
   auto ctx = JsiWorkletContext::getCurrent(runtime);
+  if (ctx == nullptr) {
+    throw std::runtime_error("Failed to create Worklet invoker - this Runtime does not have a Worklet Context!");
+  }
 
   // Create host function
   return [rtPtr, ctx,
@@ -369,27 +373,16 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
     auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
     ArgumentsWrapper argsWrapper(runtime, arguments, count);
 
-    if (ctx != nullptr) {
-      // We are on a worklet thread
-      ctx->invokeOnWorkletThread(
-          [argsWrapper, rtPtr, func = std::move(func)](JsiWorkletContext *,
-                                     jsi::Runtime &runtime) mutable {
-            assert(&runtime == rtPtr && "Expected same runtime ptr!");
-            auto args = argsWrapper.getArguments(runtime);
-            func->call(runtime, ArgumentsWrapper::toArgs(args),
-                       argsWrapper.getCount());
-            func = nullptr;
-          });
-    } else {
-      ctx->invokeOnJsThread(
-          [argsWrapper, rtPtr, func = std::move(func)](jsi::Runtime &runtime) mutable {
-            assert(&runtime == rtPtr && "Expected same runtime ptr!");
-            auto args = argsWrapper.getArguments(runtime);
-            func->call(runtime, ArgumentsWrapper::toArgs(args),
-                       argsWrapper.getCount());
-            func = nullptr;
-          });
-    }
+    // We are on a worklet thread
+    ctx->invokeOnWorkletThread(
+        [argsWrapper, rtPtr, func = std::move(func)](JsiWorkletContext *,
+                                   jsi::Runtime &runtime) mutable {
+          assert(&runtime == rtPtr && "Expected same runtime ptr!");
+          auto args = argsWrapper.getArguments(runtime);
+          func->call(runtime, ArgumentsWrapper::toArgs(args),
+                     argsWrapper.getCount());
+          func = nullptr;
+        });
 
     return jsi::Value::undefined();
   };

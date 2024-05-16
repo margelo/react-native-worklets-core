@@ -23,7 +23,7 @@ class JsiSetImmediateDecorator : public JsiBaseDecorator {
 public:
   JsiSetImmediateDecorator() {}
 
-  static jsi::Value setImmediate(jsi::Runtime& runtime, const jsi::Value& thisValue, const jsi::Value* args, size_t count) {
+  static jsi::Value setImmediate(jsi::Runtime& runtime, const jsi::Value& thisValue, const jsi::Value* arguments, size_t count) {
     if (count == 0) {
       throw jsi::JSError(
           runtime,
@@ -74,30 +74,28 @@ public:
     };
 
     auto context = JsiWorkletContext::getCurrent(runtime);
-    if (context) {
-      // Invoke function on context thread / runtime
-      context->invokeOnWorkletThread(
-          [dispatcher](JsiWorkletContext *context,
-                       jsi::Runtime &runtime) {
-            printf("ctx %lu: setImmediate\n", context->getContextId());
-            dispatcher(runtime);
-          });
-    } else {
-      // Invoke function in JS thread / runtime
-      JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
-          [dispatcher](jsi::Runtime &runtime) {
-            printf("ctx -1: setImmediate\n");
-            dispatcher(runtime);
-          });
+    if (context == nullptr) {
+      throw std::runtime_error("setImmediate failed: This Runtime does not have a Worklet Context!");
     }
+    // Invoke function on context thread / runtime
+    context->invokeOnWorkletThread(
+        [dispatcher](JsiWorkletContext *context,
+                     jsi::Runtime &runtime) {
+          printf("ctx %lu: setImmediate\n", context->getContextId());
+          dispatcher(runtime);
+        });
     return 0;
   }
 
-  void decorateRuntime(jsi::Runtime &fromRuntime, JsiWorkletContext &toContext) override {
-    toContext.invokeOnWorkletThread([](JsiWorkletContext *, jsi::Runtime &toRuntime) {
+  void decorateRuntime(jsi::Runtime &fromRuntime, std::weak_ptr<JsiWorkletContext> toContext) override {
+    auto context = toContext.lock();
+    if (context == nullptr) {
+      throw std::runtime_error("Cannot decorate Runtime - target context is null!");
+    }
+    context->invokeOnWorkletThread([](JsiWorkletContext *, jsi::Runtime &toRuntime) {
       // Inject global.setImmediate
       jsi::HostFunctionType hostFunction = JsiSetImmediateDecorator::setImmediate;
-      auto setImmediate = jsi::Function::createFromHostFunction(toRuntime, jsi::PropNameID::forUtf8(runtime, PropNameSetImmediate), 2, hostFunction);
+      auto setImmediate = jsi::Function::createFromHostFunction(toRuntime, jsi::PropNameID::forUtf8(toRuntime, PropNameSetImmediate), 2, hostFunction);
       toRuntime.global().setProperty(toRuntime, PropNameSetImmediate, setImmediate);
     });
   }

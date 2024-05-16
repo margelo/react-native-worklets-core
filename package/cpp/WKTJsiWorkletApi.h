@@ -40,9 +40,9 @@ public:
                          "parameter as a string.");
     }
 
-    auto nameStr = arguments[0].asString(runtime).utf8(runtime);
-    return jsi::Object::createFromHostObject(runtime,
-                                             createWorkletContext(nameStr));
+    std::string nameStr = arguments[0].asString(runtime).utf8(runtime);
+    std::shared_ptr<JsiWorkletContext> context = createWorkletContext(runtime, nameStr);
+    return jsi::Object::createFromHostObject(runtime, context);
   };
 
   JSI_HOST_FUNCTION(createSharedValue) {
@@ -146,18 +146,8 @@ public:
 
   JSI_PROPERTY_GET(defaultContext) {
     if (_defaultContext == nullptr) {
-      // Create an arbitrary background dispatch-queue
-      auto dispatchQueue = std::make_shared<DispatchQueue>("worklets_default_queue");
-      // Capture JS callinvoker
-      auto callInvoker = _jsCallInvoker;
-      // Initialize default context
-      _defaultContext = std::make_shared<JsiWorkletContext>("default", &runtime, [callInvoker](std::function<void()>&& func) {
-        callInvoker->invokeAsync(std::move(func));
-      }, [dispatchQueue](std::function<void()>&& func) {
-        dispatchQueue->dispatch(std::move(func));
-      });
+      _defaultContext = createWorkletContext(runtime, "default");
     }
-    
     return jsi::Object::createFromHostObject(runtime, _defaultContext);
   }
 
@@ -180,7 +170,7 @@ public:
    @returns A new worklet context that has been initialized and decorated.
    */
   std::shared_ptr<JsiWorkletContext>
-  createWorkletContext(const std::string &name);
+  createWorkletContext(jsi::Runtime& runtime, const std::string &name);
   
   
 private:

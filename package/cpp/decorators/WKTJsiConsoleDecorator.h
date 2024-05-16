@@ -18,17 +18,28 @@ static const char *PropNameConsole = "console";
 class JsiConsoleImpl : public JsiHostObject,
                        public std::enable_shared_from_this<JsiConsoleImpl> {
 public:
-  JsiConsoleImpl(jsi::Runtime &runtime, const jsi::Value &consoleObj)
-      : _consoleObj(consoleObj.asObject(runtime)),
+  JsiConsoleImpl(jsi::Runtime &runtime, const jsi::Value &consoleObj, std::weak_ptr<JsiWorkletContext> toContext)
+      : _targetContext(toContext), _consoleObj(consoleObj.asObject(runtime)),
         _logFn(_consoleObj.getPropertyAsFunction(runtime, "log")),
         _infoFn(_consoleObj.getPropertyAsFunction(runtime, "info")),
         _warnFn(_consoleObj.getPropertyAsFunction(runtime, "warn")),
         _errorFn(_consoleObj.getPropertyAsFunction(runtime, "error")) {}
+                         
+private:
+ std::shared_ptr<JsiWorkletContext> getContext() {
+   auto targetContext = _targetContext.lock();
+   if (targetContext == nullptr) {
+     throw std::runtime_error("console wrapper: Target Context has been destroyed, cannot log!");
+   }
+   return targetContext;
+ }
+ 
+public:
 
   JSI_HOST_FUNCTION(log) {
     ArgumentsWrapper argsWrapper(runtime, arguments, count);
     auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
-    JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
+    getContext()->invokeOnJsThread(
         [weakSelf = weak_from_this(), argsWrapper, thisWrapper,
          count](jsi::Runtime &runtime) {
           auto args = argsWrapper.getArguments(runtime);
@@ -49,7 +60,7 @@ public:
   JSI_HOST_FUNCTION(warn) {
     ArgumentsWrapper argsWrapper(runtime, arguments, count);
     auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
-    JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
+    getContext()->invokeOnJsThread(
         [weakSelf = weak_from_this(), argsWrapper, thisWrapper,
          count](jsi::Runtime &runtime) {
           auto args = argsWrapper.getArguments(runtime);
@@ -71,7 +82,7 @@ public:
   JSI_HOST_FUNCTION(error) {
     ArgumentsWrapper argsWrapper(runtime, arguments, count);
     auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
-    JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
+    getContext()->invokeOnJsThread(
         [weakSelf = weak_from_this(), argsWrapper, thisWrapper,
          count](jsi::Runtime &runtime) {
           auto args = argsWrapper.getArguments(runtime);
@@ -94,7 +105,7 @@ public:
   JSI_HOST_FUNCTION(info) {
     ArgumentsWrapper argsWrapper(runtime, arguments, count);
     auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
-    JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
+    getContext()->invokeOnJsThread(
         [weakSelf = weak_from_this(), argsWrapper, thisWrapper,
          count](jsi::Runtime &runtime) {
           auto args = argsWrapper.getArguments(runtime);
@@ -119,6 +130,7 @@ public:
                        JSI_EXPORT_FUNC(JsiConsoleImpl, info))
 
 private:
+  std::weak_ptr<JsiWorkletContext> _targetContext;
   jsi::Object _consoleObj;
   jsi::Function _logFn;
   jsi::Function _warnFn;
@@ -131,13 +143,17 @@ private:
  */
 class JsiConsoleDecorator : public JsiBaseDecorator {
 public:
-  void decorateRuntime(jsi::Runtime &fromRuntime, JsiWorkletContext& toContext) override {
+  void decorateRuntime(jsi::Runtime &fromRuntime, std::weak_ptr<JsiWorkletContext> toContext) override {
     auto consoleObj = fromRuntime.global().getProperty(fromRuntime, PropNameConsole);
-    auto jsConsoleImpl = std::make_shared<JsiConsoleImpl>(runtime, consoleObj);
+    auto jsConsoleImpl = std::make_shared<JsiConsoleImpl>(fromRuntime, consoleObj, toContext);
     
-    toContext.invokeOnWorkletThread([jsConsoleImpl](JsiWorkletContext *, jsi::Runtime &toRuntime) {
+    auto context = toContext.lock();
+    if (context == nullptr) {
+      throw std::runtime_error("Cannot decorate Runtime - target context is null!");
+    }
+    context->invokeOnWorkletThread([jsConsoleImpl](JsiWorkletContext *, jsi::Runtime &toRuntime) {
       toRuntime.global().setProperty(toRuntime, PropNameConsole,
-                                     jsi::Object::createFromHostObject(runtime, jsConsoleImpl));
+                                     jsi::Object::createFromHostObject(toRuntime, jsConsoleImpl));
     });
   };
 };

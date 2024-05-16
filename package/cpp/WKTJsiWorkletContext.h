@@ -4,7 +4,6 @@
 #include "WKTDispatchQueue.h"
 #include "WKTJsiBaseDecorator.h"
 #include "WKTJsiHostObject.h"
-#include "WKTJsiJsDecorator.h"
 
 #include <exception>
 #include <functional>
@@ -57,10 +56,14 @@ public:
   size_t getContextId() { return _contextId; }
 
   /**
-   Adds a global decorator. The decorator will be installed in the default
-   context.
+   Adds a C++ based global decorator.
    */
   void addDecorator(std::shared_ptr<JsiBaseDecorator> decorator);
+        
+  /**
+   Adds a global JS-based decorator.
+   */
+  void addDecorator(jsi::Runtime& runtime, const std::string& propName, const jsi::Value& value);
 
   JSI_HOST_FUNCTION(addDecorator) {
     if (count != 2) {
@@ -76,10 +79,8 @@ public:
       throw jsi::JSError(runtime, "addDecorator expects a property name and a "
                                   "Javascript object as its arguments.");
     }
-
-    // Create / add the decorator
-    addDecorator(std::make_shared<JsiJsDecorator>(
-        runtime, arguments[0].asString(runtime).utf8(runtime), arguments[1]));
+    
+    addDecorator(runtime, arguments[0].asString(runtime).utf8(runtime), arguments[1]);
 
     return jsi::Value::undefined();
   }

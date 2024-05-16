@@ -35,11 +35,17 @@ public:
  */
 class JsiPerformanceDecorator : public JsiBaseDecorator {
 public:
-  void decorateRuntime(jsi::Runtime &runtime) override {
+  void decorateRuntime(jsi::Runtime &fromRuntime, std::weak_ptr<JsiWorkletContext> toContext) override {
     auto performanceObj = std::make_shared<JsiPerformanceImpl>();
-    runtime.global().setProperty(
-        runtime, PropNamePerformance,
-        jsi::Object::createFromHostObject(runtime, performanceObj));
+    auto context = toContext.lock();
+    if (context == nullptr) {
+      throw std::runtime_error("Cannot decorate Runtime - target context is null!");
+    }
+    context->invokeOnWorkletThread([performanceObj](JsiWorkletContext*, jsi::Runtime& toRuntime) {
+      // Inject the wrapped object into the target runtime's global
+      toRuntime.global().setProperty(toRuntime, PropNamePerformance,
+                                     jsi::Object::createFromHostObject(toRuntime, performanceObj));
+    });
   };
 };
 } // namespace RNWorklet

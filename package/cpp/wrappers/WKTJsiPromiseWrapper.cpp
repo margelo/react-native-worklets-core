@@ -202,6 +202,9 @@ void JsiPromiseWrapper::setValue(jsi::Runtime &runtime,
   auto obj = value.asObject(runtime);
 
   auto callingContext = JsiWorkletContext::getCurrent(runtime);
+  if (callingContext == nullptr) {
+    throw std::runtime_error("Failed to set value from a JS Promise - this Runtime does not have a Worklet Context!");
+  }
 
   auto maybeThenFunc = obj.getProperty(runtime, ThenPropName);
   if (!maybeThenFunc.isObject() ||

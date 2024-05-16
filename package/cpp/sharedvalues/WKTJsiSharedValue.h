@@ -76,7 +76,11 @@ public:
     auto dispatcher = JsiDispatcher::createDispatcher(
         runtime, thisValuePtr, functionPtr, nullptr,
         [&runtime, this](const char *err) {
-          JsiWorkletContext::getCurrent(runtime)->invokeOnJsThread(
+          auto context = JsiWorkletContext::getCurrent(runtime);
+          if (context == nullptr) {
+            throw std::runtime_error("Failed to add a Shared Value listener - this Runtime does not have a Worklet Context!");
+          }
+          context->invokeOnJsThread(
               [err](jsi::Runtime &runtime) {
                 throw jsi::JSError(runtime, err);
               });
