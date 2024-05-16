@@ -369,9 +369,6 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
                                  const jsi::Value *maybeFunc) {
   auto rtPtr = &runtime;
   auto ctx = JsiWorkletContext::getCurrent(runtime);
-  if (ctx == nullptr) {
-    throw std::runtime_error("Failed to create Worklet invoker - this Runtime does not have a Worklet Context!");
-  }
 
   // Create host function
   return [rtPtr, ctx,
@@ -389,6 +386,9 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
     ArgumentsWrapper argsWrapper(runtime, arguments, count);
 
     // We are on a worklet thread
+    if (ctx == nullptr) {
+      throw std::runtime_error("Failed to create Worklet invoker - this Runtime does not have a Worklet Context!");
+    }
     ctx->invokeOnWorkletThread(
         [argsWrapper, rtPtr, func = std::move(func)](JsiWorkletContext *,
                                    jsi::Runtime &runtime) mutable {
