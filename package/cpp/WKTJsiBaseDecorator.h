@@ -11,10 +11,19 @@ namespace jsi = facebook::jsi;
 
 class JsiBaseDecorator {
 public:
+  
   /**
-   Decorates the given Worklet Context, using the given source runtime to copy the result from.
+   Initializes the Decorator with the given Runtime.
+   For decorators that call back to the main JS runtime, this pulls values from the given fromRuntime.
+   This needs to be called on the given source Runtime's Thread.
    */
-  virtual void decorateRuntime(jsi::Runtime &fromRuntime, std::weak_ptr<JsiWorkletContext> toContext) = 0;
+  virtual void initialize(jsi::Runtime& fromRuntime) { }
+  /**
+   Decorates the given Runtime.
+   This needs to be called on the given target Runtime's Thread.
+   */
+  virtual void decorateRuntime(jsi::Runtime &toRuntime) = 0;
+  
   virtual ~JsiBaseDecorator() {}
 };
 } // namespace RNWorklet

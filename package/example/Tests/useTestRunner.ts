@@ -60,7 +60,7 @@ export const useTestRunner = () => {
             );
           })
           .catch((err) => {
-            console.log("Test: " + test.name + " failed.");
+            console.log("❌ Test: " + test.name + " failed.");
             setTimeout(
               () =>
                 setActiveTests((p) => ({

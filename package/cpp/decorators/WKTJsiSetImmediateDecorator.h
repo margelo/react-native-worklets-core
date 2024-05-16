@@ -87,17 +87,11 @@ public:
     return 0;
   }
 
-  void decorateRuntime(jsi::Runtime &fromRuntime, std::weak_ptr<JsiWorkletContext> toContext) override {
-    auto context = toContext.lock();
-    if (context == nullptr) {
-      throw std::runtime_error("Cannot decorate Runtime - target context is null!");
-    }
-    context->invokeOnWorkletThread([](JsiWorkletContext *, jsi::Runtime &toRuntime) {
-      // Inject global.setImmediate
-      jsi::HostFunctionType hostFunction = JsiSetImmediateDecorator::setImmediate;
-      auto setImmediate = jsi::Function::createFromHostFunction(toRuntime, jsi::PropNameID::forUtf8(toRuntime, PropNameSetImmediate), 2, hostFunction);
-      toRuntime.global().setProperty(toRuntime, PropNameSetImmediate, setImmediate);
-    });
+  void decorateRuntime(jsi::Runtime &toRuntime) override {
+    // Inject global.setImmediate
+    jsi::HostFunctionType hostFunction = JsiSetImmediateDecorator::setImmediate;
+    auto setImmediate = jsi::Function::createFromHostFunction(toRuntime, jsi::PropNameID::forUtf8(toRuntime, PropNameSetImmediate), 2, hostFunction);
+    toRuntime.global().setProperty(toRuntime, PropNameSetImmediate, setImmediate);
   }
 };
 } // namespace RNWorklet

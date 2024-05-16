@@ -22,7 +22,9 @@ const App = () => {
   });
 
   useEffect(() => {
+    console.log(`Calling Marc...`);
     dummyWorklet("marc");
+    console.log(`Called Marc!`);
   }, [dummyWorklet]);
 
   useEffect(() => {

@@ -47,11 +47,15 @@ JsiWorkletContext::JsiWorkletContext(
 
   _jsThreadId = std::this_thread::get_id();
   runtimeMappings.emplace(&getWorkletRuntime(), this);
-
+  
   // Add default decorators
   addDecorator(std::make_shared<JsiSetImmediateDecorator>());
   addDecorator(std::make_shared<JsiPerformanceDecorator>());
-  addDecorator(std::make_shared<JsiConsoleDecorator>());
+  addDecorator(std::make_shared<JsiConsoleDecorator>([jsRuntime, jsCallInvoker](std::function<void(jsi::Runtime&)> callback) {
+    jsCallInvoker([jsRuntime, callback = std::move(callback)]() {
+      callback(*jsRuntime);
+    });
+  }));
 }
 
 JsiWorkletContext::~JsiWorkletContext() {
@@ -105,13 +109,24 @@ void JsiWorkletContext::invokeOnWorkletThread(
   });
 }
 
-void JsiWorkletContext::addDecorator(
-    std::shared_ptr<JsiBaseDecorator> decorator) {
-  // TODO: Do we need to block until decorateRuntime(..) is done on the other thread?
-  // I _assume_ it isn't required because after this runs, and calls scheduled to the other Worklet context
-  // will be put after the decorator's `invokeOnWorkletContext` anyways as the dispatch queue is FIFO.
-  std::weak_ptr<JsiWorkletContext> weak = shared_from_this();
-  decorator->decorateRuntime(*getJsRuntime(), weak);
+void JsiWorkletContext::addDecorator(std::shared_ptr<JsiBaseDecorator> decorator) {
+  std::mutex mu;
+  std::condition_variable cond;
+  bool isFinished = false;
+  std::unique_lock<std::mutex> lock(mu);
+
+  decorator->initialize(*getJsRuntime());
+
+  // Execute decoration in context' worklet thread/runtime
+  _workletCallInvoker([&]() {
+    std::lock_guard<std::mutex> lock(mu);
+    decorator->decorateRuntime(getWorkletRuntime());
+    isFinished = true;
+    cond.notify_one();
+  });
+
+  // Wait untill the blocking code as finished
+  cond.wait(lock, [&]() { return isFinished; });
 }
 
 void JsiWorkletContext::addDecorator(jsi::Runtime &runtime, const std::string& propName, const jsi::Value& value) {

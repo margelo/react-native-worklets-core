@@ -21,19 +21,10 @@ public:
     _propertyName = propertyName;
   }
   
-  void decorateRuntime(jsi::Runtime &fromRuntime, std::weak_ptr<JsiWorkletContext> toContext) override {
-    std::string propertyName = _propertyName;
-    std::shared_ptr<JsiWrapper> objectWrapper = _objectWrapper;
-    
-    auto context = toContext.lock();
-    if (context == nullptr) {
-      throw std::runtime_error("Cannot decorate Runtime - target context is null!");
-    }
-    context->invokeOnWorkletThread([propertyName, objectWrapper](JsiWorkletContext*, jsi::Runtime& toRuntime) {
-      // Inject the wrapped object into the target runtime's global
-      toRuntime.global().setProperty(toRuntime, propertyName.c_str(),
-                                     JsiWrapper::unwrap(toRuntime, objectWrapper));
-    });
+  void decorateRuntime(jsi::Runtime &toRuntime) override {
+    // Inject the wrapped object into the target runtime's global
+    toRuntime.global().setProperty(toRuntime, _propertyName.c_str(),
+                                   JsiWrapper::unwrap(toRuntime, _objectWrapper));
   }
 
 private:

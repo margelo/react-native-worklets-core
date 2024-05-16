@@ -33,7 +33,7 @@ export const ExpectValue = <V, T>(value: V | Promise<V>, expected: T) => {
       try {
         resolvedValue = await value;
       } catch (err) {
-        console.log("ExpectValue, failed:", err);
+        console.log("❌ ExpectValue, failed:", err);
         reject(new Error(`Expected ${expected}, got ${err}.`));
         return;
       }
@@ -46,7 +46,7 @@ export const ExpectValue = <V, T>(value: V | Promise<V>, expected: T) => {
       const message = `Expected ${JSON.stringify(
         expected
       )}, got ${JSON.stringify(resolvedValue)}.`;
-      console.log("ExpectValue, failed:", message);
+      console.log("❌ ExpectValue, failed:", message);
       reject(new Error(message));
     } else {
       resolve();
