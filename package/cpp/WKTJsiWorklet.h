@@ -353,6 +353,24 @@ private:
   double _workletHash = 0;
 };
 
+class WorkletInvoker;
+class FunctionOrWorklet {
+public:
+  FunctionOrWorklet(std::shared_ptr<jsi::Function> function): _plainFunctionOrNull(function) { }
+  FunctionOrWorklet(std::shared_ptr<WorkletInvoker> worklet): _workletFunctionOrNull(worklet) { }
+  
+  bool isPlainFunction() const { return _plainFunctionOrNull != nullptr; }
+  bool isWorkletFunction() const { return _workletFunctionOrNull != nullptr; }
+  
+  std::shared_ptr<jsi::Function> getPlainFunction() const { return _plainFunctionOrNull; }
+  std::shared_ptr<WorkletInvoker> getWorkletFunction() const { return _workletFunctionOrNull; }
+
+private:
+  std::shared_ptr<jsi::Function> _plainFunctionOrNull;
+  std::shared_ptr<WorkletInvoker> _workletFunctionOrNull;
+};
+
+
 class WorkletInvoker {
 public:
   explicit WorkletInvoker(std::shared_ptr<JsiWorklet> worklet)
@@ -371,6 +389,8 @@ public:
     return _worklet->call(_workletFunction.get(runtime), runtime, thisValue,
                           arguments, count);
   }
+
+  static FunctionOrWorklet getFunctionInvoker(jsi::Runtime& runtime, const jsi::Value& maybeFunc);
 
 private:
   RuntimeAwareCache<std::shared_ptr<jsi::Function>> _workletFunction;

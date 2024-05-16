@@ -65,8 +65,10 @@ public:
           runtime, "createRunOnJS expects a function as its first parameter.");
     }
 
-    auto caller =
-        JsiWorkletContext::createCallInContext(runtime, arguments[0], nullptr);
+    auto callInvoker = _jsCallInvoker;
+    auto caller = JsiWorkletContext::createCallOnJS(runtime, arguments[0], [callInvoker](std::function<void()>&& func) {
+      callInvoker->invokeAsync(std::move(func));
+    });
 
     // Now let us create the caller function.
     return jsi::Function::createFromHostFunction(

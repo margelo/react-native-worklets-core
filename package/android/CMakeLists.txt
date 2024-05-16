@@ -14,6 +14,7 @@ add_library(
         ../cpp/dispatch/WKTDispatchQueue.cpp
         ../cpp/wrappers/WKTJsiPromiseWrapper.cpp
         ../cpp/wrappers/WKTJsiWrapper.cpp
+        ../cpp/WKTJsiWorklet.cpp
         ../cpp/WKTJsiWorkletApi.cpp
         ../cpp/WKTJsiWorkletContext.cpp
 )

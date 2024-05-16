@@ -91,7 +91,7 @@ public:
     }
 
     auto caller =
-        JsiWorkletContext::createCallInContext(runtime, arguments[0], this);
+        JsiWorkletContext::createCallInContext(runtime, arguments[0], shared_from_this());
 
     // Now let us create the caller function.
     return jsi::Function::createFromHostFunction(
@@ -145,18 +145,30 @@ public:
                                              const jsi::Value *maybeFunc);
 
   /**
-   Calls a worklet function in a given context (or in the JS context if the ctx
-   parameter is null.
-   @param runtime Runtime for the calling context
-   @param maybeFunc Function to call - might be a worklet or might not - depends
-   on wether we call cross context or not.
-   @param ctx Context to call the function in
+   Calls a worklet function in a given Worklet Context.
+   @param runtime Runtime that is scheduling this call. If this is the same Runtime
+   as the given target Worklet Context, the function will be called immediately.
+   @param maybeFunc The function to call, must be a Worklet.
+   @param targetContext Context to call the function in
    @returns A host function type that will return a promise calling the
    maybeFunc.
    */
   static jsi::HostFunctionType createCallInContext(jsi::Runtime &runtime,
                                                    const jsi::Value &maybeFunc,
-                                                   JsiWorkletContext *ctx);
+                                                   std::shared_ptr<JsiWorkletContext> targetContext);
+        
+  /**
+   Calls a non-worklet function on the React JS context.
+   @param runtime Runtime that is scheduling this call. If this is the React JS
+   context, the function will be called immediately
+   @param maybeFunc The function to call, must not be a Worklet.
+   @param jsCallInvoker A function to schedule a call on the main React JS Runtime.
+   @returns A host function type that will return a promise calling the
+   maybeFunc.
+   */
+  static jsi::HostFunctionType createCallOnJS(jsi::Runtime& runtime,
+                                              const jsi::Value& maybeFunc,
+                                              std::function<void(std::function<void()> &&)> jsCallInvoker);
 
   /**
    Calls a worklet function in a given context (or in the JS context if the ctx
