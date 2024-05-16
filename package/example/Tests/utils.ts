@@ -54,6 +54,15 @@ export const ExpectValue = <V, T>(value: V | Promise<V>, expected: T) => {
   });
 };
 
+function isErrorLike(maybeError: unknown): maybeError is { message: string } {
+  return (
+    typeof maybeError === "object" &&
+    maybeError != null &&
+    "message" in maybeError &&
+    typeof maybeError.message === "string"
+  );
+}
+
 export const ExpectException = <T>(
   executor: (() => T) | (() => Promise<T>),
   expectedReason?: string
@@ -67,10 +76,14 @@ export const ExpectException = <T>(
       } else {
         reject(new Error("Expected error but function succeeded."));
       }
-    } catch (reason: any) {
+    } catch (reason: unknown) {
       if (expectedReason) {
-        const resolvedReason =
-          typeof reason === "object" ? reason.message : reason;
+        if (!isErrorLike(reason)) {
+          throw new Error(
+            `Unknown error type was thrown! Error does not have a .message property. ${typeof reason} (${Object.keys(reason)}) ${JSON.stringify(reason)}`
+          );
+        }
+        const resolvedReason = reason.message;
         if (resolvedReason === expectedReason) {
           resolve();
         } else {

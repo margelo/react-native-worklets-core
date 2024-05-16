@@ -139,8 +139,11 @@ std::shared_ptr<JsiPromiseWrapper> FunctionInvoker::call(jsi::Runtime& fromRunti
         // TODO: What do we do here now?
         std::string message = exception.what();
         callbackToOriginalRuntime([message, promise](jsi::Runtime& originalRuntime) {
-          jsi::JSError error(originalRuntime, message);
-          promise->reject(originalRuntime, error.value());
+          // TODO: We cannot use jsi::JSError here because we wrap it in JsiPromiseWrapper!
+          //       jsi::JSError error(originalRuntime, message);
+          jsi::Object error(originalRuntime);
+          error.setProperty(originalRuntime, "message", jsi::String::createFromUtf8(originalRuntime, message));
+          promise->reject(originalRuntime, jsi::Value(originalRuntime, error));
         });
       }
     });

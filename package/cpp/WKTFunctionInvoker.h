@@ -12,6 +12,7 @@
 #include "WKTJsiWorklet.h"
 #include "WKTJsiPromiseWrapper.h"
 #include <memory>
+#include "JSCallInvoker.h"
 
 namespace RNWorklet {
 
@@ -47,8 +48,6 @@ public:
    - If the given JSI Value is not a Function, it will throw an error.
    */
   static std::shared_ptr<FunctionInvoker> createFunctionInvoker(jsi::Runtime& runtime, const jsi::Value& maybeFunc);
-  
-  using JSCallInvoker = std::function<void(std::function<void(jsi::Runtime& targetRuntime)>&&)>;
   
   /**
    Calls the underlying function or worklet on the given worklet dispatcher.

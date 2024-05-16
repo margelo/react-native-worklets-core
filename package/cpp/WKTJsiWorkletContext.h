@@ -4,6 +4,7 @@
 #include "WKTDispatchQueue.h"
 #include "WKTJsiBaseDecorator.h"
 #include "WKTJsiHostObject.h"
+#include "JSCallInvoker.h"
 
 #include <exception>
 #include <functional>
@@ -54,6 +55,11 @@ public:
   }
 
   size_t getContextId() { return _contextId; }
+        
+  /**
+   Gets a function that can schedule calls on the current Runtime.
+   */
+  JSCallInvoker getCurrentRuntimeInvoker(jsi::Runtime& currentRuntime);
 
   /**
    Adds a C++ based global decorator.
@@ -90,8 +96,7 @@ public:
       throw jsi::JSError(runtime, "createRunAsync expects one parameter.");
     }
 
-    auto caller =
-        JsiWorkletContext::createCallInContext(runtime, arguments[0], shared_from_this());
+    auto caller = this->createCallInContext(runtime, arguments[0]);
 
     // Now let us create the caller function.
     return jsi::Function::createFromHostFunction(
@@ -141,24 +146,21 @@ public:
   void invokeOnWorkletThread(std::function<void(JsiWorkletContext *context,
                                                 jsi::Runtime &runtime)> &&fp);
 
-  static jsi::HostFunctionType createInvoker(jsi::Runtime &runtime,
-                                             const jsi::Value *maybeFunc);
-
   /**
-   Calls a worklet function in a given Worklet Context.
+   Create a function that calls a worklet function in this current Worklet Context.
+   The returned function can be called from any context.
    @param runtime Runtime that is scheduling this call. If this is the same Runtime
    as the given target Worklet Context, the function will be called immediately.
    @param maybeFunc The function to call, must be a Worklet.
-   @param targetContext Context to call the function in
    @returns A host function type that will return a promise calling the
    maybeFunc.
    */
-  static jsi::HostFunctionType createCallInContext(jsi::Runtime &runtime,
-                                                   const jsi::Value &maybeFunc,
-                                                   std::shared_ptr<JsiWorkletContext> targetContext);
+  jsi::HostFunctionType createCallInContext(jsi::Runtime &runtime,
+                                            const jsi::Value &maybeFunc);
         
   /**
-   Calls a non-worklet function on the React JS context.
+   Creates a function that calls a non-worklet function on the React JS context.
+   The returned function can be called from any context.
    @param runtime Runtime that is scheduling this call. If this is the React JS
    context, the function will be called immediately
    @param maybeFunc The function to call, must not be a Worklet.
@@ -168,19 +170,7 @@ public:
    */
   static jsi::HostFunctionType createCallOnJS(jsi::Runtime& runtime,
                                               const jsi::Value& maybeFunc,
-                                              std::function<void(std::function<void()> &&)> jsCallInvoker);
-
-  /**
-   Calls a worklet function in a given context (or in the JS context if the ctx
-   parameter is null.
-   @param runtime Runtime for the calling context
-   @param maybeFunc Function to call - might be a worklet or might not - depends
-   on wether we call cross context or not.
-   @returns A host function type that will return a promise calling the
-   maybeFunc.
-   */
-  jsi::HostFunctionType createCallInContext(jsi::Runtime &runtime,
-                                            const jsi::Value &maybeFunc);
+                                              JSCallInvoker&& jsCallInvoker);
 
 private:
   jsi::Runtime *_jsRuntime;

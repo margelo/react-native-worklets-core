@@ -16,7 +16,7 @@ NativeWorkletsModule::NativeWorkletsModule(std::shared_ptr<CallInvoker> jsInvoke
 NativeWorkletsModule::~NativeWorkletsModule() {}
 
 jsi::Object NativeWorkletsModule::createWorkletsApi(jsi::Runtime &runtime) {
-  auto worklets = std::make_shared<RNWorklet::JsiWorkletApi>(_jsCallInvoker);
+  auto worklets = std::make_shared<RNWorklet::JsiWorkletApi>(runtime, _jsCallInvoker);
   return jsi::Object::createFromHostObject(runtime, worklets);
 }
 

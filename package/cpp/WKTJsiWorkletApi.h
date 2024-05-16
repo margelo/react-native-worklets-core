@@ -24,7 +24,7 @@ using namespace facebook;
 
 class JsiWorkletApi : public JsiHostObject {
 public:
-  JsiWorkletApi(std::shared_ptr<react::CallInvoker> jsCallInvoker): _jsCallInvoker(jsCallInvoker) { }
+  JsiWorkletApi(jsi::Runtime& mainRuntime, std::shared_ptr<react::CallInvoker> jsCallInvoker): _mainRuntime(&mainRuntime), _jsCallInvoker(jsCallInvoker) { }
   
 public:
   // JSI API
@@ -65,9 +65,12 @@ public:
           runtime, "createRunOnJS expects a function as its first parameter.");
     }
 
+    auto mainRuntime = _mainRuntime;
     auto callInvoker = _jsCallInvoker;
-    auto caller = JsiWorkletContext::createCallOnJS(runtime, arguments[0], [callInvoker](std::function<void()>&& func) {
-      callInvoker->invokeAsync(std::move(func));
+    auto caller = JsiWorkletContext::createCallOnJS(runtime, arguments[0], [callInvoker, mainRuntime](std::function<void(jsi::Runtime& runtime)>&& func) {
+      callInvoker->invokeAsync([func = std::move(func), mainRuntime]() {
+        func(*mainRuntime);
+      });
     });
 
     // Now let us create the caller function.
@@ -176,6 +179,7 @@ public:
   
   
 private:
+  jsi::Runtime* _mainRuntime;
   std::shared_ptr<react::CallInvoker> _jsCallInvoker;
   std::shared_ptr<JsiWorkletContext> _defaultContext;
 };
