@@ -22,7 +22,6 @@ inline std::string tryGetFunctionName(jsi::Runtime& runtime, const jsi::Value& m
 }
 
 std::shared_ptr<FunctionInvoker> FunctionInvoker::createFunctionInvoker(jsi::Runtime &runtime, const jsi::Value &maybeFunc) {
-  
   // Ensure that we are passing a function as the param.
   if (!maybeFunc.isObject() ||
       !maybeFunc.asObject(runtime).isFunction(runtime)) [[unlikely]] {
@@ -75,6 +74,49 @@ CallingConvention getCallingConvention(JsiWorkletContext *fromContextOrNull,
       }
     }
   }
+}
+
+void FunctionInvoker::callAndForget(jsi::Runtime& fromRuntime,
+                                    const jsi::Value& thisValue,
+                                    const jsi::Value* arguments,
+                                    size_t count,
+                                    JSCallInvoker&& runOnTargetRuntime) {
+  // Start by wrapping the arguments
+  ArgumentsWrapper argsWrapper(fromRuntime, arguments, count);
+
+  // Wrap the `this` value (or undefined)
+  std::shared_ptr<JsiWrapper> thisWrapper = JsiWrapper::wrap(fromRuntime, thisValue);
+  
+  std::shared_ptr<FunctionInvoker> self = shared_from_this();
+  runOnTargetRuntime([self,
+                      thisWrapper,
+                      argsWrapper = std::move(argsWrapper)
+                     ](jsi::Runtime& targetRuntime) {
+    // Now we are on the target Runtime, let's unwrap all arguments and extract them into this target Runtime.
+    auto unwrappedThis = thisWrapper->unwrap(targetRuntime);
+    auto args = argsWrapper.getArguments(targetRuntime);
+    
+    try {
+      // Call the actual function or worklet
+      if (self->isWorkletFunction()) {
+        // It's a Worklet, so we need to inject the captured values and call it as a Worklet
+        auto workletInvoker = self->_workletFunctionOrNull;
+        workletInvoker->call(targetRuntime, unwrappedThis, ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+      } else {
+        // It's a normal JS func, so we just call it.
+        auto plainFunction = self->_plainFunctionOrNull;
+        if (unwrappedThis.isObject()) {
+          // ...with `this`
+          plainFunction->callWithThis(targetRuntime, unwrappedThis.asObject(targetRuntime), ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+        } else {
+          // ...without `this`
+          plainFunction->call(targetRuntime, ArgumentsWrapper::toArgs(args), argsWrapper.getCount());
+        }
+      }
+    } catch (...) {
+      // ignore errors.
+    }
+  });
 }
 
 std::shared_ptr<JsiPromiseWrapper> FunctionInvoker::call(jsi::Runtime& fromRuntime,

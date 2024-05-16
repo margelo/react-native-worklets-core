@@ -50,6 +50,15 @@ public:
   static std::shared_ptr<FunctionInvoker> createFunctionInvoker(jsi::Runtime& runtime, const jsi::Value& maybeFunc);
   
   /**
+   Calls the underlying function or worklet on the given worklet dispatcher without creating an awaitable Promise.
+   */
+  void callAndForget(jsi::Runtime& fromRuntime,
+                     const jsi::Value& thisValue,
+                     const jsi::Value* arguments,
+                     size_t count,
+                     JSCallInvoker&& runOnTargetRuntime);
+  
+  /**
    Calls the underlying function or worklet on the given worklet dispatcher.
    */
   std::shared_ptr<JsiPromiseWrapper> call(jsi::Runtime& fromRuntime,

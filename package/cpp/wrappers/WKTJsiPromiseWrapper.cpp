@@ -54,7 +54,7 @@ void JsiPromiseWrapper::runComputation(jsi::Runtime &runtime,
  */
 bool JsiPromiseWrapper::isThenable(jsi::Runtime &runtime, jsi::Object &obj) {
   auto then = obj.getProperty(runtime, ThenPropName);
-  if (then.isObject() && then.asObject(runtime).isFunction(runtime)) {
+  if (then.isObject() && then.getObject(runtime).isFunction(runtime)) {
     return true;
   }
   return false;
@@ -65,14 +65,12 @@ bool JsiPromiseWrapper::isThenable(jsi::Runtime &runtime, jsi::Object &obj) {
  function. Which is basically what a promise is.
  */
 bool JsiPromiseWrapper::isThenable(jsi::Runtime &runtime, jsi::Value &value) {
-  if (value.isObject()) {
-    auto then = value.asObject(runtime).getProperty(runtime, ThenPropName);
-    if (then.isObject() && then.asObject(runtime).isFunction(runtime)) {
-      return true;
-    }
+  if (!value.isObject()) [[unlikely]] {
     return false;
   }
-  return false;
+  
+  jsi::Object object = value.getObject(runtime);
+  return JsiPromiseWrapper::isThenable(runtime, object);
 }
 
 /**
