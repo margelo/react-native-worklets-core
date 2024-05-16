@@ -171,6 +171,9 @@ public:
   static jsi::HostFunctionType createCallOnJS(jsi::Runtime& runtime,
                                               const jsi::Value& maybeFunc,
                                               JSCallInvoker&& jsCallInvoker);
+        
+  static jsi::HostFunctionType createInvoker(jsi::Runtime &runtime,
+                                             const jsi::Value *maybeFunc);
 
 private:
   jsi::Runtime *_jsRuntime;

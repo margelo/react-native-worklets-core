@@ -261,4 +261,45 @@ jsi::HostFunctionType JsiWorkletContext::createCallInContext(jsi::Runtime &runti
   };
 }
 
+
+
+jsi::HostFunctionType
+JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
+                                 const jsi::Value *maybeFunc) {
+  auto rtPtr = &runtime;
+  auto ctx = JsiWorkletContext::getCurrent(runtime);
+
+  // Create host function
+  return [rtPtr, ctx,
+          func = std::make_shared<jsi::Function>(
+              maybeFunc->asObject(runtime).asFunction(runtime))](
+             jsi::Runtime &runtime, const jsi::Value &thisValue,
+             const jsi::Value *arguments, size_t count) {
+    // If we are in the same context let's just call the function directly
+    if (&runtime == rtPtr) {
+      return func->call(runtime, arguments, count);
+    }
+
+    // We're about to cross contexts and will need to wrap args
+    auto thisWrapper = JsiWrapper::wrap(runtime, thisValue);
+    ArgumentsWrapper argsWrapper(runtime, arguments, count);
+
+    // We are on a worklet thread
+    if (ctx == nullptr) {
+      throw std::runtime_error("Failed to create Worklet invoker - this Runtime does not have a Worklet Context!");
+    }
+    ctx->invokeOnWorkletThread(
+        [argsWrapper, rtPtr, func = std::move(func)](JsiWorkletContext *,
+                                   jsi::Runtime &runtime) mutable {
+          assert(&runtime == rtPtr && "Expected same runtime ptr!");
+          auto args = argsWrapper.getArguments(runtime);
+          func->call(runtime, ArgumentsWrapper::toArgs(args),
+                     argsWrapper.getCount());
+          func = nullptr;
+        });
+
+    return jsi::Value::undefined();
+  };
+}
+
 } // namespace RNWorklet

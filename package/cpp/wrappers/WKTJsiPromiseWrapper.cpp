@@ -105,8 +105,7 @@ jsi::Value JsiPromiseWrapper::then(jsi::Runtime &runtime,
   jsi::HostFunctionType thenHostFn;
   if (thenFn && thenFn->isObject() &&
       thenFn->asObject(runtime).isFunction(runtime)) {
-    throw std::runtime_error("PromiseWrapper: Custom .then(..) functions are not yet supported!");
-    // thenHostFn = JsiWorkletContext::createInvoker(runtime, thenFn);
+    thenHostFn = JsiWorkletContext::createInvoker(runtime, thenFn);
   } else {
     thenHostFn = JSI_HOST_FUNCTION_LAMBDA {
       return JsiWrapper::wrap(runtime, arguments[0], nullptr,
@@ -118,8 +117,7 @@ jsi::Value JsiPromiseWrapper::then(jsi::Runtime &runtime,
   jsi::HostFunctionType catchHostFn;
   if (catchFn && catchFn->isObject() &&
       catchFn->asObject(runtime).isFunction(runtime)) {
-    throw std::runtime_error("PromiseWrapper: Custom .catch(..) functions are not yet supported!");
-    // catchHostFn = JsiWorkletContext::createInvoker(runtime, catchFn);
+    catchHostFn = JsiWorkletContext::createInvoker(runtime, catchFn);
   }
 
   auto thisWrapper = JsiWrapper::wrap(runtime, thisValue, nullptr,
@@ -159,8 +157,7 @@ jsi::Value JsiPromiseWrapper::finally(jsi::Runtime &runtime,
 
   if (sideEffectFn && sideEffectFn->isObject() &&
       sideEffectFn->asObject(runtime).isFunction(runtime)) {
-    throw std::runtime_error("PromiseWrapper: Custom side effect functions are not yet supported!");
-    // sideEffectHostFn = JsiWorkletContext::createInvoker(runtime, sideEffectFn);
+    sideEffectHostFn = JsiWorkletContext::createInvoker(runtime, sideEffectFn);
   }
 
   if (_state != PromiseState::Pending) {
