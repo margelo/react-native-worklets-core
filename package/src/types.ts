@@ -168,7 +168,7 @@ export interface IWorkletNativeApi {
   /**
    * Get the current Worklet context, or `undefined` if called in main React JS context.
    */
-  currentContext: IWorkletContext | undefined;
+  currentContext: IWorkletContext;
   /**
    * Returns true if jsi/cpp believes that the passed value is an array.
    */

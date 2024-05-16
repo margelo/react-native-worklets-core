@@ -10,6 +10,7 @@
 
 #include "WKTJsiHostObject.h"
 #include "WKTJsiJsDecorator.h"
+#include "WKTJsiPromiseWrapper.h"
 #include "WKTJsiSharedValue.h"
 #include "WKTJsiWorklet.h"
 #include "WKTJsiWorkletContext.h"
