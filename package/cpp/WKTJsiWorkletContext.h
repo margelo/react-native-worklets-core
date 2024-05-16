@@ -172,10 +172,15 @@ public:
 
   // Resolve type of call we're about to do
   typedef enum {
+    // Main React JS -> Main React JS, no Thread hop.
     JsToJs = 0,
+    // Context A -> Main React JS, requires Thread hop.
     CtxToJs = 1,
+    // Context A -> Context A, no Thread hop.
     WithinCtx = 2,
+    // Context A -> Context B, requires Thread hop.
     CtxToCtx = 3,
+    // Main React JS -> Context A, requires Thread hop.
     JsToCtx = 4
   } CallingConvention;
 
