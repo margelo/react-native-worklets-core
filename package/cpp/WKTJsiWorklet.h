@@ -359,6 +359,8 @@ public:
       : _worklet(worklet) {}
   WorkletInvoker(jsi::Runtime &runtime, const jsi::Value &value)
       : WorkletInvoker(std::make_shared<JsiWorklet>(runtime, value)) {}
+  WorkletInvoker(jsi::Runtime &runtime, std::shared_ptr<jsi::Function> func)
+      : WorkletInvoker(std::make_shared<JsiWorklet>(runtime, func)) {}
 
   jsi::Value call(jsi::Runtime &runtime, const jsi::Value &thisValue,
                   const jsi::Value *arguments, size_t count) {
