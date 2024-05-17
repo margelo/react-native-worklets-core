@@ -14,7 +14,8 @@
 // CMake include on Android
 #include <RNWorkletsSpecJSI.h>
 #else
-#error "Cannot find react-native-worklets-core spec! Try cleaning your cache and re-running CodeGen!"
+#error                                                                         \
+    "Cannot find react-native-worklets-core spec! Try cleaning your cache and re-running CodeGen!"
 #endif
 
 #include <memory>
