@@ -2,6 +2,9 @@ name: Setup
 description: Setup Node.js and install dependencies
 
 runs:
+  defaults:
+    run:
+      working-directory: package
   using: composite
   steps:
     - name: Setup Node.js
