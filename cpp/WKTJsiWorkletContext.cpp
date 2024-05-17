@@ -149,7 +149,14 @@ void JsiWorkletContext::invokeOnWorkletThread(
     if (self) {
       auto callingCtx = getCurrent(*self->_jsRuntime);
       auto convention = getCallingConvention(callingCtx, self.get());
+
+#ifdef ANDROID
+      facebook::jni::ThreadScope::WithClassLoader([fp = std::move(fp), self]() {
+        fp(self.get(), self->getWorkletRuntime(), convention);
+      });
+#else
       fp(self.get(), self->getWorkletRuntime(), convention);
+#endif
     }
   });
 }
