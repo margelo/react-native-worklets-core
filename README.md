@@ -1,5 +1,9 @@
 <a href="https://margelo.io">
-  <img src="./img/banner.svg" width="100%" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./img/bg-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./img/bg-light.png" />
+    <img alt="Worklets" src="./img/bg-light.png" />
+  </picture>
 </a>
 
 # 🧵 react-native-worklets-core
