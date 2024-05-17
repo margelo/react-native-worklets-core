@@ -14,8 +14,10 @@
 // CMake include on Android
 #include <RNWorkletsSpecJSI.h>
 #else
-#error Cannot find react-native-worklets-core spec! Try cleaning your cache and re-running CodeGen!
+#error "Cannot find react-native-worklets-core spec! Try cleaning your cache and re-running CodeGen!"
 #endif
+
+#include <memory>
 
 namespace facebook::react {
 
@@ -23,7 +25,7 @@ namespace facebook::react {
 class NativeWorkletsModule
     : public NativeWorkletsCxxSpec<NativeWorkletsModule> {
 public:
-  NativeWorkletsModule(std::shared_ptr<CallInvoker> jsInvoker);
+  explicit NativeWorkletsModule(std::shared_ptr<CallInvoker> jsInvoker);
   ~NativeWorkletsModule();
 
   jsi::Object createWorkletsApi(jsi::Runtime &runtime);

@@ -8,6 +8,8 @@
 #include "NativeWorkletsModule.h"
 #include "WKTJsiWorkletApi.h"
 #include "WKTJsiWorkletContext.h"
+#include <memory>
+#include <utility>
 
 namespace facebook::react {
 
