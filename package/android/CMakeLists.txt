@@ -33,11 +33,16 @@ target_include_directories(
 
 # Add Hermes (from com.facebook.react:hermes-android)
 find_package(hermes-engine REQUIRED CONFIG)
+# Add React core libraries (JSI, ...)
+find_package(ReactAndroid REQUIRED CONFIG)
+# Add fbjni (from React core)
+find_package(fbjni REQUIRED CONFIG)
 
 # Link everything together
 target_link_libraries(
         ${PACKAGE_NAME}
         ReactAndroid::jsi               # <-- JSI core
+        fbjni::fbjni                    # <-- fbjni
         react_codegen_RNWorkletsSpec    # <-- Generated Specs from CodeGen
         hermes-engine::libhermes        # <-- Hermes Prefab
 )
