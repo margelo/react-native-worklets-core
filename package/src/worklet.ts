@@ -26,7 +26,7 @@ export function isWorklet<TFunc extends Function>(
   if (initData == null || typeof initData !== "object") return false;
 
   if (
-    typeof initData.__sourceMap !== "string" ||
+    typeof initData.sourceMap !== "string" ||
     typeof initData.code !== "string" ||
     typeof initData.location !== "string"
   )
