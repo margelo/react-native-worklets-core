@@ -1,4 +1,4 @@
-package com.workletsexample
+package com.margelo.workletsexample
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

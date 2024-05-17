@@ -16,10 +16,20 @@ add_library(
         ../cpp/wrappers/WKTJsiWrapper.cpp
         ../cpp/WKTJsiWorkletApi.cpp
         ../cpp/WKTJsiWorkletContext.cpp
-)
+        ../cpp/NativeWorkletsModule.cpp
+        )
 
 # Add headers search paths
-target_include_directories(${PACKAGE_NAME} PUBLIC ../cpp)
+target_include_directories(
+  ${PACKAGE_NAME}
+  PUBLIC
+  ../cpp
+  ../cpp/base
+  ../cpp/decorators
+  ../cpp/dispatch
+  ../cpp/sharedvalues
+  ../cpp/wrappers
+)
 
 # Add Hermes (from com.facebook.react:hermes-android)
 find_package(hermes-engine REQUIRED CONFIG)

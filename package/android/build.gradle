@@ -21,7 +21,7 @@ def getExtOrIntegerDefault(name) {
 }
 
 android {
-  namespace "com.worklets"
+  namespace "com.margelo.worklets"
 
   ndkVersion getExtOrDefault("ndkVersion")
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
@@ -90,5 +90,5 @@ dependencies {
 react {
   jsRootDir = file("../src/")
   libraryName = "Worklets"
-  codegenJavaPackageName = "com.worklets"
+  codegenJavaPackageName = "com.margelo.worklets"
 }

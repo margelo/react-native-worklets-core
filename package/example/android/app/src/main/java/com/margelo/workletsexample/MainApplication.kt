@@ -1,4 +1,4 @@
-package com.workletsexample
+package com.margelo.workletsexample
 
 import android.app.Application
 import com.facebook.react.PackageList
