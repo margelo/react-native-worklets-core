@@ -18,7 +18,8 @@
   facebook::react::registerCxxModuleToGlobalModuleMap(
       std::string(facebook::react::NativeWorkletsModule::kModuleName),
       [&](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
-        return std::make_shared<facebook::react::NativeWorkletsModule>(jsInvoker);
+        return std::make_shared<facebook::react::NativeWorkletsModule>(
+            jsInvoker);
       });
 }
 

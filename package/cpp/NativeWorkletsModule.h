@@ -20,12 +20,13 @@
 namespace facebook::react {
 
 // The TurboModule itself
-class NativeWorkletsModule : public NativeWorkletsCxxSpec<NativeWorkletsModule> {
+class NativeWorkletsModule
+    : public NativeWorkletsCxxSpec<NativeWorkletsModule> {
 public:
   NativeWorkletsModule(std::shared_ptr<CallInvoker> jsInvoker);
   ~NativeWorkletsModule();
 
-  jsi::Object createWorkletsApi(jsi::Runtime& runtime);
+  jsi::Object createWorkletsApi(jsi::Runtime &runtime);
 
 private:
   std::shared_ptr<CallInvoker> _jsCallInvoker;

@@ -121,7 +121,8 @@ public:
     std::unique_lock lock(_readWriteMutex);
 
     auto nameStr = name.utf8(runtime);
-    _properties[nameStr] = JsiWrapper::wrap(runtime, value, this, getUseProxiesForUnwrapping());
+    _properties[nameStr] =
+        JsiWrapper::wrap(runtime, value, this, getUseProxiesForUnwrapping());
   }
 
   /**
