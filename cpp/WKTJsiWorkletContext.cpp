@@ -137,7 +137,8 @@ void JsiWorkletContext::invokeOnJsThread(
 }
 
 void JsiWorkletContext::invokeOnWorkletThread(
-    std::function<void(JsiWorkletContext *context, jsi::Runtime &runtime)>
+    std::function<void(JsiWorkletContext *context, jsi::Runtime &runtime,
+                       CallingConvention convention)>
         &&fp) {
   if (_workletCallInvoker == nullptr) {
     throw std::runtime_error(
@@ -146,13 +147,9 @@ void JsiWorkletContext::invokeOnWorkletThread(
   _workletCallInvoker([fp = std::move(fp), weakSelf = weak_from_this()]() {
     auto self = weakSelf.lock();
     if (self) {
-#ifdef ANDROID
-      facebook::jni::ThreadScope::WithClassLoader([fp = std::move(fp), self]() {
-        fp(self.get(), self->getWorkletRuntime());
-      });
-#else
-      fp(self.get(), self->getWorkletRuntime());
-#endif
+      auto callingCtx = getCurrent(*self->_jsRuntime);
+      auto convention = getCallingConvention(callingCtx, self.get());
+      fp(self.get(), self->getWorkletRuntime(), convention);
     }
   });
 }
@@ -460,26 +457,27 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
 JsiWorkletContext::CallingConvention
 JsiWorkletContext::getCallingConvention(JsiWorkletContext *fromContext,
                                         JsiWorkletContext *toContext) {
-
   if (toContext == nullptr) {
-    // Calling into JS
+    // Calling into JavaScript
     if (fromContext == nullptr) {
-      // Calling from JS
+      // Calling from JavaScript
       return CallingConvention::JsToJs;
     } else {
       // Calling from a context
       return CallingConvention::CtxToJs;
     }
   } else {
-    // Calling into another ctx
+    // Calling into another context
     if (fromContext == nullptr) {
-      // Calling from Js
+      // Calling from JavaScript
       return CallingConvention::JsToCtx;
     } else {
-      // Calling from Ctx
+      // Calling from a context
       if (fromContext == toContext) {
+        // Within the same context
         return CallingConvention::WithinCtx;
       } else {
+        // Calling into another context
         return CallingConvention::CtxToCtx;
       }
     }
