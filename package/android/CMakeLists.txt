@@ -43,7 +43,6 @@ target_link_libraries(
         ${PACKAGE_NAME}
         ReactAndroid::jsi               # <-- JSI core
         fbjni::fbjni                    # <-- fbjni
-        react_codegen_RNWorkletsSpec    # <-- Generated Specs from CodeGen
         hermes-engine::libhermes        # <-- Hermes Prefab
 )
 
@@ -54,3 +53,9 @@ if(${HERMES_ENABLE_DEBUGGER})
     ReactAndroid::hermes_executor
   )
 endif()
+
+# Add the CodeGen-geneated spec project (android/build/generated/jni/...)
+if (TARGET react_codegen_RNWorkletsSpec)
+  target_include_directories(react_codegen_RNWorkletsSpec PUBLIC .)
+  target_link_libraries(${PACKAGE_NAME} react_codegen_RNWorkletsSpec)
+endif ()
