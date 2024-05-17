@@ -5,7 +5,6 @@
 
 #include "WKTJsiBaseDecorator.h"
 #include "WKTJsiWrapper.h"
-#include "WKTJsiWorkletContext.h"
 #include <jsi/jsi.h>
 
 namespace RNWorklet {
@@ -16,16 +15,14 @@ class JsiJsDecorator : public JsiBaseDecorator {
 public:
   JsiJsDecorator(jsi::Runtime &runtime, const std::string &propertyName,
                  const jsi::Value &value) {
-    // Capture the object on the current runtime and wrap it
     _objectWrapper = JsiWrapper::wrap(runtime, value.asObject(runtime));
     _propertyName = propertyName;
   }
-  
-  void decorateRuntime(jsi::Runtime &toRuntime) override {
-    // Inject the wrapped object into the target runtime's global
-    toRuntime.global().setProperty(toRuntime, _propertyName.c_str(),
-                                   JsiWrapper::unwrap(toRuntime, _objectWrapper));
-  }
+
+  void decorateRuntime(jsi::Runtime &runtime) override {
+    runtime.global().setProperty(runtime, _propertyName.c_str(),
+                                 JsiWrapper::unwrap(runtime, _objectWrapper));
+  };
 
 private:
   std::shared_ptr<JsiWrapper> _objectWrapper;

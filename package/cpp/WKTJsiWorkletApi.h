@@ -16,18 +16,12 @@
 #include "WKTJsiWorkletContext.h"
 #include "WKTJsiWrapper.h"
 
-#include <ReactCommon/CallInvoker.h>
-
 namespace RNWorklet {
 
-using namespace facebook;
+namespace jsi = facebook::jsi;
 
 class JsiWorkletApi : public JsiHostObject {
 public:
-  JsiWorkletApi(jsi::Runtime& mainRuntime, std::shared_ptr<react::CallInvoker> jsCallInvoker): _mainRuntime(&mainRuntime), _jsCallInvoker(jsCallInvoker) { }
-  
-public:
-  // JSI API
   JSI_HOST_FUNCTION(createContext) {
     if (count == 0) {
       throw jsi::JSError(
@@ -40,13 +34,15 @@ public:
                          "parameter as a string.");
     }
 
-    std::string nameStr = arguments[0].asString(runtime).utf8(runtime);
-    std::shared_ptr<JsiWorkletContext> context = createWorkletContext(runtime, nameStr);
-    return jsi::Object::createFromHostObject(runtime, context);
+    auto nameStr = arguments[0].asString(runtime).utf8(runtime);
+    return jsi::Object::createFromHostObject(runtime,
+                                             createWorkletContext(nameStr));
   };
 
   JSI_HOST_FUNCTION(createSharedValue) {
-    return jsi::Object::createFromHostObject(runtime, std::make_shared<JsiSharedValue>(runtime, arguments[0]));
+    return jsi::Object::createFromHostObject(
+        *JsiWorkletContext::getDefaultInstance()->getJsRuntime(),
+        std::make_shared<JsiSharedValue>(arguments[0]));
   };
 
   JSI_HOST_FUNCTION(createRunOnJS) {
@@ -65,13 +61,8 @@ public:
           runtime, "createRunOnJS expects a function as its first parameter.");
     }
 
-    auto mainRuntime = _mainRuntime;
-    auto callInvoker = _jsCallInvoker;
-    auto caller = JsiWorkletContext::createCallOnJS(runtime, arguments[0], [callInvoker, mainRuntime](std::function<void(jsi::Runtime& runtime)>&& func) {
-      callInvoker->invokeAsync([func = std::move(func), mainRuntime]() {
-        func(*mainRuntime);
-      });
-    });
+    auto caller =
+        JsiWorkletContext::createCallInContext(runtime, arguments[0], nullptr);
 
     // Now let us create the caller function.
     return jsi::Function::createFromHostFunction(
@@ -150,10 +141,8 @@ public:
                        JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_object))
 
   JSI_PROPERTY_GET(defaultContext) {
-    if (_defaultContext == nullptr) {
-      _defaultContext = createWorkletContext(runtime, "default");
-    }
-    return jsi::Object::createFromHostObject(runtime, _defaultContext);
+    return jsi::Object::createFromHostObject(
+        runtime, JsiWorkletContext::getDefaultInstanceAsShared());
   }
 
   JSI_PROPERTY_GET(currentContext) {
@@ -175,12 +164,6 @@ public:
    @returns A new worklet context that has been initialized and decorated.
    */
   std::shared_ptr<JsiWorkletContext>
-  createWorkletContext(jsi::Runtime& runtime, const std::string &name);
-  
-  
-private:
-  jsi::Runtime* _mainRuntime;
-  std::shared_ptr<react::CallInvoker> _jsCallInvoker;
-  std::shared_ptr<JsiWorkletContext> _defaultContext;
+  createWorkletContext(const std::string &name);
 };
 } // namespace RNWorklet

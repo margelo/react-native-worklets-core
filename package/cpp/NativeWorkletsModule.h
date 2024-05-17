@@ -26,9 +26,6 @@ public:
   ~NativeWorkletsModule();
 
   jsi::Object createWorkletsApi(jsi::Runtime& runtime);
-  
-private:
-  std::shared_ptr<CallInvoker> _jsCallInvoker;
 };
 
 } // namespace facebook::react

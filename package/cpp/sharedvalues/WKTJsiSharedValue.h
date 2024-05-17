@@ -20,8 +20,10 @@ public:
    Constructs a shared value - which is a wrapped value that can be accessed in
    a thread safe across two javascript runtimes.
    */
-  explicit JsiSharedValue(jsi::Runtime& runtime, const jsi::Value &value)
-      : _valueWrapper(JsiWrapper::wrap(runtime, value, nullptr, true)) {}
+  explicit JsiSharedValue(const jsi::Value &value)
+      : _valueWrapper(JsiWrapper::wrap(
+            *JsiWorkletContext::getDefaultInstance()->getJsRuntime(), value,
+            nullptr, true)) {}
 
   /**
     Destructor
@@ -76,11 +78,7 @@ public:
     auto dispatcher = JsiDispatcher::createDispatcher(
         runtime, thisValuePtr, functionPtr, nullptr,
         [&runtime, this](const char *err) {
-          auto context = JsiWorkletContext::getCurrent(runtime);
-          if (context == nullptr) {
-            throw std::runtime_error("Failed to add a Shared Value listener - this Runtime does not have a Worklet Context!");
-          }
-          context->invokeOnJsThread(
+          JsiWorkletContext::getCurrent(runtime)->invokeOnJsThread(
               [err](jsi::Runtime &runtime) {
                 throw jsi::JSError(runtime, err);
               });

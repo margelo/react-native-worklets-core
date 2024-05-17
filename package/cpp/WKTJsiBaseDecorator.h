@@ -1,29 +1,22 @@
 #pragma once
 
 #include <jsi/jsi.h>
-#include <memory>
 
 namespace RNWorklet {
-
-class JsiWorkletContext;
 
 namespace jsi = facebook::jsi;
 
 class JsiBaseDecorator {
 public:
-  
   /**
-   Initializes the Decorator with the given Runtime.
-   For decorators that call back to the main JS runtime, this pulls values from the given fromRuntime.
-   This needs to be called on the given source Runtime's Thread.
+   Initializes the decorator on the JS thread with the JS runtime
    */
-  virtual void initialize(jsi::Runtime& fromRuntime) { }
+  virtual void initialize(jsi::Runtime &runtime) {}
+
   /**
-   Decorates the given Runtime.
-   This needs to be called on the given target Runtime's Thread.
+   Called on the context's worklet thread, the runtime is the worklet runtime
    */
-  virtual void decorateRuntime(jsi::Runtime &toRuntime) = 0;
-  
+  virtual void decorateRuntime(jsi::Runtime &runtime) = 0;
   virtual ~JsiBaseDecorator() {}
 };
 } // namespace RNWorklet

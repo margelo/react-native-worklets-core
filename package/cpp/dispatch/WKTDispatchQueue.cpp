@@ -2,10 +2,6 @@
 
 #include <utility>
 
-#ifdef ANDROID
-#include <fbjni/fbjni.h>
-#endif
-
 namespace RNWorklet {
 
 DispatchQueue::~DispatchQueue() {
@@ -62,16 +58,7 @@ void DispatchQueue::dispatch_thread_handler(void) {
 
       {
         auto opCopyThatWillBeDestroyedBeforeWeGetLock = std::move(op);
-        
-    #ifdef ANDROID
-        // On Android, we use an fbjni Thread Scope to be able to access Java Methods within our Thread's context
-          facebook::jni::ThreadScope::WithClassLoader([opCopyThatWillBeDestroyedBeforeWeGetLock = std::move(opCopyThatWillBeDestroyedBeforeWeGetLock)]() {
-            opCopyThatWillBeDestroyedBeforeWeGetLock();
-          });
-    #else
-        // If not on Android, we just call the function directly.
         opCopyThatWillBeDestroyedBeforeWeGetLock();
-    #endif
       }
 
       lock.lock();

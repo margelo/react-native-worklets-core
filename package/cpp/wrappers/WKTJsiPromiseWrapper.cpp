@@ -3,7 +3,6 @@
 #include "WKTArgumentsWrapper.h"
 #include "WKTJsiObjectWrapper.h"
 #include "WKTJsiWorkletContext.h"
-#include "WKTFunctionInvoker.h"
 
 #include <utility>
 
@@ -23,6 +22,9 @@ std::shared_ptr<JsiPromiseWrapper> JsiPromiseWrapper::createPromiseWrapper(
 void JsiPromiseWrapper::runComputation(jsi::Runtime &runtime,
                                        PromiseComputationFunction computation) {
   // Run the compute function to start resolving the promise
+  auto resolve = std::bind(&JsiPromiseWrapper::onFulfilled, this,
+                           std::placeholders::_1, std::placeholders::_2);
+
   auto reject = std::bind(&JsiPromiseWrapper::onRejected, this,
                           std::placeholders::_1, std::placeholders::_2);
   try {
@@ -54,7 +56,7 @@ void JsiPromiseWrapper::runComputation(jsi::Runtime &runtime,
  */
 bool JsiPromiseWrapper::isThenable(jsi::Runtime &runtime, jsi::Object &obj) {
   auto then = obj.getProperty(runtime, ThenPropName);
-  if (then.isObject() && then.getObject(runtime).isFunction(runtime)) {
+  if (then.isObject() && then.asObject(runtime).isFunction(runtime)) {
     return true;
   }
   return false;
@@ -65,12 +67,14 @@ bool JsiPromiseWrapper::isThenable(jsi::Runtime &runtime, jsi::Object &obj) {
  function. Which is basically what a promise is.
  */
 bool JsiPromiseWrapper::isThenable(jsi::Runtime &runtime, jsi::Value &value) {
-  if (!value.isObject()) [[unlikely]] {
+  if (value.isObject()) {
+    auto then = value.asObject(runtime).getProperty(runtime, ThenPropName);
+    if (then.isObject() && then.asObject(runtime).isFunction(runtime)) {
+      return true;
+    }
     return false;
   }
-  
-  jsi::Object object = value.getObject(runtime);
-  return JsiPromiseWrapper::isThenable(runtime, object);
+  return false;
 }
 
 /**
@@ -198,9 +202,6 @@ void JsiPromiseWrapper::setValue(jsi::Runtime &runtime,
   auto obj = value.asObject(runtime);
 
   auto callingContext = JsiWorkletContext::getCurrent(runtime);
-  if (callingContext == nullptr) {
-    throw std::runtime_error("Failed to set value from a JS Promise - this Runtime does not have a Worklet Context!");
-  }
 
   auto maybeThenFunc = obj.getProperty(runtime, ThenPropName);
   if (!maybeThenFunc.isObject() ||

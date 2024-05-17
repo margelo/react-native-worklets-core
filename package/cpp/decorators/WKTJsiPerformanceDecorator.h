@@ -35,11 +35,11 @@ public:
  */
 class JsiPerformanceDecorator : public JsiBaseDecorator {
 public:
-  void decorateRuntime(jsi::Runtime &toRuntime) override {
+  void decorateRuntime(jsi::Runtime &runtime) override {
     auto performanceObj = std::make_shared<JsiPerformanceImpl>();
-    // Inject the wrapped object into the target runtime's global
-    toRuntime.global().setProperty(toRuntime, PropNamePerformance,
-                                   jsi::Object::createFromHostObject(toRuntime, performanceObj));
+    runtime.global().setProperty(
+        runtime, PropNamePerformance,
+        jsi::Object::createFromHostObject(runtime, performanceObj));
   };
 };
 } // namespace RNWorklet

@@ -33,7 +33,7 @@ export const ExpectValue = <V, T>(value: V | Promise<V>, expected: T) => {
       try {
         resolvedValue = await value;
       } catch (err) {
-        console.log("❌ ExpectValue, failed:", err);
+        console.log("ExpectValue, failed:", err);
         reject(new Error(`Expected ${expected}, got ${err}.`));
         return;
       }
@@ -46,22 +46,13 @@ export const ExpectValue = <V, T>(value: V | Promise<V>, expected: T) => {
       const message = `Expected ${JSON.stringify(
         expected
       )}, got ${JSON.stringify(resolvedValue)}.`;
-      console.log("❌ ExpectValue, failed:", message);
+      console.log("ExpectValue, failed:", message);
       reject(new Error(message));
     } else {
       resolve();
     }
   });
 };
-
-function isErrorLike(maybeError: unknown): maybeError is { message: string } {
-  return (
-    typeof maybeError === "object" &&
-    maybeError != null &&
-    "message" in maybeError &&
-    typeof maybeError.message === "string"
-  );
-}
 
 export const ExpectException = <T>(
   executor: (() => T) | (() => Promise<T>),
@@ -76,14 +67,10 @@ export const ExpectException = <T>(
       } else {
         reject(new Error("Expected error but function succeeded."));
       }
-    } catch (reason: unknown) {
+    } catch (reason: any) {
       if (expectedReason) {
-        if (!isErrorLike(reason)) {
-          throw new Error(
-            `Unknown error type was thrown! Error does not have a .message property. ${typeof reason} (${Object.keys(reason)}) ${JSON.stringify(reason)}`
-          );
-        }
-        const resolvedReason = reason.message;
+        const resolvedReason =
+          typeof reason === "object" ? reason.message : reason;
         if (resolvedReason === expectedReason) {
           resolve();
         } else {
