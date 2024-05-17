@@ -32,6 +32,13 @@ function getFrameworkType(): "react-native" | "expo" | "expo-go" {
 
 export class ModuleNotFoundError extends Error {
   constructor(cause?: unknown) {
+    const errorCause =
+      cause instanceof Error
+        ? cause
+        : new Error(
+            `Unknown cause! ${typeof cause === "object" ? JSON.stringify(cause) : cause}`
+          );
+
     // TurboModule not found, something went wrong!
     if (global.__turboModuleProxy == null) {
       // TurboModules are not available/new arch is not enabled.
@@ -47,7 +54,7 @@ export class ModuleNotFoundError extends Error {
         "Enable the new architecture in your app to use react-native-worklets-core 2.x.x. (See https://github.com/reactwg/react-native-new-architecture/blob/main/docs/enable-apps.md)"
       );
       const error = messageWithSuggestions(message, suggestions);
-      super(error, { cause: cause });
+      super(error, { cause: errorCause });
       return;
     }
 
@@ -93,6 +100,6 @@ export class ModuleNotFoundError extends Error {
     }
 
     const error = messageWithSuggestions(message, suggestions);
-    super(error, { cause: cause });
+    super(error, { cause: errorCause });
   }
 }
