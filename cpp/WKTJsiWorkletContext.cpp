@@ -161,6 +161,17 @@ void JsiWorkletContext::invokeOnWorkletThread(
   });
 }
 
+// Old implementation remains as is and
+// Overload new function
+void JsiWorkletContext::invokeOnWorkletThread(
+    std::function<void(JsiWorkletContext *context, jsi::Runtime &runtime)>
+        &&fp) {
+  // Delegate to the main function with default convention
+  invokeOnWorkletThread([fp = std::move(fp)](JsiWorkletContext *context, jsi::Runtime &runtime, CallingConvention::WithinCtx) {
+    fp(context, runtime);
+  });
+}
+
 void JsiWorkletContext::addDecorator(
     std::shared_ptr<JsiBaseDecorator> decorator) {
   std::mutex mu;
