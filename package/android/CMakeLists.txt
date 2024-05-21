@@ -46,11 +46,3 @@ target_link_libraries(
         react_codegen_RNWorkletsSpec    # <-- Generated Specs from CodeGen
         hermes-engine::libhermes        # <-- Hermes Prefab
 )
-
-# Add Hermes Debugger if enabled in Gradle CMake options
-if(${HERMES_ENABLE_DEBUGGER})
-  target_link_libraries(
-    ${PACKAGE_NAME}
-    ReactAndroid::hermes_executor
-  )
-endif()
