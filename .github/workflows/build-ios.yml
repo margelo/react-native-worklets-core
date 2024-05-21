@@ -6,57 +6,57 @@ on:
       - main
     paths:
       - '.github/workflows/build-ios.yml'
-      - 'package/ios/**'
       - 'package/cpp/**'
+      - 'package/ios/**'
       - 'package/*.podspec'
       - 'package/example/ios/**'
   pull_request:
     paths:
       - '.github/workflows/build-ios.yml'
-      - 'package/ios/**'
       - 'package/cpp/**'
+      - 'package/ios/**'
       - 'package/*.podspec'
       - 'package/example/ios/**'
 
 jobs:
-  build:
+  build_example:
     name: Build iOS Example App
     runs-on: macOS-latest
     defaults:
       run:
         working-directory: package/example/ios
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
       - name: Restore node_modules from cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: yarn-cache
         with:
           path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
           key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
-      - name: Install node_modules for root
+      - name: Install node_modules
         run: yarn install --frozen-lockfile --cwd ../..
       - name: Install node_modules for example/
         run: yarn install --frozen-lockfile --cwd ..
 
       - name: Restore buildcache
-        uses: mikehardy/buildcache-action@v1
+        uses: mikehardy/buildcache-action@v2
         continue-on-error: true
 
       - name: Setup Ruby (bundle)
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '2.7.6'
+          ruby-version: 2.6
           bundler-cache: true
-          working-directory: package/example
+          working-directory: package/example/ios
 
       - name: Restore Pods cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             package/example/ios/Pods
@@ -66,7 +66,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pods-
       - name: Install Pods
-        run: bundle exec pod check || bundle exec pod install
+        run: yarn pods
       - name: Install xcpretty
         run: gem install xcpretty
       - name: Build App
