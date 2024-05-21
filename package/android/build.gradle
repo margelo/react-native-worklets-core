@@ -29,43 +29,11 @@ android {
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
-
-    externalNativeBuild {
-      cmake {
-        arguments "-DANDROID_STL=c++_shared",
-          "-DANDROID_TOOLCHAIN=clang"
-        cppFlags "-O2 -frtti -fexceptions -Wall -fstack-protector-all"
-      }
-    }
-  }
-
-  externalNativeBuild {
-    cmake {
-      path "CMakeLists.txt"
-    }
   }
 
   buildFeatures {
     buildConfig true
     prefab true
-  }
-
-  buildTypes {
-    debug {
-      externalNativeBuild {
-        cmake {
-          arguments "-DHERMES_ENABLE_DEBUGGER=1"
-        }
-      }
-    }
-    release {
-      externalNativeBuild {
-        cmake {
-          arguments "-DHERMES_ENABLE_DEBUGGER=0"
-        }
-      }
-      minifyEnabled false
-    }
   }
 
   lintOptions {
@@ -84,9 +52,6 @@ dependencies {
   // For > 0.71, this will be replaced by `com.facebook.react:react-android:$version` by react gradle plugin
   //noinspection GradleDynamicVersion
   implementation "com.facebook.react:react-native:+"
-
-  // Requires Hermes Runtime
-  implementation "com.facebook.react:hermes-android"
 }
 
 react {
