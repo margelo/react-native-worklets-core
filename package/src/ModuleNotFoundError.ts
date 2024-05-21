@@ -42,8 +42,6 @@ export class ModuleNotFoundError extends Error {
     // TurboModule not found, something went wrong!
     if (global.__turboModuleProxy == null) {
       // TurboModules are not available/new arch is not enabled.
-      // react-native-mmkv 3.x.x requires new arch (react-native >0.74)
-      // react-native-mmkv 2.x.x works on old arch (react-native <0.74)
       const message =
         "Failed to initialize react-native-worklets-core: react-native-worklets-core 2.x.x requires TurboModules, but the new architecture is not enabled!";
       const suggestions: string[] = [];
