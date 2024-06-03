@@ -213,4 +213,12 @@ export const worklet_tests = {
       worklet(func);
     });
   },
+  check_worklet_json_parse: () => {
+    const dataStr = '{"test-1":"123"}';
+    const value = Worklets.defaultContext.runAsync(() => {
+      "worklet";
+      return JSON.parse(dataStr);
+    });
+    return ExpectValue(value, { "test-1": "123" });
+  },
 };
