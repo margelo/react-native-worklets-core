@@ -6,5 +6,8 @@ module.exports = {
     [pak.name]: {
       root: path.join(__dirname, ".."),
     },
+    "sample-native-module": {
+      root: path.join(__dirname, "sample-native-module"),
+    },
   },
 };

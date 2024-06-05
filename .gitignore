@@ -3,3 +3,4 @@
 /node_modules
 /react-native-worklets
 .xcode.env.*
+.DS_Store

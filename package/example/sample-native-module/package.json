@@ -1,0 +1,19 @@
+{
+  "name": "sample-native-module",
+  "private": true,
+  "version": "0.0.1",
+  "author": {
+    "name": "Margelo GmbH"
+  },
+  "license": "MIT",
+  "homepage": "https://margelo.com",
+  "description": "Sample Native Module",
+  "codegenConfig": {
+    "name": "RNSampleModule",
+    "type": "modules",
+    "jsSrcsDir": "js"
+  },
+  "dependencies": {
+    "react-native": "^0.74.2"
+  }
+}
