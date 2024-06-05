@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "paths": {
-      "react-native-worklets-core": ["./src/index"]
+      "react-native-worklets-core": ["./src/index"],
+      "sample-native-module/*": ["./example/sample-native-module/*"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,

@@ -1,9 +1,0 @@
-{
-  "extends": "../tsconfig.json",
-  "compilerOptions": {
-    "paths": {
-      "react-native-worklets-core": ["../src/index"],
-      "sample-native-module/*": ["./sample-native-module/*"]
-    }
-  }
-}
