@@ -52,4 +52,4 @@ MIT
 ## Credits
 
 * Credits go to [Christian Falch](https://github.com/chrfalch) for building the initial version of this library. You're amazing! 🤩
-* Credits go to [Software Mansion](https://swmansion.com) for introducing the concept of [Worklets](https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/worklets) in [Reanimated v2](https://github.com/software-mansion/react-native-reanimated). This library is inspired by Reanimated v2 with a few structural changes to the Worklets architecture to make it more flexible for different use-cases, such as integrating it with other C++ libraries like VisionCamera and WishList.
+* Credits go to [Software Mansion](https://swmansion.com) for introducing the concept of [Worklets](https://docs.swmansion.com/react-native-reanimated/docs/2.x/fundamentals/worklets/) in [Reanimated v2](https://github.com/software-mansion/react-native-reanimated). This library is inspired by Reanimated v2 with a few structural changes to the Worklets architecture to make it more flexible for different use-cases, such as integrating it with other C++ libraries like VisionCamera and WishList.
