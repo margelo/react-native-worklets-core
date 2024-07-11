@@ -126,7 +126,7 @@ context1.runAsync(() => {
 
 ## Integration
 
-To integrate react-native-worklets-core in your library, first install the package:
+To integrate react-native-worklets-core in your library, first add the dependency:
 
 ### Dependency Installation
 
@@ -139,11 +139,7 @@ To integrate react-native-worklets-core in your library, first install the packa
 
 #### Android:
 
-1. Add `react-native-worklets-core` to your `build.gradle`:
-    ```groovy
-    implementation project(":react-native-worklets-core")
-    ```
-2. Add `react-native-worklets-core` to your `CMakeLists.txt`:
+1. Add `react-native-worklets-core` to your `CMakeLists.txt`:
     ```CMake
     find_package(react-native-worklets-core REQUIRED CONFIG)
 
@@ -156,14 +152,17 @@ To integrate react-native-worklets-core in your library, first install the packa
     )
     ```
 
+> [!NOTE]
+> The user is still required to install react-native-worklets-core in their app.
+
 Then, from C++ you can convert Functions to Worklets and call them on any Thread:
 
 ### Usage
 
 1. Include the Headers:
     ```cpp
-    #include <JsiWorkletContext.h>
-    #include <JsiWorklet.h>
+    #include <WKTJsiWorkletContext.h>
+    #include <WKTJsiWorklet.h>
     ```
 2. On the main JavaScript Thread (`mqt_js`), create your Worklet Context:
     ```cpp
