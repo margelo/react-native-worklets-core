@@ -64,6 +64,8 @@ public:
 #if JS_RUNTIME_HERMES
     updateNativeState(runtime, object);
 #endif
+    // Update the object's prototype (chain), if it has one.
+    updatePrototype(runtime, object);
   }
 
 #if JS_RUNTIME_HERMES
@@ -76,6 +78,24 @@ public:
   }
 #endif
 
+   void updatePrototype(jsi::Runtime& runtime, jsi::Object& object) {
+     if (!object.hasNativeState(runtime)) {
+       // Ignore objects without NativeState for now.
+       return;
+     }
+
+     auto objectConstructor = runtime.global().getPropertyAsObject(runtime, "Object");
+     auto getPrototypeOf = objectConstructor.getPropertyAsFunction(runtime, "getPrototypeOf");
+     auto prototype = getPrototypeOf.call(runtime, object);
+     if (!prototype.isObject()) {
+       _prototype = nullptr;
+       return;
+     }
+     jsi::Object prototypeObject = prototype.getObject(runtime);
+     _prototype = std::make_shared<JsiObjectWrapper>(nullptr, false);
+     _prototype->setValue(runtime, jsi::Value(runtime, object));
+   }
+
   /**
    * Overridden get value where we convert from the internal representation to
    * a jsi value
@@ -83,6 +103,22 @@ public:
    * @return Value converted to a jsi::Value
    */
   jsi::Value getValue(jsi::Runtime &runtime) override {
+    if (_prototype != nullptr) {
+      // It is an object with a wrapped prototype. We want to copy the prototype chain, and deep-copy the object over.
+      jsi::Value prototype = _prototype->getValue(runtime);
+      if (prototype.isObject()) {
+        auto objectConstructor = runtime.global().getPropertyAsObject(runtime, "Object");
+        auto createFn = objectConstructor.getPropertyAsFunction(runtime, "create");
+        jsi::Object result = createFn.call(runtime, prototype).asObject(runtime);
+#if JS_RUNTIME_HERMES
+        if (_nativeState != nullptr) {
+          result.setNativeState(runtime, _nativeState);
+        }
+#endif
+        return result;
+      }
+    }
+
     if (getUseProxiesForUnwrapping()) {
       if (getType() == JsiWrapperType::Object) {
         return getObjectAsProxy(runtime, shared_from_this());
@@ -195,7 +231,7 @@ private:
 
   void setObjectValue(jsi::Runtime &runtime, jsi::Object &obj) {
     std::unique_lock lock(_readWriteMutex);
-    
+
     setType(JsiWrapperType::Object);
     _properties.clear();
     auto propNames = obj.getPropertyNames(runtime);
@@ -252,6 +288,7 @@ private:
   }
 
 private:
+  std::shared_ptr<JsiObjectWrapper> _prototype;
   std::map<std::string, std::shared_ptr<JsiWrapper>> _properties;
   std::shared_ptr<jsi::HostFunctionType> _hostFunction;
   std::shared_ptr<jsi::HostObject> _hostObject;
