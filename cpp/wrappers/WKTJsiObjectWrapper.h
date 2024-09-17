@@ -93,7 +93,7 @@ public:
      }
      jsi::Object prototypeObject = prototype.getObject(runtime);
      _prototype = std::make_shared<JsiObjectWrapper>(nullptr, false);
-     _prototype->setValue(runtime, jsi::Value(runtime, object));
+     _prototype->setValue(runtime, jsi::Value(runtime, prototypeObject));
    }
 
   /**
