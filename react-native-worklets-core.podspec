@@ -30,7 +30,7 @@ Pod::Spec.new do |s|
     s.dependency "RCT-Folly"
     s.dependency "RCTRequired"
     s.dependency "RCTTypeSafety"
-    s.dependency "ReactCommon/turbomodule/core"
+    s.dependency "React"
   else
     s.pod_target_xcconfig = {
       'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
