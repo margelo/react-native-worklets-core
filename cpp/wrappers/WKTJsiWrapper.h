@@ -20,6 +20,7 @@ enum JsiWrapperType {
   Bool,
   Number,
   String,
+  BigInt,
   Array,
   Object,
   Promise,
@@ -239,6 +240,7 @@ private:
   bool _boolValue;
   double _numberValue;
   std::string _stringValue;
+  int64_t _bigintValue;
 
   size_t _listenerId = 1000;
   std::map<size_t, std::shared_ptr<std::function<void()>>> _listeners;

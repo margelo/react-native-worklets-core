@@ -21,6 +21,8 @@ jsi::Value JsiWrapper::getValue(jsi::Runtime &runtime) {
     return jsi::Value(static_cast<double>(_numberValue));
   case JsiWrapperType::String:
     return jsi::String::createFromUtf8(runtime, _stringValue);
+  case JsiWrapperType::BigInt:
+    return jsi::BigInt::fromInt64(runtime, _bigintValue);
   default:
     throw jsi::JSError(runtime, "Value type not supported.");
     return jsi::Value::undefined();
@@ -34,7 +36,7 @@ std::shared_ptr<JsiWrapper> JsiWrapper::wrap(jsi::Runtime &runtime,
   std::shared_ptr<JsiWrapper> retVal = nullptr;
 
   if (value.isUndefined() || value.isNull() || value.isBool() ||
-      value.isNumber() || value.isString()) {
+      value.isNumber() || value.isBigInt() || value.isString()) {
     retVal = std::make_shared<JsiWrapper>(parent, useProxiesForUnwrapping);
   } else if (value.isObject()) {
     auto obj = value.asObject(runtime);
@@ -74,6 +76,9 @@ void JsiWrapper::setValue(jsi::Runtime &runtime, const jsi::Value &value) {
   } else if (value.isString()) {
     _type = JsiWrapperType::String;
     _stringValue = value.asString(runtime).utf8(runtime);
+  } else if (value.isBigInt()) {
+    _type = JsiWrapperType::BigInt;
+    _bigintValue = value.getBigInt(runtime).asInt64(runtime);
   } else {
     throw jsi::JSError(runtime, "Value type not supported.");
   }
