@@ -10,7 +10,6 @@ endif()
 
 set(PACKAGE_NAME "rnworklets")
 
-
 # Pre-set Folly flags from React Native core
 include("${REACT_NATIVE_DIR}/ReactAndroid/cmake-utils/folly-flags.cmake")
 add_compile_options(${folly_FLAGS})
@@ -28,8 +27,13 @@ file(GLOB_RECURSE SOURCES_COMMON CONFIGURE_DEPENDS "../cpp/**.cpp")
 add_library(
   ${PACKAGE_NAME}
   SHARED
-  ${SOURCES_COMMON}
-  cpp-adapter.cpp
+  ../cpp/base/WKTJsiHostObject.cpp
+  ../cpp/base/WKTRuntimeLifecycleMonitor.cpp
+  ../cpp/dispatch/WKTDispatchQueue.cpp
+  ../cpp/wrappers/WKTJsiPromiseWrapper.cpp
+  ../cpp/wrappers/WKTJsiWrapper.cpp
+  ../cpp/WKTJsiWorkletApi.cpp
+  ../cpp/WKTJsiWorkletContext.cpp
 )
 
 # includes
@@ -53,8 +57,11 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 
 target_link_libraries(
   ${PACKAGE_NAME}
-  log
-  android
+  hermes-engine::libhermes # <-- Hermes Prefab
+  fbjni::fbjni # <-- fbjni
+  ReactAndroid::jsi # <-- RN: JSI
+  ReactAndroid::react_nativemodule_core # <-- RN: TurboModules Core
+  ReactAndroid::turbomodulejsijni # <-- RN: TurboModules utils (e.g. CallInvokerHolder)
 )
 
 target_link_libraries(

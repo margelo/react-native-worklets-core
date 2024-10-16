@@ -1,39 +1,40 @@
 import type { TurboModule } from "react-native";
 import { TurboModuleRegistry } from "react-native";
 import type { IWorkletNativeApi } from "./types";
+import { ModuleNotFoundError } from "./ModuleNotFoundError";
+
+if (__DEV__) {
+  console.log("Loading react-native-worklets-core...");
+}
 
 export interface Spec extends TurboModule {
-  install(): boolean;
+  /**
+   * Installs `WorkletsProxy` into this JS Runtime's `global`.
+   * @returns A `string` error message if this function failed to run, or `undefined` if everything went successful.
+   */
+  install(): string | undefined;
 }
 
-const WorkletsInstaller = TurboModuleRegistry.getEnforcing<Spec>("Worklets");
-
-console.log("Loading react-native-worklets-core...");
-
-// @ts-expect-error it's an untyped JSI global.
-if (global.Worklets == null) {
-  if (
-    WorkletsInstaller == null ||
-    typeof WorkletsInstaller.install !== "function"
-  ) {
-    console.error(
-      "Native Worklets Module cannot be found! Make sure you correctly " +
-        "installed native dependencies and rebuilt your app."
-    );
-  } else {
-    // Install the module
-    const result = WorkletsInstaller.install();
-    if (result !== true) {
-      console.error(
-        `Native Worklets Module failed to correctly install JSI Bindings! Result: ${result}`
-      );
-    } else {
-      console.log("Worklets loaded successfully");
-    }
-  }
-} else {
-  console.log("react-native-worklets-core installed.");
+let module: Spec;
+try {
+  module = TurboModuleRegistry.getEnforcing<Spec>("Worklets");
+} catch (e) {
+  // User didn't enable new arch, or the module does not exist.
+  throw new ModuleNotFoundError(e);
 }
 
-// @ts-expect-error It's a global injected by JSI.
-export const Worklets = global.Worklets as IWorkletNativeApi;
+const installResult = module.install();
+if (typeof installResult === "string") {
+  throw new Error(installResult);
+}
+
+/**
+ * The Worklets API.
+ * This object can be shared and accessed from multiple contexts,
+ * however it is advised to not hold unnecessary references to it.
+ */
+export const Worklets = global.WorkletsProxy as IWorkletNativeApi; // TODO: actually inject that into global
+
+if (__DEV__) {
+  console.log("react-native-worklets-core loaded successfully!");
+}

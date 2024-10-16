@@ -75,6 +75,9 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
+  "dependencies": {
+    "string-hash-64": "^1.0.3"
+  },
   "devDependencies": {
     "@react-native-community/eslint-config": "^3.0.2",
     "@release-it/conventional-changelog": "^5.0.0",
@@ -174,11 +177,8 @@
     "type": "modules",
     "jsSrcsDir": "src",
     "android": {
-      "javaPackageName": "com.worklets"
+      "javaPackageName": "com.margelo.worklets"
     }
-  },
-  "dependencies": {
-    "string-hash-64": "^1.0.3"
   },
   "packageManager": "yarn@1.22.19+sha1.4ba7fc5c6e704fce2066ecbfb0b0d8976fe62447"
 }
