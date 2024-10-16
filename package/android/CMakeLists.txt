@@ -16,7 +16,6 @@ add_library(
         ../cpp/wrappers/WKTJsiWrapper.cpp
         ../cpp/WKTJsiWorkletApi.cpp
         ../cpp/WKTJsiWorkletContext.cpp
-        ../cpp/NativeWorkletsModule.cpp
         )
 
 # Add headers search paths
@@ -41,8 +40,9 @@ find_package(fbjni REQUIRED CONFIG)
 # Link everything together
 target_link_libraries(
         ${PACKAGE_NAME}
-        ReactAndroid::jsi               # <-- JSI core
-        fbjni::fbjni                    # <-- fbjni
-        react_codegen_RNWorkletsSpec    # <-- Generated Specs from CodeGen
-        hermes-engine::libhermes        # <-- Hermes Prefab
+        hermes-engine::libhermes                  # <-- Hermes Prefab
+        fbjni::fbjni                              # <-- fbjni
+        ReactAndroid::jsi                         # <-- RN: JSI
+        ReactAndroid::react_nativemodule_core     # <-- RN: TurboModules Core
+        ReactAndroid::turbomodulejsijni           # <-- RN: TurboModules utils (e.g. CallInvokerHolder)
 )
