@@ -17,6 +17,7 @@ Pod::Spec.new do |s|
   s.pod_target_xcconfig = {
     "CLANG_CXX_LANGUAGE_STANDARD" => "c++17",
     "CLANG_CXX_LIBRARY" => "libc++",
+    "DEFINES_MODULE" => "YES",
   }
   s.source_files = [
     # iOS Installer
