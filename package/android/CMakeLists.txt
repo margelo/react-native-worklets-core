@@ -16,6 +16,7 @@ add_library(
         ../cpp/wrappers/WKTJsiWrapper.cpp
         ../cpp/WKTJsiWorkletApi.cpp
         ../cpp/WKTJsiWorkletContext.cpp
+        ../cpp/entrypoint/InstallWorklets.cpp
 
         # Android-specific C++ sources
         src/main/cpp/JNIOnLoad.cpp
@@ -32,6 +33,7 @@ target_include_directories(
         ../cpp/dispatch
         ../cpp/sharedvalues
         ../cpp/wrappers
+        ../cpp/entrypoint/
 
         # Android-specific C++ includes
         src/main/cpp
