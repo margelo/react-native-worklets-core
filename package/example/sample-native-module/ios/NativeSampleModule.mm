@@ -10,7 +10,6 @@
 #include "WKTJsiWorkletApi.h"
 #include "WKTJsiWorkletContext.h"
 #include "CallInvokerDispatcher.h"
-#include "NativeWorkletsModule.h"
 #include <memory>
 #include <utility>
 
