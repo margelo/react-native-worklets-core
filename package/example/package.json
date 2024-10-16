@@ -11,16 +11,16 @@
     "pods": "bundle install && cd ios && pod install && cd .."
   },
   "dependencies": {
-    "react": "18.2.0",
-    "react-native": "0.74.1"
+    "react": "18.3.1",
+    "react-native": "0.75.4"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@babel/preset-env": "^7.20.0",
     "@babel/runtime": "^7.20.0",
-    "@react-native/babel-preset": "0.74.83",
-    "@react-native/metro-config": "0.74.83",
-    "@react-native/typescript-config": "0.74.83",
+    "@react-native/babel-preset": "0.75.4",
+    "@react-native/metro-config": "0.75.4",
+    "@react-native/typescript-config": "0.75.4",
     "babel-plugin-module-resolver": "^5.0.0"
   },
   "engines": {
