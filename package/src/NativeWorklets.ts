@@ -33,6 +33,7 @@ if (typeof installResult === "string") {
  * This object can be shared and accessed from multiple contexts,
  * however it is advised to not hold unnecessary references to it.
  */
+// @ts-expect-error
 export const Worklets = global.WorkletsProxy as IWorkletNativeApi;
 
 if (__DEV__) {
