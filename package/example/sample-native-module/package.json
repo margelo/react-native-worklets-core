@@ -14,6 +14,6 @@
     "jsSrcsDir": "js"
   },
   "dependencies": {
-    "react-native": "^0.74.2"
+    "react-native": "^0.75.4"
   }
 }
