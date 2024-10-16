@@ -35,7 +35,7 @@ class Worklets internal constructor(val context: ReactApplicationContext) : Work
             val callInvokerHolder = context.jsCallInvokerHolder as? CallInvokerHolderImpl
                 ?: return "ReactApplicationContext.jsCallInvokerHolder is null!"
 
-            // 3. Install Nitro
+            // 3. Install rnworklets
             install(jsContext.get(), callInvokerHolder)
 
             return null
@@ -61,7 +61,7 @@ class Worklets internal constructor(val context: ReactApplicationContext) : Work
         var applicationContext: ReactApplicationContext? = null
 
         init {
-            // Make sure Nitro's C++ library is loaded
+            // Make sure Worklets's C++ library is loaded
             JNIOnLoad.initializeNativeWorklets()
         }
     }

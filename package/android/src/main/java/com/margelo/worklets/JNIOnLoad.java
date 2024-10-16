@@ -16,7 +16,7 @@ public class JNIOnLoad {
         if (isInitialized) return;
         try {
             Log.i(TAG, "Loading react-native-worklets-core C++ library...");
-            System.loadLibrary("Worklets");
+            System.loadLibrary("rnworklets");
             Log.i(TAG, "Successfully loaded react-native-worklets-core C++ library!");
             isInitialized = true;
         } catch (Throwable e) {

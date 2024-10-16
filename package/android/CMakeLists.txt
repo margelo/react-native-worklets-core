@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.8)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 17)
+set(PACKAGE_NAME "rnworklets")
 
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   string(APPEND CMAKE_CXX_FLAGS " -DDEBUG")
@@ -34,29 +35,42 @@ add_library(
   ../cpp/wrappers/WKTJsiWrapper.cpp
   ../cpp/WKTJsiWorkletApi.cpp
   ../cpp/WKTJsiWorkletContext.cpp
+
+  # Android-specific C++ sources
+  src/main/cpp/JNIOnLoad.cpp
+  src/main/cpp/JWorklets.cpp
 )
 
 # includes
 target_include_directories(
   ${PACKAGE_NAME}
-  PRIVATE
+  PUBLIC
   ../cpp
   ../cpp/base
   ../cpp/decorators
   ../cpp/dispatch
   ../cpp/sharedvalues
   ../cpp/wrappers
-  "${REACT_NATIVE_DIR}/ReactAndroid/src/main/jni/react/turbomodule"
-  "${REACT_NATIVE_DIR}/ReactCommon"
-  "${REACT_NATIVE_DIR}/ReactCommon/callinvoker"
-  "${REACT_NATIVE_DIR}/ReactCommon/runtimeexecutor"
+
+  # Android-specific C++ includes
+  src/main/cpp
 )
 
-# build shared lib
-set_target_properties(${PACKAGE_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+# Add Hermes (from com.facebook.react:hermes-android)
+find_package(hermes-engine REQUIRED CONFIG)
 
+# Add React core libraries (JSI, ...)
+find_package(ReactAndroid REQUIRED CONFIG)
+
+# Add fbjni (from React core)
+find_package(fbjni REQUIRED CONFIG)
+
+find_library(LOG_LIB log)
+
+# Link everything together
 target_link_libraries(
   ${PACKAGE_NAME}
+  ${LOG_LIB} # <-- Logcat logger
   hermes-engine::libhermes # <-- Hermes Prefab
   fbjni::fbjni # <-- fbjni
   ReactAndroid::jsi # <-- RN: JSI
