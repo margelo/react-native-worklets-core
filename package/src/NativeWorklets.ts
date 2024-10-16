@@ -33,7 +33,7 @@ if (typeof installResult === "string") {
  * This object can be shared and accessed from multiple contexts,
  * however it is advised to not hold unnecessary references to it.
  */
-export const Worklets = global.WorkletsProxy as IWorkletNativeApi; // TODO: actually inject that into global
+export const Worklets = global.WorkletsProxy as IWorkletNativeApi;
 
 if (__DEV__) {
   console.log("react-native-worklets-core loaded successfully!");

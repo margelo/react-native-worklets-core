@@ -1,6 +1,6 @@
 #include "JWorklets.h"
 #include <android/log.h>
-// #include "InstallNitro.hpp"
+#include "InstallWorklets.h"
 
 #include <exception>
 
@@ -26,8 +26,7 @@ void JWorklets::install(jlong runtimePointer, jni::alias_ref<react::CallInvokerH
     throw std::invalid_argument("CallInvoker was null!");
   }
 
-//  auto dispatcher = std::make_shared<CallInvokerDispatcher>(callInvoker);
-//   margelo::nitro::install(*runtime, dispatcher);
+  RNWorklet::install(*runtime, callInvoker);
 }
 
 void JWorklets::registerNatives() {

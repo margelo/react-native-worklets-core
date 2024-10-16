@@ -5,9 +5,18 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 17)
 set(PACKAGE_NAME "rnworklets")
 
-if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-  string(APPEND CMAKE_CXX_FLAGS " -DDEBUG")
-endif()
+# Compile sources
+add_library(
+        ${PACKAGE_NAME}
+        SHARED
+        ../cpp/base/WKTJsiHostObject.cpp
+        ../cpp/base/WKTRuntimeLifecycleMonitor.cpp
+        ../cpp/dispatch/WKTDispatchQueue.cpp
+        ../cpp/wrappers/WKTJsiPromiseWrapper.cpp
+        ../cpp/wrappers/WKTJsiWrapper.cpp
+        ../cpp/WKTJsiWorkletApi.cpp
+        ../cpp/WKTJsiWorkletContext.cpp
+        ../cpp/entrypoint/InstallWorklets.cpp
 
 set(PACKAGE_NAME "rnworklets")
 
@@ -43,14 +52,15 @@ add_library(
 
 # includes
 target_include_directories(
-  ${PACKAGE_NAME}
-  PUBLIC
-  ../cpp
-  ../cpp/base
-  ../cpp/decorators
-  ../cpp/dispatch
-  ../cpp/sharedvalues
-  ../cpp/wrappers
+        ${PACKAGE_NAME}
+        PUBLIC
+        ../cpp
+        ../cpp/base
+        ../cpp/decorators
+        ../cpp/dispatch
+        ../cpp/sharedvalues
+        ../cpp/wrappers
+        ../cpp/entrypoint/
 
   # Android-specific C++ includes
   src/main/cpp
