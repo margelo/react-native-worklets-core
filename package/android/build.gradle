@@ -5,7 +5,7 @@ buildscript {
   }
 
   dependencies {
-    classpath "com.android.tools.build:gradle:7.2.1"
+    classpath "com.android.tools.build:gradle:8.7.1"
   }
 }
 
@@ -19,6 +19,7 @@ def isNewArchitectureEnabled() {
 }
 
 apply plugin: "com.android.library"
+apply plugin: 'org.jetbrains.kotlin.android'
 
 if (isNewArchitectureEnabled()) {
   apply plugin: "com.facebook.react"
@@ -46,7 +47,8 @@ android {
     externalNativeBuild {
       cmake {
         cppFlags "-O2 -frtti -fexceptions -Wall -fstack-protector-all"
-        arguments "-DANDROID_STL=c++_shared"
+        arguments "-DANDROID_STL=c++_shared",
+                  "-DANDROID_TOOLCHAIN=clang"
         abiFilters (*reactNativeArchitectures())
       }
     }
@@ -63,6 +65,12 @@ android {
     prefab true
     prefabPublishing true
   }
+
+   prefab {
+     "react-native-worklets-core" {
+       headers "${project.buildDir}/headers/rnworklets/"
+     }
+   }
 
   lintOptions {
     disable "GradleCompatible"
@@ -107,10 +115,8 @@ if (isNewArchitectureEnabled()) {
 }
 
 task prepareHeaders(type: Copy) {
-  from fileTree('./src/main/cpp').filter { it.isFile() }
-  from fileTree('../cpp/').filter { it.isFile() }
-  include "*.hpp"
-  into "${project.buildDir}/headers/nitromodules/NitroModules/"
+  from fileTree('../cpp').filter { it.isFile() }
+  into "${project.buildDir}/headers/rnworklets/react-native-worklets-core/"
   includeEmptyDirs = false
 }
 
