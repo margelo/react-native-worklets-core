@@ -23,9 +23,11 @@ try {
   throw new ModuleNotFoundError(e);
 }
 
-const installResult = module.install();
-if (typeof installResult === "string") {
-  throw new Error(installResult);
+const errorMessage = module.install();
+if (errorMessage != null) {
+  throw new Error(
+    `Failed to install react-native-worklets-core: ${errorMessage}`
+  );
 }
 
 /**
