@@ -2,7 +2,7 @@
 //  NativeWorklets+OldArch.m
 //  react-native-worklets-core
 //
-//  Created by Hanno Gödecke on 16.10.24.
+//  Created by Marc Rousavy on 16.10.24.
 //
 
 #import "NativeWorklets.h"

@@ -2,7 +2,7 @@
 //  NativeWorklets.h
 //  Pods
 //
-//  Created by Hanno Gödecke on 16.10.24.
+//  Created by Marc Rousavy on 16.10.24.
 //
 
 #ifdef RCT_NEW_ARCH_ENABLED
