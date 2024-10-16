@@ -23,7 +23,8 @@ using namespace RNWorklet;
 
 /**
  * NativeWorklets implementation for the new architecture.
- * This uses `installJSIBindingsWithRuntime:` to install the `global.WorkletsProxy` into the JS Runtime.
+ * This uses `installJSIBindingsWithRuntime:` to install the
+ * `global.WorkletsProxy` into the JS Runtime.
  */
 @implementation NativeWorklets {
   bool _didInstall;
@@ -32,28 +33,31 @@ using namespace RNWorklet;
 
 RCT_EXPORT_MODULE(Worklets)
 
-- (void)installJSIBindingsWithRuntime:(facebook::jsi::Runtime &)runtime { 
+- (void)installJSIBindingsWithRuntime:(facebook::jsi::Runtime &)runtime {
   // 1. Get CallInvoker we cached statically
   auto callInvoker = _callInvoker.lock();
   if (callInvoker == nullptr) {
-    throw std::runtime_error("Cannot install global.WorkletsProxy - CallInvoker was null!");
+    throw std::runtime_error(
+        "Cannot install global.WorkletsProxy - CallInvoker was null!");
   }
-  
+
   // 2. Install Worklets
   RNWorklet::install(runtime, callInvoker);
   _didInstall = true;
 }
 
-- (NSString * _Nullable)install { 
+- (NSString *_Nullable)install {
   if (_didInstall) {
     // installJSIBindingsWithRuntime ran successfully.
     return nil;
   } else {
-    return @"installJSIBindingsWithRuntime: was not called - JSI Bindings could not be installed!";
+    return @"installJSIBindingsWithRuntime: was not called - JSI Bindings "
+           @"could not be installed!";
   }
 }
 
-- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:(const facebook::react::ObjCTurboModule::InitParams &)params {
+- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
+    (const facebook::react::ObjCTurboModule::InitParams &)params {
   _callInvoker = params.jsInvoker;
   return std::make_shared<react::NativeWorkletsSpecJSI>(params);
 }

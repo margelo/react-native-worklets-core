@@ -6,8 +6,6 @@
 
 using namespace RNWorklet;
 
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
-    return facebook::jni::initialize(vm, [] {
-        JWorklets::registerNatives();
-    });
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
+  return facebook::jni::initialize(vm, [] { JWorklets::registerNatives(); });
 }
