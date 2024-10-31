@@ -54,9 +54,38 @@ find_library(LOG_LIB log)
 target_link_libraries(
         ${PACKAGE_NAME}
         ${LOG_LIB}                              # <-- Logcat logger
-        hermes-engine::libhermes                # <-- Hermes Prefab
         fbjni::fbjni                            # <-- fbjni
         ReactAndroid::jsi                       # <-- RN: JSI
         ReactAndroid::react_nativemodule_core   # <-- RN: TurboModules Core
         ReactAndroid::turbomodulejsijni         # <-- RN: TurboModules utils (e.g. CallInvokerHolder)
 )
+
+if(${JS_RUNTIME} STREQUAL "hermes")
+        find_package(hermes-engine REQUIRED CONFIG)
+        string(APPEND CMAKE_CXX_FLAGS " -DJS_RUNTIME_HERMES=1")
+
+        # From prefab from module `com.facebook.react:hermes-android`
+        set(HERMES_LIB hermes-engine::libhermes)
+
+        target_link_libraries(
+                ${PACKAGE_NAME}
+                ${HERMES_LIB}
+        )
+
+        if(${HERMES_ENABLE_DEBUGGER})
+                set(HERMES_EXECUTOR_LIB ReactAndroid::hermes_executor)
+
+                target_link_libraries(
+                        ${PACKAGE_NAME}
+                        ${HERMES_EXECUTOR_LIB}
+                )
+        endif()
+elseif(${JS_RUNTIME} STREQUAL "jsc")
+        string(APPEND CMAKE_CXX_FLAGS " -DJS_RUNTIME_JSC=1")
+
+        set(JSEXECUTOR_LIB ReactAndroid::jscexecutor)
+
+        target_link_libraries(${PACKAGE_NAME} ${JSEXECUTOR_LIB})
+else()
+        message(FATAL_ERROR "Unknown JS runtime ${JS_RUNTIME}.")
+endif()
