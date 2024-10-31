@@ -29,23 +29,23 @@ public:
    */
   JsiArrayWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping)
       : JsiWrapper(parent, useProxiesForUnwrapping, JsiWrapperType::Array) {}
-                          
+
   /**
    Helper to evaluate any jsi::Value as a boolean
    */
-  bool evaluateAsBoolean(jsi::Runtime& rt, const jsi::Value& value) {
+  bool evaluateAsBoolean(jsi::Runtime &rt, const jsi::Value &value) {
     if (value.isUndefined() || value.isNull()) {
       return false;
     }
-    
+
     if (value.isBool()) {
       return value.getBool();
     }
-    
+
     if (value.isNumber()) {
       return value.asNumber() != 0;
     }
-    
+
     // Passing objects or array into this function evals to true in JS
     return true;
   }
@@ -141,16 +141,17 @@ public:
     std::unique_lock lock(_readWriteMutex);
 
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-    
+
     std::vector<jsi::Value> args(3);
     args[2] = thisValue.asObject(runtime);
-    
+
     for (size_t i = 0; i < _array.size(); i++) {
       args[0] = _array.at(i)->unwrap(runtime);
       args[1] = jsi::Value(static_cast<double>(i));
-      callFunction(runtime, callbackFn, thisValue, static_cast<const jsi::Value *>(args.data()), 3);
+      callFunction(runtime, callbackFn, thisValue,
+                   static_cast<const jsi::Value *>(args.data()), 3);
     }
-    
+
     return jsi::Value::undefined();
   };
 
@@ -159,15 +160,16 @@ public:
 
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     auto result = jsi::Array(runtime, _array.size());
-    
+
     std::vector<jsi::Value> args(3);
     args[2] = thisValue.asObject(runtime);
-    
+
     for (size_t i = 0; i < _array.size(); i++) {
       args[0] = _array.at(i)->unwrap(runtime);
       args[1] = jsi::Value(static_cast<double>(i));
-      auto retVal = callFunction(runtime, callbackFn, thisValue,
-                                 static_cast<const jsi::Value *>(args.data()), 3);
+      auto retVal =
+          callFunction(runtime, callbackFn, thisValue,
+                       static_cast<const jsi::Value *>(args.data()), 3);
       result.setValueAtIndex(runtime, i, retVal);
     }
     return result;
@@ -178,16 +180,17 @@ public:
 
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
     std::vector<std::shared_ptr<JsiWrapper>> result;
-    
+
     std::vector<jsi::Value> args(3);
     args[2] = thisValue.asObject(runtime);
 
     for (size_t i = 0; i < _array.size(); i++) {
       args[0] = _array.at(i)->unwrap(runtime);
       args[1] = jsi::Value(static_cast<double>(i));
-      
-      auto retVal = callFunction(runtime, callbackFn, thisValue,
-                                 static_cast<const jsi::Value *>(args.data()), 3);
+
+      auto retVal =
+          callFunction(runtime, callbackFn, thisValue,
+                       static_cast<const jsi::Value *>(args.data()), 3);
 
       if (evaluateAsBoolean(runtime, retVal)) {
         result.push_back(_array.at(i));
@@ -204,15 +207,16 @@ public:
     std::unique_lock lock(_readWriteMutex);
 
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-    
+
     std::vector<jsi::Value> args(3);
     args[2] = thisValue.asObject(runtime);
-    
+
     for (size_t i = 0; i < _array.size(); i++) {
       args[0] = _array.at(i)->unwrap(runtime);
       args[1] = jsi::Value(static_cast<double>(i));
-      auto retVal = callFunction(runtime, callbackFn, thisValue,
-                                 static_cast<const jsi::Value *>(args.data()), 3);
+      auto retVal =
+          callFunction(runtime, callbackFn, thisValue,
+                       static_cast<const jsi::Value *>(args.data()), 3);
 
       if (evaluateAsBoolean(runtime, retVal)) {
         return _array.at(i)->unwrap(runtime);
@@ -225,16 +229,17 @@ public:
     std::unique_lock lock(_readWriteMutex);
 
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-    
+
     std::vector<jsi::Value> args(3);
     args[2] = thisValue.asObject(runtime);
-    
+
     for (size_t i = 0; i < _array.size(); i++) {
       args[0] = _array.at(i)->unwrap(runtime);
       args[1] = jsi::Value(static_cast<double>(i));
-      
-      auto retVal = callFunction(runtime, callbackFn, thisValue,
-                                 static_cast<const jsi::Value *>(args.data()), 3);
+
+      auto retVal =
+          callFunction(runtime, callbackFn, thisValue,
+                       static_cast<const jsi::Value *>(args.data()), 3);
 
       if (evaluateAsBoolean(runtime, retVal) == false) {
         return false;
@@ -242,21 +247,22 @@ public:
     }
     return true;
   };
-                          
+
   JSI_HOST_FUNCTION(some) {
     std::unique_lock lock(_readWriteMutex);
 
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-    
+
     std::vector<jsi::Value> args(3);
     args[2] = thisValue.asObject(runtime);
-    
+
     for (size_t i = 0; i < _array.size(); i++) {
       args[0] = _array.at(i)->unwrap(runtime);
       args[1] = jsi::Value(static_cast<double>(i));
-      
-      auto retVal = callFunction(runtime, callbackFn, thisValue,
-                                 static_cast<const jsi::Value *>(args.data()), 3);
+
+      auto retVal =
+          callFunction(runtime, callbackFn, thisValue,
+                       static_cast<const jsi::Value *>(args.data()), 3);
 
       if (evaluateAsBoolean(runtime, retVal) == true) {
         return true;
@@ -269,17 +275,18 @@ public:
     std::unique_lock lock(_readWriteMutex);
 
     auto callbackFn = arguments[0].asObject(runtime).asFunction(runtime);
-    
+
     std::vector<jsi::Value> args(3);
     args[2] = thisValue.asObject(runtime);
-    
+
     for (size_t i = 0; i < _array.size(); i++) {
       args[0] = _array.at(i)->unwrap(runtime);
       args[1] = jsi::Value(static_cast<double>(i));
-      
-      auto retVal = callFunction(runtime, callbackFn, thisValue,
-                                 static_cast<const jsi::Value *>(args.data()), 3);
-      
+
+      auto retVal =
+          callFunction(runtime, callbackFn, thisValue,
+                       static_cast<const jsi::Value *>(args.data()), 3);
+
       if (evaluateAsBoolean(runtime, retVal)) {
         return static_cast<double>(i);
       }
@@ -292,12 +299,12 @@ public:
 
     auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0], nullptr,
                                        getUseProxiesForUnwrapping());
-    
+
     size_t fromIndex = 0;
     if (count == 2) {
       fromIndex = arguments[1].asNumber();
     }
-    
+
     for (size_t i = fromIndex; i < _array.size(); i++) {
       // TODO: Add == operator to JsiWrapper
       if (wrappedArg->getType() == _array[i]->getType()) {
@@ -349,12 +356,12 @@ public:
 
     auto wrappedArg = JsiWrapper::wrap(runtime, arguments[0], nullptr,
                                        getUseProxiesForUnwrapping());
-    
+
     size_t fromIndex = 0;
     if (count == 2) {
       fromIndex = arguments[1].asNumber();
     }
-    
+
     for (size_t i = fromIndex; i < _array.size(); i++) {
       // TODO: Add == operator to JsiWrapper!!!
       if (wrappedArg->getType() == _array[i]->getType()) {
@@ -372,30 +379,32 @@ public:
     // Copy existing array
     std::vector<std::shared_ptr<JsiWrapper>> nextArray;
     nextArray.resize(_array.size());
-    
-    for (size_t i=0; i<_array.size(); i++) {
+
+    for (size_t i = 0; i < _array.size(); i++) {
       nextArray[i] = _array[i];
     }
-    
-    // enumerate all the parameters and check for either value or sub array (only two levels)
-    for (size_t i=0; i<count; i++) {
+
+    // enumerate all the parameters and check for either value or sub array
+    // (only two levels)
+    for (size_t i = 0; i < count; i++) {
       if (arguments[0].isObject()) {
         auto obj = arguments[0].asObject(runtime);
         if (obj.isArray(runtime)) {
           // We have an array - loop through and append all the array elements
           auto arr = obj.asArray(runtime);
           for (size_t n = 0; n < arr.size(runtime); n++) {
-            nextArray.push_back(JsiWrapper::wrap(runtime, arr.getValueAtIndex(runtime, n)));
+            nextArray.push_back(
+                JsiWrapper::wrap(runtime, arr.getValueAtIndex(runtime, n)));
           }
           // continue loop
           continue;
         }
       }
-      
+
       // Not an array, let's add item itself
       nextArray.push_back(JsiWrapper::wrap(runtime, arguments[i]));
     }
-    
+
     auto results = jsi::Array(runtime, static_cast<size_t>(nextArray.size()));
 
     for (size_t i = 0; i < nextArray.size(); i++) {
@@ -433,10 +442,10 @@ public:
       acc = JsiWrapper::wrap(runtime, arguments[1], nullptr,
                              getUseProxiesForUnwrapping());
     }
-    
+
     std::vector<jsi::Value> args(4);
     args[3] = thisValue.asObject(runtime);
-    
+
     for (size_t i = 0; i < _array.size(); i++) {
       args[0] = acc->unwrap(runtime);
       args[1] = _array.at(i)->unwrap(runtime);
