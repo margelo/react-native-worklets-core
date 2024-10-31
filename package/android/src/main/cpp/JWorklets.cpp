@@ -8,15 +8,12 @@ namespace RNWorklet {
 
 JWorklets::JWorklets() = default;
 
-jni::local_ref<JWorklets::jhybriddata>
-JWorklets::initHybrid(jni::alias_ref<JWorklets::jhybridobject>) {
+jni::local_ref<JWorklets::jhybriddata> JWorklets::initHybrid(jni::alias_ref<JWorklets::jhybridobject>) {
   return makeCxxInstance();
 }
 
-void JWorklets::install(
-    jlong runtimePointer,
-    jni::alias_ref<react::CallInvokerHolder::javaobject> callInvokerHolder) {
-  auto runtime = reinterpret_cast<jsi::Runtime *>(runtimePointer);
+void JWorklets::install(jlong runtimePointer, jni::alias_ref<react::CallInvokerHolder::javaobject> callInvokerHolder) {
+  auto runtime = reinterpret_cast<jsi::Runtime*>(runtimePointer);
   if (runtime == nullptr) {
     throw std::invalid_argument("jsi::Runtime was null!");
   }
@@ -33,8 +30,7 @@ void JWorklets::install(
 }
 
 void JWorklets::registerNatives() {
-  registerHybrid({makeNativeMethod("initHybrid", JWorklets::initHybrid),
-                  makeNativeMethod("install", JWorklets::install)});
+  registerHybrid({makeNativeMethod("initHybrid", JWorklets::initHybrid), makeNativeMethod("install", JWorklets::install)});
 }
 
 } // namespace RNWorklet

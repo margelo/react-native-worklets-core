@@ -21,7 +21,7 @@ DispatchQueue::DispatchQueue(std::string name) : name_{std::move(name)} {
   thread_ = std::thread(&DispatchQueue::dispatch_thread_handler, this);
 }
 
-void DispatchQueue::dispatch(const fp_t &op) {
+void DispatchQueue::dispatch(const fp_t& op) {
   std::unique_lock<std::mutex> lock(lock_);
   q_.push(op);
 
@@ -31,7 +31,7 @@ void DispatchQueue::dispatch(const fp_t &op) {
   cv_.notify_one();
 }
 
-void DispatchQueue::dispatch(fp_t &&op) {
+void DispatchQueue::dispatch(fp_t&& op) {
   std::unique_lock<std::mutex> lock(lock_);
   q_.push(std::move(op));
 

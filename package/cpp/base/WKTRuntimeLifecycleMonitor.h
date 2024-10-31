@@ -14,7 +14,7 @@ namespace jsi = facebook::jsi;
  */
 struct RuntimeLifecycleListener {
   virtual ~RuntimeLifecycleListener() {}
-  virtual void onRuntimeDestroyed(jsi::Runtime *) = 0;
+  virtual void onRuntimeDestroyed(jsi::Runtime*) = 0;
 };
 
 /**
@@ -24,9 +24,8 @@ struct RuntimeLifecycleListener {
  * destroyed.
  */
 struct RuntimeLifecycleMonitor {
-  static void addListener(jsi::Runtime &rt, RuntimeLifecycleListener *listener);
-  static void removeListener(jsi::Runtime &rt,
-                             RuntimeLifecycleListener *listener);
+  static void addListener(jsi::Runtime& rt, RuntimeLifecycleListener* listener);
+  static void removeListener(jsi::Runtime& rt, RuntimeLifecycleListener* listener);
 };
 
 } // namespace RNWorklet

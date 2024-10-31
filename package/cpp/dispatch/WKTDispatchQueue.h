@@ -22,19 +22,19 @@ public:
   ~DispatchQueue();
 
   // dispatch and copy
-  void dispatch(const fp_t &op);
+  void dispatch(const fp_t& op);
 
   // dispatch and move
-  void dispatch(fp_t &&op);
+  void dispatch(fp_t&& op);
 
   // Deleted operations
-  DispatchQueue(const DispatchQueue &rhs) = delete;
+  DispatchQueue(const DispatchQueue& rhs) = delete;
 
-  DispatchQueue &operator=(const DispatchQueue &rhs) = delete;
+  DispatchQueue& operator=(const DispatchQueue& rhs) = delete;
 
-  DispatchQueue(DispatchQueue &&rhs) = delete;
+  DispatchQueue(DispatchQueue&& rhs) = delete;
 
-  DispatchQueue &operator=(DispatchQueue &&rhs) = delete;
+  DispatchQueue& operator=(DispatchQueue&& rhs) = delete;
 
 private:
   std::string name_;

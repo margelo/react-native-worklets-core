@@ -16,26 +16,23 @@ namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
 
-const char *JsiWorkletApi::WorkletsApiName = "Worklets";
+const char* JsiWorkletApi::WorkletsApiName = "Worklets";
 std::shared_ptr<JsiWorkletApi> JsiWorkletApi::instance;
 
 /**
  * Installs the worklet API into the provided runtime
  */
-void JsiWorkletApi::installApi(jsi::Runtime &runtime) {
+void JsiWorkletApi::installApi(jsi::Runtime& runtime) {
   JsiWorkletContext::getDefaultInstance();
   auto existingApi = (runtime.global().getProperty(runtime, WorkletsApiName));
   if (existingApi.isObject()) {
     return;
   }
 
-  runtime.global().setProperty(
-      runtime, WorkletsApiName,
-      jsi::Object::createFromHostObject(runtime, getInstance()));
+  runtime.global().setProperty(runtime, WorkletsApiName, jsi::Object::createFromHostObject(runtime, getInstance()));
 }
 
-std::shared_ptr<JsiWorkletContext>
-JsiWorkletApi::createWorkletContext(const std::string &name) {
+std::shared_ptr<JsiWorkletContext> JsiWorkletApi::createWorkletContext(const std::string& name) {
   return std::make_shared<JsiWorkletContext>(name);
 }
 
@@ -49,6 +46,8 @@ std::shared_ptr<JsiWorkletApi> JsiWorkletApi::getInstance() {
 /**
  Invalidate the api instance.
  */
-void JsiWorkletApi::invalidateInstance() { instance = nullptr; }
+void JsiWorkletApi::invalidateInstance() {
+  instance = nullptr;
+}
 
 } // namespace RNWorklet

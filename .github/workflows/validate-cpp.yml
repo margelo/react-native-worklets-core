@@ -5,16 +5,16 @@ on:
     branches:
       - main
     paths:
-      - '.github/workflows/validate-cpp.yml'
-      - 'package/cpp/**'
-      - 'package/android/src/main/cpp/**'
-      - 'package/ios/**'
+      - ".github/workflows/validate-cpp.yml"
+      - "package/cpp/**"
+      - "package/android/src/main/cpp/**"
+      - "package/ios/**"
   pull_request:
     paths:
-      - '.github/workflows/validate-cpp.yml'
-      - 'package/cpp/**'
-      - 'package/android/src/main/cpp/**'
-      - 'package/ios/**'
+      - ".github/workflows/validate-cpp.yml"
+      - "package/cpp/**"
+      - "package/android/src/main/cpp/**"
+      - "package/ios/**"
 
 jobs:
   lint:
@@ -23,14 +23,14 @@ jobs:
     strategy:
       matrix:
         path:
-          - 'package/cpp'
-          - 'package/android/src/main/cpp'
-          - 'package/ios'
+          - "package/cpp"
+          - "package/android/src/main/cpp"
+          - "package/ios"
     steps:
       - uses: actions/checkout@v4
       - name: Run clang-format style check
-        uses: jidicula/clang-format-action@v4.11.0
+        uses: mrousavy/clang-format-action@v1
         with:
-          clang-format-version: '16'
+          clang-format-version: "16"
           check-path: ${{ matrix.path }}
-
+          clang-format-style-path: package/.clang-format

@@ -18,11 +18,8 @@ private:
 
 private:
   // JNI Methods
-  static jni::local_ref<JWorklets::jhybriddata>
-  initHybrid(jni::alias_ref<jhybridobject> javaThis);
-  void install(
-      jlong runtimePointer,
-      jni::alias_ref<react::CallInvokerHolder::javaobject> callInvokerHolder);
+  static jni::local_ref<JWorklets::jhybriddata> initHybrid(jni::alias_ref<jhybridobject> javaThis);
+  void install(jlong runtimePointer, jni::alias_ref<react::CallInvokerHolder::javaobject> callInvokerHolder);
 
 private:
   static auto constexpr TAG = "Worklets";

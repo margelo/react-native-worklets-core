@@ -10,7 +10,7 @@ namespace RNWorklet {
 
 #if JSI_DEBUG_ALLOCATIONS
 int objCounter = 0;
-std::vector<JsiHostObject *> objects;
+std::vector<JsiHostObject*> objects;
 #endif
 
 JsiHostObject::JsiHostObject() {
@@ -31,25 +31,22 @@ JsiHostObject::~JsiHostObject() {
 #endif
 }
 
-void JsiHostObject::set(jsi::Runtime &rt, const jsi::PropNameID &name,
-                        const jsi::Value &value) {
+void JsiHostObject::set(jsi::Runtime& rt, const jsi::PropNameID& name, const jsi::Value& value) {
 
   auto nameStr = name.utf8(rt);
 
   /** Check the static setters map */
-  const JsiPropertySettersMap &setters = getExportedPropertySettersMap();
+  const JsiPropertySettersMap& setters = getExportedPropertySettersMap();
   auto setter = setters.find(nameStr);
   if (setter != setters.end()) {
-    auto dispatcher = std::bind(setter->second, this, std::placeholders::_1,
-                                std::placeholders::_2);
+    auto dispatcher = std::bind(setter->second, this, std::placeholders::_1, std::placeholders::_2);
     return dispatcher(rt, value);
   }
 }
 
-jsi::Value JsiHostObject::get(jsi::Runtime &runtime,
-                              const jsi::PropNameID &name) {
+jsi::Value JsiHostObject::get(jsi::Runtime& runtime, const jsi::PropNameID& name) {
   auto nameStr = name.utf8(runtime);
-  auto &cache = _hostFunctionCache.get(runtime);
+  auto& cache = _hostFunctionCache.get(runtime);
 
   // Check function cache
   auto cachedFunc = cache.find(nameStr);
@@ -58,7 +55,7 @@ jsi::Value JsiHostObject::get(jsi::Runtime &runtime,
   }
 
   // Check the static getters map
-  const JsiPropertyGettersMap &getters = getExportedPropertyGettersMap();
+  const JsiPropertyGettersMap& getters = getExportedPropertyGettersMap();
   auto getter = getters.find(nameStr);
   if (getter != getters.end()) {
     auto dispatcher = std::bind(getter->second, this, std::placeholders::_1);
@@ -66,35 +63,29 @@ jsi::Value JsiHostObject::get(jsi::Runtime &runtime,
   }
 
   // Check the static function map
-  const JsiFunctionMap &funcs = getExportedFunctionMap();
+  const JsiFunctionMap& funcs = getExportedFunctionMap();
   auto func = funcs.find(nameStr);
   if (func != funcs.end()) {
-    auto dispatcher =
-        std::bind(func->second, reinterpret_cast<JsiHostObject *>(this),
-                  std::placeholders::_1, std::placeholders::_2,
-                  std::placeholders::_3, std::placeholders::_4);
+    auto dispatcher = std::bind(func->second, reinterpret_cast<JsiHostObject*>(this), std::placeholders::_1, std::placeholders::_2,
+                                std::placeholders::_3, std::placeholders::_4);
 
     // Add to cache - it is important to cache the results from the
     // createFromHostFunction function which takes some time.
-    return cache
-        .emplace(nameStr, jsi::Function::createFromHostFunction(runtime, name,
-                                                                0, dispatcher))
-        .first->second.asFunction(runtime);
+    return cache.emplace(nameStr, jsi::Function::createFromHostFunction(runtime, name, 0, dispatcher)).first->second.asFunction(runtime);
   }
 
   return jsi::Value::undefined();
 }
 
-std::vector<jsi::PropNameID>
-JsiHostObject::getPropertyNames(jsi::Runtime &runtime) {
+std::vector<jsi::PropNameID> JsiHostObject::getPropertyNames(jsi::Runtime& runtime) {
   // statically exported functions
-  const auto &funcs = getExportedFunctionMap();
+  const auto& funcs = getExportedFunctionMap();
 
   // Statically exported property getters
-  const auto &getters = getExportedPropertyGettersMap();
+  const auto& getters = getExportedPropertyGettersMap();
 
   // Statically exported property setters
-  const auto &setters = getExportedPropertySettersMap();
+  const auto& setters = getExportedPropertySettersMap();
 
   std::vector<jsi::PropNameID> propNames;
   propNames.reserve(funcs.size() + getters.size() + setters.size());

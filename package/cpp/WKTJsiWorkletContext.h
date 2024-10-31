@@ -19,9 +19,7 @@ namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
 
-class JsiWorkletContext
-    : public JsiHostObject,
-      public std::enable_shared_from_this<JsiWorkletContext> {
+class JsiWorkletContext : public JsiHostObject, public std::enable_shared_from_this<JsiWorkletContext> {
 public:
   /**
    * Creates a new worklet context that can be used to run javascript functions
@@ -37,7 +35,7 @@ public:
    default queue.
    @param name Name of the context
    */
-  explicit JsiWorkletContext(const std::string &name);
+  explicit JsiWorkletContext(const std::string& name);
 
   /**
    Constructs a new worklet context using the same values and configuration as
@@ -46,9 +44,7 @@ public:
    @param workletCallInvoker Callback for running a function on the worklet
    thread
    */
-  JsiWorkletContext(
-      const std::string &name,
-      std::function<void(std::function<void()> &&)> workletCallInvoker);
+  JsiWorkletContext(const std::string& name, std::function<void(std::function<void()>&&)> workletCallInvoker);
 
   /**
    Constructs a new worklet context using the given runtime and call invokers.
@@ -59,10 +55,8 @@ public:
    @param workletCallInvoker Callback for running a function on the worklet
    thread
    */
-  JsiWorkletContext(
-      const std::string &name, jsi::Runtime *jsRuntime,
-      std::function<void(std::function<void()> &&)> jsCallInvoker,
-      std::function<void(std::function<void()> &&)> workletCallInvoker);
+  JsiWorkletContext(const std::string& name, jsi::Runtime* jsRuntime, std::function<void(std::function<void()>&&)> jsCallInvoker,
+                    std::function<void(std::function<void()>&&)> workletCallInvoker);
 
   /**
    Destructor
@@ -77,10 +71,8 @@ public:
    * @param workletCallInvoker Callback for running a function on the worklet
    * thread
    */
-  void
-  initialize(const std::string &name, jsi::Runtime *jsRuntime,
-             std::function<void(std::function<void()> &&)> jsCallInvoker,
-             std::function<void(std::function<void()> &&)> workletCallInvoker);
+  void initialize(const std::string& name, jsi::Runtime* jsRuntime, std::function<void(std::function<void()>&&)> jsCallInvoker,
+                  std::function<void(std::function<void()>&&)> workletCallInvoker);
 
   /**
    * Initialializes the worklet context
@@ -88,8 +80,7 @@ public:
    * @param jsRuntime Runtime for the main javascript runtime.
    * @param jsCallInvoker Callback for running a function on the JS thread.
    */
-  void initialize(const std::string &name, jsi::Runtime *jsRuntime,
-                  std::function<void(std::function<void()> &&)> jsCallInvoker);
+  void initialize(const std::string& name, jsi::Runtime* jsRuntime, std::function<void(std::function<void()>&&)> jsCallInvoker);
 
   /**
    Get the default context
@@ -106,7 +97,7 @@ public:
    *
    * @return JsiWorkletContext*
    */
-  static JsiWorkletContext *getDefaultInstance() {
+  static JsiWorkletContext* getDefaultInstance() {
     return JsiWorkletContext::getDefaultInstanceAsShared().get();
   }
 
@@ -114,15 +105,17 @@ public:
    Returns the worklet context for the current thread. If called from the
    JS thread (or any other invalid context thread) nullptr is returned.
    */
-  static JsiWorkletContext *getCurrent(jsi::Runtime &runtime) {
-    auto rtPtr = static_cast<void *>(&runtime);
+  static JsiWorkletContext* getCurrent(jsi::Runtime& runtime) {
+    auto rtPtr = static_cast<void*>(&runtime);
     if (runtimeMappings.count(rtPtr) != 0) {
       return runtimeMappings.at(rtPtr);
     }
     return nullptr;
   }
 
-  size_t getContextId() { return _contextId; }
+  size_t getContextId() {
+    return _contextId;
+  }
 
   /**
    Adds a global decorator. The decorator will be installed in the default
@@ -133,7 +126,9 @@ public:
   /**
    Invalidates the instance
    */
-  static void invalidateDefaultInstance() { defaultInstance = nullptr; }
+  static void invalidateDefaultInstance() {
+    defaultInstance = nullptr;
+  }
 
   JSI_HOST_FUNCTION(addDecorator) {
     if (count != 2) {
@@ -151,8 +146,7 @@ public:
     }
 
     // Create / add the decorator
-    addDecorator(std::make_shared<JsiJsDecorator>(
-        runtime, arguments[0].asString(runtime).utf8(runtime), arguments[1]));
+    addDecorator(std::make_shared<JsiJsDecorator>(runtime, arguments[0].asString(runtime).utf8(runtime), arguments[1]));
 
     return jsi::Value::undefined();
   }
@@ -162,13 +156,10 @@ public:
       throw jsi::JSError(runtime, "createRunAsync expects one parameter.");
     }
 
-    auto caller =
-        JsiWorkletContext::createCallInContext(runtime, arguments[0], this);
+    auto caller = JsiWorkletContext::createCallInContext(runtime, arguments[0], this);
 
     // Now let us create the caller function.
-    return jsi::Function::createFromHostFunction(
-        runtime, jsi::PropNameID::forAscii(runtime, "createRunAsync"), 0,
-        caller);
+    return jsi::Function::createFromHostFunction(runtime, jsi::PropNameID::forAscii(runtime, "createRunAsync"), 0, caller);
   }
 
   JSI_HOST_FUNCTION(runAsync) {
@@ -177,8 +168,7 @@ public:
     return func.call(runtime, nullptr, 0);
   }
 
-  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletContext, addDecorator),
-                       JSI_EXPORT_FUNC(JsiWorkletContext, createRunAsync),
+  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletContext, addDecorator), JSI_EXPORT_FUNC(JsiWorkletContext, createRunAsync),
                        JSI_EXPORT_FUNC(JsiWorkletContext, runAsync))
 
   JSI_PROPERTY_GET(name) {
@@ -190,31 +180,33 @@ public:
   /**
    Returns the main javascript runtime
    */
-  jsi::Runtime *getJsRuntime() { return _jsRuntime; }
+  jsi::Runtime* getJsRuntime() {
+    return _jsRuntime;
+  }
 
   /**
    Returns the name of the context
    */
-  const std::string &getName() { return _name; }
+  const std::string& getName() {
+    return _name;
+  }
 
   /**
    Returns the worklet runtime. Lazy evaluated
    */
-  jsi::Runtime &getWorkletRuntime();
+  jsi::Runtime& getWorkletRuntime();
 
   /**
    Executes a function in the JS thread
    */
-  void invokeOnJsThread(std::function<void(jsi::Runtime &runtime)> &&fp);
+  void invokeOnJsThread(std::function<void(jsi::Runtime& runtime)>&& fp);
 
   /**
    Executes a function in the worklet thread
    */
-  void invokeOnWorkletThread(std::function<void(JsiWorkletContext *context,
-                                                jsi::Runtime &runtime)> &&fp);
+  void invokeOnWorkletThread(std::function<void(JsiWorkletContext* context, jsi::Runtime& runtime)>&& fp);
 
-  static jsi::HostFunctionType createInvoker(jsi::Runtime &runtime,
-                                             const jsi::Value *maybeFunc);
+  static jsi::HostFunctionType createInvoker(jsi::Runtime& runtime, const jsi::Value* maybeFunc);
 
   /**
    Calls a worklet function in a given context (or in the JS context if the ctx
@@ -226,9 +218,7 @@ public:
    @returns A host function type that will return a promise calling the
    maybeFunc.
    */
-  static jsi::HostFunctionType createCallInContext(jsi::Runtime &runtime,
-                                                   const jsi::Value &maybeFunc,
-                                                   JsiWorkletContext *ctx);
+  static jsi::HostFunctionType createCallInContext(jsi::Runtime& runtime, const jsi::Value& maybeFunc, JsiWorkletContext* ctx);
 
   /**
    Calls a worklet function in a given context (or in the JS context if the ctx
@@ -239,55 +229,44 @@ public:
    @returns A host function type that will return a promise calling the
    maybeFunc.
    */
-  jsi::HostFunctionType createCallInContext(jsi::Runtime &runtime,
-                                            const jsi::Value &maybeFunc);
+  jsi::HostFunctionType createCallInContext(jsi::Runtime& runtime, const jsi::Value& maybeFunc);
 
   // Resolve type of call we're about to do
-  typedef enum {
-    JsToJs = 0,
-    CtxToJs = 1,
-    WithinCtx = 2,
-    CtxToCtx = 3,
-    JsToCtx = 4
-  } CallingConvention;
+  typedef enum { JsToJs = 0, CtxToJs = 1, WithinCtx = 2, CtxToCtx = 3, JsToCtx = 4 } CallingConvention;
 
   /**
    Returns the calling convention for a given from/to context. This method is
    used to find out if we are calling a worklet from or to the JS context or
    from to a Worklet context or a combination of these.
    */
-  static CallingConvention getCallingConvention(JsiWorkletContext *fromContext,
-                                                JsiWorkletContext *toContext);
+  static CallingConvention getCallingConvention(JsiWorkletContext* fromContext, JsiWorkletContext* toContext);
 
   /**
    Verifies that the runtime is the correct runtime for the current context
    (worklet context or js context). NOTE: Only verifies in debug mode
    */
-  static void verifyRuntime(jsi::Runtime &runtime) {
+  static void verifyRuntime(jsi::Runtime& runtime) {
 #if DEBUG
     auto ctx = JsiWorkletContext::getCurrent(runtime);
     if (ctx) {
-      assert(&ctx->getWorkletRuntime() == &runtime &&
-             "Worklet runtime is not the same as the provided runtime");
+      assert(&ctx->getWorkletRuntime() == &runtime && "Worklet runtime is not the same as the provided runtime");
     } else {
-      assert(JsiWorkletContext::getDefaultInstance()->getJsRuntime() ==
-                 &runtime &&
-             "Expected JS runtime, got other runtime");
+      assert(JsiWorkletContext::getDefaultInstance()->getJsRuntime() == &runtime && "Expected JS runtime, got other runtime");
     }
 #endif
   }
 
 private:
-  jsi::Runtime *_jsRuntime;
+  jsi::Runtime* _jsRuntime;
   std::unique_ptr<jsi::Runtime> _workletRuntime;
   std::string _name;
-  std::function<void(std::function<void()> &&)> _jsCallInvoker;
-  std::function<void(std::function<void()> &&)> _workletCallInvoker;
+  std::function<void(std::function<void()>&&)> _jsCallInvoker;
+  std::function<void(std::function<void()>&&)> _workletCallInvoker;
   size_t _contextId;
   std::thread::id _jsThreadId;
 
   static std::shared_ptr<JsiWorkletContext> defaultInstance;
-  static std::map<void *, JsiWorkletContext *> runtimeMappings;
+  static std::map<void*, JsiWorkletContext*> runtimeMappings;
   static size_t contextIdNumber;
 };
 

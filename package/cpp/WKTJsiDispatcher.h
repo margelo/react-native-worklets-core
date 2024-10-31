@@ -26,14 +26,12 @@ public:
    * @return A new dispatch function for running the provided function with
    * error handling
    */
-  static std::function<void()> createDispatcher(
-      jsi::Runtime &runtime, std::shared_ptr<JsiWrapper> thisValuePtr,
-      const jsi::HostFunctionType &functionPtr,
-      const std::function<void(std::shared_ptr<JsiWrapper>)> onSuccess,
-      const std::function<void(const char *)> onError) {
+  static std::function<void()> createDispatcher(jsi::Runtime& runtime, std::shared_ptr<JsiWrapper> thisValuePtr,
+                                                const jsi::HostFunctionType& functionPtr,
+                                                const std::function<void(std::shared_ptr<JsiWrapper>)> onSuccess,
+                                                const std::function<void(const char*)> onError) {
     std::vector<std::shared_ptr<JsiWrapper>> emptyArgs;
-    return createDispatcher(runtime, thisValuePtr, functionPtr, emptyArgs,
-                            onSuccess, onError);
+    return createDispatcher(runtime, thisValuePtr, functionPtr, emptyArgs, onSuccess, onError);
   }
 
   /**
@@ -48,38 +46,31 @@ public:
    * @return A new dispatch function for running the provided function with
    * error handling
    */
-  static std::function<void()> createDispatcher(
-      jsi::Runtime &runtime, std::shared_ptr<JsiWrapper> thisValuePtr,
-      const jsi::HostFunctionType &functionPtr,
-      const std::vector<std::shared_ptr<JsiWrapper>> &arguments,
-      const std::function<void(std::shared_ptr<JsiWrapper>)> onSuccess,
-      const std::function<void(const char *)> onError) {
+  static std::function<void()> createDispatcher(jsi::Runtime& runtime, std::shared_ptr<JsiWrapper> thisValuePtr,
+                                                const jsi::HostFunctionType& functionPtr,
+                                                const std::vector<std::shared_ptr<JsiWrapper>>& arguments,
+                                                const std::function<void(std::shared_ptr<JsiWrapper>)> onSuccess,
+                                                const std::function<void(const char*)> onError) {
 
     // Set up the callback to run on the correct runtime thread
-    return [&runtime, arguments, thisValuePtr, functionPtr, onSuccess,
-            onError]() {
+    return [&runtime, arguments, thisValuePtr, functionPtr, onSuccess, onError]() {
       try {
         // Define return value
         jsi::Value retVal = jsi::Value::undefined();
 
         // Arguments
-        jsi::Value *args = new jsi::Value[arguments.size()];
+        jsi::Value* args = new jsi::Value[arguments.size()];
         for (int i = 0; i < arguments.size(); ++i) {
           args[i] = JsiWrapper::unwrap(runtime, arguments[i]);
         }
 
         // Call with this or not?
-        if (thisValuePtr != nullptr &&
-            thisValuePtr->getType() != JsiWrapperType::Null &&
+        if (thisValuePtr != nullptr && thisValuePtr->getType() != JsiWrapperType::Null &&
             thisValuePtr->getType() != JsiWrapperType::Undefined) {
-          retVal = functionPtr(
-              runtime,
-              JsiWrapper::unwrap(runtime, thisValuePtr).asObject(runtime),
-              static_cast<const jsi::Value *>(args), arguments.size());
-        } else {
-          retVal = functionPtr(runtime, nullptr,
-                               static_cast<const jsi::Value *>(args),
+          retVal = functionPtr(runtime, JsiWrapper::unwrap(runtime, thisValuePtr).asObject(runtime), static_cast<const jsi::Value*>(args),
                                arguments.size());
+        } else {
+          retVal = functionPtr(runtime, nullptr, static_cast<const jsi::Value*>(args), arguments.size());
         }
 
         delete[] args;
@@ -88,13 +79,13 @@ public:
         if (onSuccess != nullptr) {
           onSuccess(JsiWrapper::wrap(runtime, retVal));
         }
-      } catch (const jsi::JSError &err) {
+      } catch (const jsi::JSError& err) {
         if (onError != nullptr)
           onError(err.getMessage().c_str());
-      } catch (const std::exception &err) {
+      } catch (const std::exception& err) {
         if (onError != nullptr)
           onError(err.what());
-      } catch (const std::runtime_error &err) {
+      } catch (const std::runtime_error& err) {
         if (onError != nullptr)
           onError(err.what());
       } catch (...) {

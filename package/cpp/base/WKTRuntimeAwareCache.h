@@ -22,23 +22,22 @@ namespace jsi = facebook::jsi;
  * managed by the runtime, accessing that portion of the memory after runtime is
  * deleted is the root cause of that crash).
  */
-template <typename T>
-class RuntimeAwareCache : public RuntimeLifecycleListener {
+template <typename T> class RuntimeAwareCache : public RuntimeLifecycleListener {
 
 public:
-  void onRuntimeDestroyed(jsi::Runtime *rt) override {
+  void onRuntimeDestroyed(jsi::Runtime* rt) override {
     // A runtime has been destroyed, so destroy the related cache.
     _runtimeCaches.erase(rt);
   }
 
   ~RuntimeAwareCache() {
-    for (auto &cache : _runtimeCaches) {
+    for (auto& cache : _runtimeCaches) {
       // remove all `onRuntimeDestroyed` listeners.
       RuntimeLifecycleMonitor::removeListener(*cache.first, this);
     }
   }
 
-  T &get(jsi::Runtime &rt) {
+  T& get(jsi::Runtime& rt) {
     if (_runtimeCaches.count(&rt) == 0) {
       // This is the first time this Runtime has been accessed.
       // We set up a `onRuntimeDestroyed` listener for it and
@@ -52,7 +51,7 @@ public:
   }
 
 private:
-  std::unordered_map<jsi::Runtime *, T> _runtimeCaches;
+  std::unordered_map<jsi::Runtime*, T> _runtimeCaches;
 };
 
 } // namespace RNWorklet

@@ -10,6 +10,5 @@
 
 namespace RNWorklet {
 using namespace facebook;
-void install(jsi::Runtime &runtime,
-             const std::shared_ptr<react::CallInvoker> &callInvoker);
+void install(jsi::Runtime& runtime, const std::shared_ptr<react::CallInvoker>& callInvoker);
 } // namespace RNWorklet
