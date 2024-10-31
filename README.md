@@ -40,9 +40,7 @@ const worklet = () => {
 
 ## Requirements
 
-- Requires react-native 0.74 or higher
-- Requires the [new architecture](https://reactnative.dev/docs/the-new-architecture/landing-page) to be enabled
-- Requires [Hermes](https://reactnative.dev/docs/hermes)
+- Requires react-native 0.75 or higher
 
 ## Usage
 
