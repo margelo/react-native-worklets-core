@@ -53,10 +53,10 @@ find_library(LOG_LIB log)
 # Link everything together
 target_link_libraries(
         ${PACKAGE_NAME}
-        ${LOG_LIB} # <-- Logcat logger
-        hermes-engine::libhermes # <-- Hermes Prefab
-        fbjni::fbjni # <-- fbjni
-        ReactAndroid::jsi # <-- RN: JSI
-        ReactAndroid::react_nativemodule_core # <-- RN: TurboModules Core
-        ReactAndroid::turbomodulejsijni # <-- RN: TurboModules utils (e.g. CallInvokerHolder)
+        ${LOG_LIB}                              # <-- Logcat logger
+        hermes-engine::libhermes                # <-- Hermes Prefab
+        fbjni::fbjni                            # <-- fbjni
+        ReactAndroid::jsi                       # <-- RN: JSI
+        ReactAndroid::react_nativemodule_core   # <-- RN: TurboModules Core
+        ReactAndroid::turbomodulejsijni         # <-- RN: TurboModules utils (e.g. CallInvokerHolder)
 )
