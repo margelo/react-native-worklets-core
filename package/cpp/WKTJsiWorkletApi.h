@@ -22,6 +22,24 @@ namespace jsi = facebook::jsi;
 
 class JsiWorkletApi : public JsiHostObject {
 public:
+  // Name of the Worklet API member (where to install on global)
+  static const char *WorkletsApiName;
+
+  /**
+   * Installs the worklet API into the provided runtime
+   */
+  static void installApi(jsi::Runtime &runtime);
+
+  /**
+   Returns the worklet API
+   */
+  static std::shared_ptr<JsiWorkletApi> getInstance();
+
+  /**
+   Invalidate the api instance.
+   */
+  static void invalidateInstance();
+
   JSI_HOST_FUNCTION(createContext) {
     if (count == 0) {
       throw jsi::JSError(
@@ -165,5 +183,9 @@ public:
    */
   std::shared_ptr<JsiWorkletContext>
   createWorkletContext(const std::string &name);
+
+private:
+  // Instance/singletong
+  static std::shared_ptr<JsiWorkletApi> instance;
 };
 } // namespace RNWorklet

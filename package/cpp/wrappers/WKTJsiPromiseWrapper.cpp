@@ -231,9 +231,6 @@ void JsiPromiseWrapper::setValue(jsi::Runtime &runtime,
 void JsiPromiseWrapper::propagateFulfilled(jsi::Runtime &runtime) {
   // printf("promise %zu: propagateFulfilled queue: %zu\n", _counter,
   //        _thenQueue.size());
-  if (_value == nullptr) {
-    _value = JsiWrapper::wrap(runtime, jsi::Value::undefined());
-  }
 
   for (auto &item : _thenQueue) {
     if (item.fulfilledFn != nullptr) {
@@ -288,9 +285,6 @@ void JsiPromiseWrapper::propagateFulfilled(jsi::Runtime &runtime) {
 void JsiPromiseWrapper::propagateRejected(jsi::Runtime &runtime) {
   // printf("promise %zu: propagateRejected queue: %zu\n", _counter,
   //        _thenQueue.size());
-  if (_reason == nullptr) {
-    _reason = JsiWrapper::wrap(runtime, jsi::Value::undefined());
-  }
 
   for (auto &item : _thenQueue) {
     if (item.catchFn != nullptr) {

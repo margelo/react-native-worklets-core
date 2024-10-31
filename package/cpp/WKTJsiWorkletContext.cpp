@@ -113,6 +113,9 @@ jsi::Runtime &JsiWorkletContext::getWorkletRuntime() {
     // object.
     _workletRuntime->global().setProperty(*_workletRuntime, GlobalPropertyName,
                                           _workletRuntime->global());
+
+    // Install the WorkletAPI into the new runtime
+    JsiWorkletApi::installApi(*_workletRuntime);
   }
 
   return *_workletRuntime;
@@ -396,9 +399,9 @@ JsiWorkletContext::createCallInContext(jsi::Runtime &runtime,
                                     runtime, "Unknown error in promise."));
               });
             }
-
-            // We need to explicitly clear the func shared pointer here to avoid
-            // it being deleted on another thread
+            
+            // We need to explicitly clear the func shared pointer here to avoid it being
+            // deleted on another thread
             promise = nullptr;
           });
         });
@@ -431,8 +434,8 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
     if (ctx != nullptr) {
       // We are on a worklet thread
       ctx->invokeOnWorkletThread(
-          [argsWrapper, rtPtr, func = std::move(func)](
-              JsiWorkletContext *, jsi::Runtime &runtime) mutable {
+          [argsWrapper, rtPtr, func = std::move(func)](JsiWorkletContext *,
+                                     jsi::Runtime &runtime) mutable {
             assert(&runtime == rtPtr && "Expected same runtime ptr!");
             auto args = argsWrapper.getArguments(runtime);
             func->call(runtime, ArgumentsWrapper::toArgs(args),
@@ -441,8 +444,7 @@ JsiWorkletContext::createInvoker(jsi::Runtime &runtime,
           });
     } else {
       JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
-          [argsWrapper, rtPtr,
-           func = std::move(func)](jsi::Runtime &runtime) mutable {
+          [argsWrapper, rtPtr, func = std::move(func)](jsi::Runtime &runtime) mutable {
             assert(&runtime == rtPtr && "Expected same runtime ptr!");
             auto args = argsWrapper.getArguments(runtime);
             func->call(runtime, ArgumentsWrapper::toArgs(args),
