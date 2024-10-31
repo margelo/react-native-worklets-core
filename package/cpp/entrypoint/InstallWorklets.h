@@ -4,11 +4,12 @@
 
 #pragma once
 
+#include <ReactCommon/CallInvoker.h>
 #include <jsi/jsi.h>
 #include <memory>
-#include <ReactCommon/CallInvoker.h>
 
 namespace RNWorklet {
-    using namespace facebook;
-    void install(jsi::Runtime& runtime, const std::shared_ptr<react::CallInvoker>& callInvoker);
-} // RNWorklet
+using namespace facebook;
+void install(jsi::Runtime &runtime,
+             const std::shared_ptr<react::CallInvoker> &callInvoker);
+} // namespace RNWorklet

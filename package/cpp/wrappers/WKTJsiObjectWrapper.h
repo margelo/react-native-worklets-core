@@ -60,7 +60,8 @@ public:
     } else {
       setObjectValue(runtime, object);
     }
-// NativeState functionality is also available in JSC with react-native 74+, but let's just keep this simple for now
+// NativeState functionality is also available in JSC with react-native 74+, but
+// let's just keep this simple for now
 #if JS_RUNTIME_HERMES
     updateNativeState(runtime, object);
 #endif
@@ -128,7 +129,8 @@ public:
     std::unique_lock lock(_readWriteMutex);
 
     auto nameStr = name.utf8(runtime);
-    _properties[nameStr] = JsiWrapper::wrap(runtime, value, this, getUseProxiesForUnwrapping());
+    _properties[nameStr] =
+        JsiWrapper::wrap(runtime, value, this, getUseProxiesForUnwrapping());
   }
 
   /**
@@ -195,7 +197,7 @@ private:
 
   void setObjectValue(jsi::Runtime &runtime, jsi::Object &obj) {
     std::unique_lock lock(_readWriteMutex);
-    
+
     setType(JsiWrapperType::Object);
     _properties.clear();
     auto propNames = obj.getPropertyNames(runtime);

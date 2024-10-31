@@ -19,7 +19,7 @@ using namespace RNWorklet;
 
 // forward-declaration (private API)
 @interface RCTBridge (JSIRuntime)
-- (void*)runtime;
+- (void *)runtime;
 - (std::shared_ptr<react::CallInvoker>)jsCallInvoker;
 @end
 
@@ -33,13 +33,13 @@ RCT_EXPORT_MODULE(Worklets)
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(install) {
   try {
     // 1. Cast RCTBridge to a RCTCxxBridge (ObjC)
-    RCTCxxBridge* cxxBridge = (RCTCxxBridge*)RCTBridge.currentBridge;
+    RCTCxxBridge *cxxBridge = (RCTCxxBridge *)RCTBridge.currentBridge;
     if (!cxxBridge) {
       return @"RCTBridge is not a RCTCxxBridge!";
     }
 
     // 2. Access jsi::Runtime and cast from void*
-    jsi::Runtime* runtime = reinterpret_cast<jsi::Runtime*>(cxxBridge.runtime);
+    jsi::Runtime *runtime = reinterpret_cast<jsi::Runtime *>(cxxBridge.runtime);
     if (!runtime) {
       return @"jsi::Runtime on RCTCxxBridge was null!";
     }
@@ -53,12 +53,14 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(install) {
     // 4. Install workelts
     RNWorklet::install(*runtime, callInvoker);
     return nil;
-  } catch (std::exception& error) {
+  } catch (std::exception &error) {
     // ?. Any C++ error occurred (probably in nitro::install()?)
-    return [NSString stringWithCString:error.what() encoding:kCFStringEncodingUTF8];
+    return [NSString stringWithCString:error.what()
+                              encoding:kCFStringEncodingUTF8];
   } catch (...) {
     // ?. Any non-std error occured (probably in ObjC code)
-    return @"Unknown non-std error occurred while installing react-native-worklets-core!";
+    return @"Unknown non-std error occurred while installing "
+           @"react-native-worklets-core!";
   }
 }
 
