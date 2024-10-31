@@ -13,8 +13,7 @@
 #include "WKTRuntimeAwareCache.h"
 
 namespace RNWorklet {
-
-static const char* PropNameWorkletHash = "__workletHash";
+static const char *PropNameWorkletHash = "__workletHash";
 static const char* PropNameWorkletInitData = "__initData";
 static const char* PropNameWorkletInitDataCode = "code";
 
