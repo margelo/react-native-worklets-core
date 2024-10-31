@@ -1,5 +1,5 @@
 {
-  "name": "workletsexample",
+  "name": "react-native-worklets-example",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -16,13 +16,14 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@babel/preset-env": "^7.20.0",
     "@babel/runtime": "^7.20.0",
     "@react-native/babel-preset": "0.75.4",
     "@react-native/metro-config": "0.75.4",
     "@react-native/typescript-config": "0.75.4",
     "babel-plugin-module-resolver": "^5.0.0"
   },
-  "jest": {
-    "preset": "react-native"
+  "engines": {
+    "node": ">=18"
   }
 }

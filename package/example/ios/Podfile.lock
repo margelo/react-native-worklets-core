@@ -43,7 +43,6 @@ PODS:
     - React-RCTText (= 0.75.4)
     - React-RCTVibration (= 0.75.4)
   - React-callinvoker (0.75.4)
-  - React-Codegen (0.1.0)
   - React-Core (0.75.4):
     - glog
     - hermes-engine
@@ -1238,13 +1237,27 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-worklets-core (1.3.3):
-    - RCT-Folly
+  - react-native-worklets-core (2.0.0-beta.4):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.01.01.00)
     - RCTRequired
     - RCTTypeSafety
-    - React-Codegen
     - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
+    - Yoga
   - React-nativeconfig (0.75.4)
   - React-NativeModulesApple (0.75.4):
     - glog
@@ -1577,7 +1590,6 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
-    - React-Codegen
     - SocketRocket
 
 EXTERNAL SOURCES:
@@ -1722,7 +1734,6 @@ SPEC CHECKSUMS:
   RCTTypeSafety: 28e24a6e44f5cbf912c66dde6ab7e07d1059a205
   React: c2830fa483b0334bda284e46a8579ebbe0c5447e
   React-callinvoker: 4aecde929540c26b841a4493f70ebf6016691eb8
-  React-Codegen: 4b8b4817cea7a54b83851d4c1f91f79aa73de30a
   React-Core: 9c059899f00d46b5cec3ed79251f77d9c469553d
   React-CoreModules: 9fac2d31803c0ed03e4ddaa17f1481714f8633a5
   React-cxxreact: a979810a3ca4045ceb09407a17563046a7f71494
@@ -1746,7 +1757,7 @@ SPEC CHECKSUMS:
   React-logger: d79b704bf215af194f5213a6b7deec50ba8e6a9b
   React-Mapbuffer: b982d5bba94a8bc073bda48f0d27c9b28417fae3
   React-microtasksnativemodule: 2cec1d6e126598df0f165268afa231174dd1a611
-  react-native-worklets-core: 80d4a9b195d3e806c5e02942cfb5a43c6f99d02d
+  react-native-worklets-core: 3990e55c271a0d3f7202a46beedd35cbc93bb68f
   React-nativeconfig: 8c83d992b9cc7d75b5abe262069eaeea4349f794
   React-NativeModulesApple: 9f7920224a3b0c7d04d77990067ded14cee3c614
   React-perflogger: 59e1a3182dca2cee7b9f1f7aab204018d46d1914
