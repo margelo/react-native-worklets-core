@@ -22,7 +22,8 @@ namespace jsi = facebook::jsi;
  * managed by the runtime, accessing that portion of the memory after runtime is
  * deleted is the root cause of that crash).
  */
-template <typename T> class RuntimeAwareCache : public RuntimeLifecycleListener {
+template <typename T>
+class RuntimeAwareCache : public RuntimeLifecycleListener {
 
 public:
   void onRuntimeDestroyed(jsi::Runtime* rt) override {
