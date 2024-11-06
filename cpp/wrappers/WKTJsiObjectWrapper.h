@@ -60,21 +60,7 @@ public:
     } else {
       setObjectValue(runtime, object);
     }
-// NativeState functionality is also available in JSC with react-native 74+, but let's just keep this simple for now
-#if JS_RUNTIME_HERMES
-    updateNativeState(runtime, object);
-#endif
   }
-
-#if JS_RUNTIME_HERMES
-  void updateNativeState(jsi::Runtime &runtime, jsi::Object &obj) {
-    if (obj.hasNativeState(runtime)) {
-      _nativeState = obj.getNativeState(runtime);
-    } else {
-      _nativeState = nullptr;
-    }
-  }
-#endif
 
   /**
    * Overridden get value where we convert from the internal representation to
@@ -91,13 +77,23 @@ public:
       }
     }
 
-    jsi::Object obj = getObject(runtime);
-#if JS_RUNTIME_HERMES
-    if (_nativeState != nullptr) {
-      obj.setNativeState(runtime, _nativeState);
+    if (_prototype != nullptr) {
+      // We have a Prototype! Create the Object from that Prototype
+      jsi::Object Object = runtime.global().getPropertyAsObject(runtime, "Object");
+      jsi::Function create = Object.getPropertyAsFunction(runtime, "create");
+      jsi::Value result = create.call(runtime, _prototype->getValue(runtime));
+      if (_nativeState != nullptr) {
+        // Adjust the native state as well if we have one
+        result.getObject(runtime).setNativeState(runtime, _nativeState);
+      }
+      return result;
+    } else {
+      jsi::Object obj = getObject(runtime);
+      if (_nativeState != nullptr) {
+        obj.setNativeState(runtime, _nativeState);
+      }
+      return obj;
     }
-#endif
-    return obj;
   }
 
   jsi::Object getObject(jsi::Runtime &runtime) {
@@ -208,6 +204,23 @@ private:
           nameString,
           JsiWrapper::wrap(runtime, value, this, getUseProxiesForUnwrapping()));
     }
+    
+    if (obj.hasNativeState(runtime)) {
+      // 1. Get NativeState and keep it in memory.
+      _nativeState = obj.getNativeState(runtime);
+      // 2. If we have a NativeState, we likely also have a prototype chain. Recursively copy those over.
+      jsi::Object Object = runtime.global().getPropertyAsObject(runtime, "Object");
+      jsi::Function getPrototypeOf = Object.getPropertyAsFunction(runtime, "getPrototypeOf");
+      jsi::Value prototype = getPrototypeOf.call(runtime, obj);
+      if (prototype.isObject()) {
+        jsi::Object prototypeObject = prototype.getObject(runtime);
+        _prototype = std::make_shared<JsiObjectWrapper>(nullptr, false);
+        _prototype->setObjectValue(runtime, prototypeObject);
+      }
+    } else {
+      _nativeState = nullptr;
+      _prototype = nullptr;
+    }
   }
 
   void setHostObjectValue(jsi::Runtime &runtime, jsi::Object &obj) {
@@ -252,11 +265,10 @@ private:
   }
 
 private:
+  std::shared_ptr<JsiObjectWrapper> _prototype;
   std::map<std::string, std::shared_ptr<JsiWrapper>> _properties;
   std::shared_ptr<jsi::HostFunctionType> _hostFunction;
   std::shared_ptr<jsi::HostObject> _hostObject;
-#if JS_RUNTIME_HERMES
   std::shared_ptr<jsi::NativeState> _nativeState;
-#endif
 };
 } // namespace RNWorklet
