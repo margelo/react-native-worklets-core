@@ -13,8 +13,10 @@ import { TestWrapper } from "../Tests/TestWrapper";
 
 const obj = Worklets.createDummyNative();
 console.log(obj, Object.getPrototypeOf(obj));
-obj.doSomething();
-console.log(obj, Object.getPrototypeOf(obj));
+const value1 = obj.doSomething();
+console.log(obj, Object.getPrototypeOf(obj), value1);
+const value2 = obj.doSomething();
+console.log(obj, Object.getPrototypeOf(obj), value2);
 
 const App = () => {
   const { tests, categories, output, runTests, runSingleTest } =
