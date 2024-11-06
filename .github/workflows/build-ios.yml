@@ -63,8 +63,6 @@ jobs:
             ~/Library/Caches/CocoaPods
             ~/.cocoapods
           key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
       - name: Install Pods
         run: RCT_NEW_ARCH_ENABLED=0 bundle exec pod install
       - name: Install xcpretty
