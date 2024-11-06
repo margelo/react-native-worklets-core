@@ -20,6 +20,13 @@ namespace RNWorklet {
 
 namespace jsi = facebook::jsi;
 
+class SomeState: public jsi::NativeState {
+public:
+  SomeState(int value): value(value) { }
+  
+  int value;
+};
+
 class JsiWorkletApi : public JsiHostObject {
 public:
   // Name of the Worklet API member (where to install on global)
@@ -132,6 +139,33 @@ public:
     }
 
     return false;
+  }
+  
+  JSI_HOST_FUNCTION(createDummyNative) {
+    jsi::Object proto(runtime);
+    proto.setProperty(runtime, "doSomething", jsi::Function::createFromHostFunction(runtime, jsi::PropNameID::forUtf8(runtime, "doSomething"), 0, [](jsi::Runtime& runtime,
+                                                                                                                                                     const jsi::Value& thisValue,
+                                                                                                                                                     const jsi::Value* args,
+                                                                                                                                                     size_t count) -> jsi::Value {
+      jsi::Object thisObj = thisValue.asObject(runtime);
+      auto nativeState = thisObj.getNativeState(runtime);
+      if (nativeState == nullptr) {
+        throw std::runtime_error("No nativestate!");
+      }
+      auto cast = std::dynamic_pointer_cast<SomeState>(nativeState);
+      if (cast == nullptr) {
+        throw std::runtime_error("Wrong nativestate!");
+      }
+      cast->value += 1;
+      return jsi::Value(cast->value);
+    }));
+    
+    jsi::Object objectBase = runtime.global().getPropertyAsObject(runtime, "Object");
+    jsi::Function create = objectBase.getPropertyAsFunction(runtime, "create");
+    jsi::Value newObj = create.call(runtime, proto);
+    auto nativeState = std::make_shared<SomeState>(5);
+    newObj.asObject(runtime).setNativeState(runtime, nativeState);
+    return newObj;
   }
 
   JSI_HOST_FUNCTION(__jsi_is_object) {
