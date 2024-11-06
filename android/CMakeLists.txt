@@ -80,20 +80,20 @@ if(${JS_RUNTIME} STREQUAL "hermes")
   string(APPEND CMAKE_CXX_FLAGS " -DJS_RUNTIME_HERMES=1")
 
   target_link_libraries(
-          ${PACKAGE_NAME}
-          hermes-engine::libhermes
+    ${PACKAGE_NAME}
+    hermes-engine::libhermes
   )
 
   if(${HERMES_ENABLE_DEBUGGER})
     if(ReactAndroid_VERSION_MINOR GREATER_EQUAL 76)
       target_link_libraries(
-              ${PACKAGE_NAME}
-              ReactAndroid::hermestooling
+        ${PACKAGE_NAME}
+        ReactAndroid::hermestooling
       )
     else()
       target_link_libraries(
-              ${PACKAGE_NAME}
-              ReactAndroid::hermes_executor
+        ${PACKAGE_NAME}
+        ReactAndroid::hermes_executor
       )
     endif()
   endif()
@@ -102,13 +102,13 @@ elseif(${JS_RUNTIME} STREQUAL "jsc")
 
   if(ReactAndroid_VERSION_MINOR GREATER_EQUAL 76)
     target_link_libraries(
-            worklets
-            ReactAndroid::jsctooling
+      ${PACKAGE_NAME}
+      ReactAndroid::jsctooling
     )
   else()
     target_link_libraries(
-            worklets
-            ReactAndroid::jscexecutor
+      ${PACKAGE_NAME}
+      ReactAndroid::jscexecutor
     )
   endif()
 else()
