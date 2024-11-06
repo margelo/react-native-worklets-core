@@ -77,15 +77,13 @@ public:
       }
     }
 
-    if (_prototype != nullptr) {
-      // We have a Prototype! Create the Object from that Prototype
+    if (_prototype != nullptr && _nativeState != nullptr) {
+      // We have a Prototype and NativeState!
+      // It's likely a Nitro HybridObject that does not have properties by itself.
       jsi::Object Object = runtime.global().getPropertyAsObject(runtime, "Object");
       jsi::Function create = Object.getPropertyAsFunction(runtime, "create");
       jsi::Value result = create.call(runtime, _prototype->getValue(runtime));
-      if (_nativeState != nullptr) {
-        // Adjust the native state as well if we have one
-        result.getObject(runtime).setNativeState(runtime, _nativeState);
-      }
+      result.getObject(runtime).setNativeState(runtime, _nativeState);
       return result;
     } else {
       jsi::Object obj = getObject(runtime);
