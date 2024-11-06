@@ -373,7 +373,7 @@ var Foo = function () {
   function Foo() {
     (0, _classCallCheck2.default)(this, Foo);
   }
-  (0, _createClass2.default)(Foo, [{
+  return (0, _createClass2.default)(Foo, [{
     key: \\"bar\\",
     get: function () {
       var _e = [new Error(), -2, -20];
@@ -389,7 +389,6 @@ var Foo = function () {
       return _f;
     }()
   }]);
-  return Foo;
 }();"
 `;
 
@@ -405,7 +404,7 @@ var Foo = function () {
   function Foo() {
     (0, _classCallCheck2.default)(this, Foo);
   }
-  (0, _createClass2.default)(Foo, [{
+  return (0, _createClass2.default)(Foo, [{
     key: \\"bar\\",
     value: function () {
       var _e = [new Error(), 1, -20];
@@ -419,7 +418,6 @@ var Foo = function () {
       return _f;
     }()
   }]);
-  return Foo;
 }();"
 `;
 
@@ -453,7 +451,7 @@ var Foo = function () {
   function Foo() {
     (0, _classCallCheck2.default)(this, Foo);
   }
-  (0, _createClass2.default)(Foo, null, [{
+  return (0, _createClass2.default)(Foo, null, [{
     key: \\"bar\\",
     value: function () {
       var _e = [new Error(), 1, -20];
@@ -467,7 +465,6 @@ var Foo = function () {
       return _f;
     }()
   }]);
-  return Foo;
 }();"
 `;
 
