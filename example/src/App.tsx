@@ -20,8 +20,12 @@ console.log(obj, Object.getPrototypeOf(obj), value2);
 
 Worklets.defaultContext.runAsync(() => {
   "worklet";
-  const value3 = obj.doSomething();
-  console.log(obj, Object.getPrototypeOf(obj), value3);
+  try {
+    const value3 = obj.doSomething();
+    console.log(obj, Object.getPrototypeOf(obj), value3);
+  } catch (e) {
+    console.error(e.message);
+  }
 });
 
 const App = () => {
