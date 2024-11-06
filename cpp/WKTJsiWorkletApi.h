@@ -190,7 +190,8 @@ public:
                                        createRunInJsFn), // <-- deprecated
                        JSI_EXPORT_FUNC(JsiWorkletApi, getCurrentThreadId),
                        JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_array),
-                       JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_object))
+                       JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_object),
+                       JSI_EXPORT_FUNC(JsiWorkletApi, createDummyNative))
 
   JSI_PROPERTY_GET(defaultContext) {
     return jsi::Object::createFromHostObject(

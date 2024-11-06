@@ -6,10 +6,15 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useWorklet } from "react-native-worklets-core";
+import { useWorklet, Worklets } from "react-native-worklets-core";
 
 import { useTestRunner } from "../Tests";
 import { TestWrapper } from "../Tests/TestWrapper";
+
+const obj = Worklets.createDummyNative();
+console.log(obj, Object.getPrototypeOf(obj));
+obj.doSomething();
+console.log(obj, Object.getPrototypeOf(obj));
 
 const App = () => {
   const { tests, categories, output, runTests, runSingleTest } =
