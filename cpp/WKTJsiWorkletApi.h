@@ -148,10 +148,10 @@ public:
                                                                                                                                                      const jsi::Value* args,
                                                                                                                                                      size_t count) -> jsi::Value {
       jsi::Object thisObj = thisValue.asObject(runtime);
-      auto nativeState = thisObj.getNativeState(runtime);
-      if (nativeState == nullptr) {
+      if (!thisObj.hasNativeState(runtime)) {
         throw std::runtime_error("No nativestate!");
       }
+      auto nativeState = thisObj.getNativeState(runtime);
       auto cast = std::dynamic_pointer_cast<SomeState>(nativeState);
       if (cast == nullptr) {
         throw std::runtime_error("Wrong nativestate!");

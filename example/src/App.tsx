@@ -18,6 +18,12 @@ console.log(obj, Object.getPrototypeOf(obj), value1);
 const value2 = obj.doSomething();
 console.log(obj, Object.getPrototypeOf(obj), value2);
 
+Worklets.defaultContext.runAsync(() => {
+  "worklet";
+  const value3 = obj.doSomething();
+  console.log(obj, Object.getPrototypeOf(obj), value3);
+});
+
 const App = () => {
   const { tests, categories, output, runTests, runSingleTest } =
     useTestRunner();
