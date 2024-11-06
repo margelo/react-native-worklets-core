@@ -79,9 +79,12 @@
     "@react-native/eslint-config": "0.76.1",
     "@release-it/conventional-changelog": "^5.0.0",
     "@types/jest": "^29.5.14",
+    "@types/react": "^18.2.6",
     "clang-format": "^1.8.0",
     "del-cli": "^5.0.0",
     "eslint": "^8.19.0",
+    "eslint-plugin-ft-flow": "^3.0.11",
+    "eslint-plugin-prettier": "^4.2.1",
     "jest": "^28.1.1",
     "prettier": "2.8.8",
     "react": "18.3.1",
@@ -120,35 +123,6 @@
         "preset": "angular"
       }
     }
-  },
-  "eslintConfig": {
-    "root": true,
-    "extends": [
-      "@react-native"
-    ],
-    "rules": {
-      "prettier/prettier": [
-        "error",
-        {
-          "quoteProps": "consistent",
-          "singleQuote": false,
-          "tabWidth": 2,
-          "trailingComma": "es5",
-          "useTabs": false
-        }
-      ]
-    }
-  },
-  "eslintIgnore": [
-    "node_modules/",
-    "lib/"
-  ],
-  "prettier": {
-    "quoteProps": "consistent",
-    "singleQuote": false,
-    "tabWidth": 2,
-    "trailingComma": "es5",
-    "useTabs": false
   },
   "react-native-builder-bob": {
     "source": "src",
