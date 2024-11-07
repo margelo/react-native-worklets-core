@@ -64,7 +64,7 @@ jobs:
             ~/.cocoapods
           key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
       - name: Install Pods
-        run: RCT_NEW_ARCH_ENABLED=0 bundle exec pod install
+        run: RCT_NEW_ARCH_ENABLED=1 bundle exec pod install
       - name: Install xcpretty
         run: gem install xcpretty
       - name: Build App
