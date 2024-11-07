@@ -5,18 +5,18 @@ on:
     branches:
       - main
     paths:
-      - '.github/workflows/build-ios.yml'
-      - 'ios/**'
-      - 'cpp/**'
-      - '*.podspec'
-      - 'example/ios/**'
+      - ".github/workflows/build-ios.yml"
+      - "ios/**"
+      - "cpp/**"
+      - "*.podspec"
+      - "example/ios/**"
   pull_request:
     paths:
-      - '.github/workflows/build-ios.yml'
-      - 'ios/**'
-      - 'cpp/**'
-      - '*.podspec'
-      - 'example/ios/**'
+      - ".github/workflows/build-ios.yml"
+      - "ios/**"
+      - "cpp/**"
+      - "*.podspec"
+      - "example/ios/**"
 
 jobs:
   build:
@@ -51,7 +51,7 @@ jobs:
       - name: Setup Ruby (bundle)
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '2.7.6'
+          ruby-version: "2.7.6"
           bundler-cache: true
           working-directory: example
 
@@ -63,10 +63,8 @@ jobs:
             ~/Library/Caches/CocoaPods
             ~/.cocoapods
           key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
       - name: Install Pods
-        run: bundle exec pod check || bundle exec pod install
+        run: RCT_NEW_ARCH_ENABLED=1 bundle exec pod install
       - name: Install xcpretty
         run: gem install xcpretty
       - name: Build App
