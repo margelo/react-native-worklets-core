@@ -80,7 +80,8 @@ android {
         arguments "-DANDROID_STL=c++_shared",
                 "-DANDROID_TOOLCHAIN=clang",
                 "-DREACT_NATIVE_DIR=${nodeModules}/react-native",
-                "-DJS_RUNTIME=${JS_RUNTIME}"
+                "-DJS_RUNTIME=${JS_RUNTIME}",
+                "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
         abiFilters (*reactNativeArchitectures())
       }
     }
