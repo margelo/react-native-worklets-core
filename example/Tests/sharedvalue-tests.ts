@@ -39,6 +39,13 @@ export const sharedvalue_tests = {
     );
   },
 
+  get_set_recursive_value: () => {
+    const x = { a: 5, b: {} };
+    x.b = x;
+    const sharedValue = Worklets.createSharedValue(x);
+    return ExpectValue(sharedValue.value, x);
+  },
+
   is_object: () => {
     const sharedValue = Worklets.createSharedValue({ a: 100, b: 200 });
     return ExpectValue(typeof sharedValue.value === "object", true);
