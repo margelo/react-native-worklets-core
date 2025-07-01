@@ -118,6 +118,12 @@ export const sharedvalue_tests = {
 
   array_destructure: () => {
     const sharedValue = Worklets.createSharedValue([100, 200]);
+    const [first] = [sharedValue.value];
+    return ExpectValue(first, 100);
+  },
+
+  array_spread_destructure: () => {
+    const sharedValue = Worklets.createSharedValue([100, 200]);
     const [first] = [...sharedValue.value];
     return ExpectValue(first, 100);
   },
