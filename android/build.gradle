@@ -51,6 +51,7 @@ def reactNativeArchitectures() {
 }
 
 apply plugin: "com.android.library"
+apply from: "./gradle/fix-prefab.gradle"
 
 if (isNewArchitectureEnabled()) {
     apply plugin: "com.facebook.react"
@@ -178,55 +179,5 @@ tasks.configureEach { task ->
   // C++ clean
   if (task.name.contains("clean")) {
     task.dependsOn(deleteCmakeCache)
-  }
-
-    // Make sure that we generate our prefab publication file only after having built the native library
-  // so that not a header publication file, but a full configuration publication will be generated, which
-  // will include the .so file
-
-  // TODO: this needs to be fixed to work dynamically on the variant name
-  if (task.name.contains("prefabDebugConfigurePackage")) {
-    task.outputs.upToDateWhen { false }
-    task.dependsOn("externalNativeBuildDebug")
-  }
-    if (task.name.contains("prefabReleaseConfigurePackage")) {
-      task.outputs.upToDateWhen { false }
-        task.dependsOn("externalNativeBuildRelease")
-    }
-}
-
-afterEvaluate {
-  def abis = reactNativeArchitectures()
-  rootProject.allprojects.each { proj ->
-    if (proj === rootProject) return // skip RNWC and app project
-
-
-    def dependsOnWorklets = proj.configurations.findAll { it.canBeResolved }.any { config ->
-      config.dependencies.any { dep ->
-        dep.group == project.group && dep.name == project.name
-      }
-    }
-    if (!dependsOnWorklets && proj != project) return // skip if not dependent
-    println("Project ${proj.path} depends on react-native-worklets-core")
-
-    if (proj.plugins.hasPlugin('com.android.application') || proj.plugins.hasPlugin('com.android.library')) {
-      def variants = proj.android.hasProperty('applicationVariants') ? proj.android.applicationVariants : proj.android.libraryVariants
-      variants.all { variant ->
-        def variantName = variant.name
-        abis.each { abi ->
-          def searchDir = new File(proj.projectDir, ".cxx/${variantName}")
-          if (!searchDir.exists()) return
-          def matches = []
-          searchDir.eachDir { randomDir ->
-            def prefabFile = new File(randomDir, "${abi}/prefab_config.json")
-            if (prefabFile.exists()) matches << prefabFile
-          }
-          matches.each { prefabConfig ->
-            prefabConfig.setLastModified(System.currentTimeMillis())
-            println("Touched: ${prefabConfig}")
-          }
-        }
-      }
-    }
   }
 }
