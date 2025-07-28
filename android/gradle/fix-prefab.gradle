@@ -8,8 +8,12 @@ tasks.configureEach { task ->
   if (matcher.matches()) {
     def variantName = matcher[0][1]
     task.outputs.upToDateWhen { false }
+    if (prepareHeaders) {
+      task.dependsOn(prepareHeaders)
+    }
     task.dependsOn("externalNativeBuild${variantName}")
   }
+
 }
 
 afterEvaluate {
