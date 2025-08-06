@@ -18,6 +18,7 @@
     "img/banner.svg",
     "!lib/typescript/example",
     "!ios/build",
+    "android/gradle/fix-prefab.gradle",
     "!android/build",
     "!android/gradle",
     "!android/gradlew",
