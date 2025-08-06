@@ -51,7 +51,7 @@ def reactNativeArchitectures() {
 }
 
 apply plugin: "com.android.library"
-apply from: "./gradle/fix-prefab.gradle"
+apply from: "./fix-prefab.gradle"
 
 if (isNewArchitectureEnabled()) {
     apply plugin: "com.facebook.react"
