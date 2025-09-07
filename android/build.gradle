@@ -63,10 +63,8 @@ task prepareHeaders(type: Copy) {
   includeEmptyDirs = false
 }
 
-task deleteCmakeCache() {
-  doFirst {
-    delete "${projectDir}/.cxx"
-  }
+task deleteCmakeCache(type: Delete) {
+  delete "${projectDir}/.cxx"
 }
 
 android {
