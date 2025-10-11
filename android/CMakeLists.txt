@@ -79,10 +79,18 @@ if(${JS_RUNTIME} STREQUAL "hermes")
 
   string(APPEND CMAKE_CXX_FLAGS " -DJS_RUNTIME_HERMES=1")
 
-  target_link_libraries(
-    ${PACKAGE_NAME}
-    hermes-engine::libhermes
+  if(ReactAndroid_VERSION_MINOR GREATER_EQUAL 82)
+        target_link_libraries(
+          ${PACKAGE_NAME}
+          hermes-engine::hermesvm
+        )
+  else()
+        target_link_libraries(
+        ${PACKAGE_NAME}
+        hermes-engine::libhermes
   )
+  endif()
+  
 
   if(${HERMES_ENABLE_DEBUGGER})
     if(ReactAndroid_VERSION_MINOR GREATER_EQUAL 76)
