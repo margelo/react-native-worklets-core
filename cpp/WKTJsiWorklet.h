@@ -16,10 +16,6 @@
 
 namespace RNWorklet {
 
-#ifndef WKT_LOG
-#define WKT_LOG(fmt, ...) std::printf("[RNWorklets] " fmt "\n", ##__VA_ARGS__)
-#endif
-
 static const char *PropNameWorkletHash = "__workletHash";
 static const char *PropNameWorkletInitData = "__initData";
 static const char *PropNameWorkletInitDataCode = "code";
@@ -187,8 +183,6 @@ public:
   std::shared_ptr<jsi::Function>
   createWorkletJsFunction(jsi::Runtime &runtime) {
     auto makeNoop = [&runtime, this]() {
-      WKT_LOG("createWorkletJsFunction: returning NO-OP function for '%s'",
-              _location.c_str());
       auto func = jsi::Function::createFromHostFunction(
           runtime,
           jsi::PropNameID::forAscii(runtime, "noopWorklet"),
@@ -207,27 +201,18 @@ public:
     try {
       evaluatedFunction = evaluteJavascriptInWorkletRuntime(runtime, _code);
     } catch (const jsi::JSError &error) {
-      WKT_LOG("createWorkletJsFunction: eval JSError at '%s': %s",
-              _location.c_str(), error.getMessage().c_str());
       return makeNoop();
     }
 
     if (!evaluatedFunction.isObject()) {
-      WKT_LOG("createWorkletJsFunction: eval did not return object at '%s'",
-              _location.c_str());
       return makeNoop();
     }
 
     auto obj = evaluatedFunction.asObject(runtime);
     if (!obj.isFunction(runtime)) {
-      WKT_LOG(
-          "createWorkletJsFunction: eval returned non-function object at '%s'",
-          _location.c_str());
       return makeNoop();
     }
 
-    WKT_LOG("createWorkletJsFunction: created REAL worklet function at '%s'",
-            _location.c_str());
     return std::make_shared<jsi::Function>(obj.asFunction(runtime));
   }
 
@@ -353,12 +338,6 @@ private:
       _isRea30Compat = false;
     }
 
-    WKT_LOG("createWorklet: isRea30Compat=%d location='%s' codeLen=%zu",
-            _isRea30Compat ? 1 : 0, _location.c_str(), _code.size());
-    if (_code.size() > 0) {
-      WKT_LOG("createWorklet code (first 80 chars): %.80s", _code.c_str());
-    }
-
     // 3) Validate code length / content, avoid "()" crashes
     bool isCodeEmpty = true;
     for (char c : _code) {
@@ -418,32 +397,18 @@ private:
     }
 
     if (isEmpty || code.size() <= 3) {
-      WKT_LOG(
-          "evaluteJavascriptInWorkletRuntime: EMPTY/TINY code (len=%zu) at "
-          "'%s', skipping eval",
-          code.size(), _location.c_str());
       return jsi::Value::undefined();
     }
 
     std::string wrappedCode = "(" + code + std::string("\n)");
-
-    WKT_LOG(
-        "evaluteJavascriptInWorkletRuntime: evaluating codeLen=%zu "
-        "wrappedLen=%zu location='%s'",
-        code.size(), wrappedCode.size(), _location.c_str());
 
     auto codeBuffer = std::make_shared<const jsi::StringBuffer>(wrappedCode);
 
     try {
       return runtime.evaluateJavaScript(codeBuffer, _location);
     } catch (const jsi::JSError &error) {
-      WKT_LOG("evaluteJavascriptInWorkletRuntime: JSError at '%s': %s",
-              _location.c_str(), error.getMessage().c_str());
       return jsi::Value::undefined();
     } catch (...) {
-      WKT_LOG(
-          "evaluteJavascriptInWorkletRuntime: UNKNOWN exception at '%s'",
-          _location.c_str());
       return jsi::Value::undefined();
     }
   }
@@ -484,8 +449,6 @@ public:
   jsi::Value call(jsi::Runtime &runtime, const jsi::Value &thisValue,
                   const jsi::Value *arguments, size_t count) {
     if (_workletFunction == nullptr) {
-      WKT_LOG("WorkletInvoker::call: creating worklet function for '%s'",
-              _worklet->getLocation().c_str());
       _workletFunction = _worklet->createWorkletJsFunction(runtime);
       auto owningContext = JsiWorkletContext::getCurrent(runtime);
       if (owningContext) {
@@ -495,20 +458,12 @@ public:
       }
     }
 
-    WKT_LOG("WorkletInvoker::call: invoking worklet '%s'",
-            _worklet->getLocation().c_str());
-
     try {
       return _worklet->call(_workletFunction, runtime, thisValue, arguments,
                             count);
     } catch (const jsi::JSError &error) {
-      WKT_LOG("WorkletInvoker::call: JSError while invoking '%s': %s",
-              _worklet->getLocation().c_str(), error.getMessage().c_str());
       return jsi::Value::undefined();
     } catch (...) {
-      WKT_LOG(
-          "WorkletInvoker::call: UNKNOWN exception while invoking '%s'",
-          _worklet->getLocation().c_str());
       return jsi::Value::undefined();
     }
   }
