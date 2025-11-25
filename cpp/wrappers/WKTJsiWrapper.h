@@ -69,7 +69,12 @@ public:
    * @return A new js value in the provided runtime with the wrapped value
    */
   static jsi::Value unwrap(jsi::Runtime &runtime,
-                           std::shared_ptr<JsiWrapper> wrapper) {
+                          std::shared_ptr<JsiWrapper> wrapper) {
+    // Defensive: if wrapper is null (e.g. bad/empty closure), just return
+    // undefined instead of crashing on a null dereference.
+    if (!wrapper) {
+      return jsi::Value::undefined();
+    }
     return wrapper->getValue(runtime);
   }
 
@@ -87,7 +92,10 @@ public:
    * @return A new js value in the provided runtime with the wrapped value
    */
   static jsi::Value unwrapAsProxyOrValue(jsi::Runtime &runtime,
-                                         std::shared_ptr<JsiWrapper> wrapper) {
+                                        std::shared_ptr<JsiWrapper> wrapper) {
+    if (!wrapper) {
+      return jsi::Value::undefined();
+    }
     return wrapper->getAsProxyOrValue(runtime);
   }
 
