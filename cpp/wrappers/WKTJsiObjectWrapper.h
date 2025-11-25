@@ -22,13 +22,11 @@ class JsiObjectWrapper : public JsiHostObject,
 public:
   /**
    * Constructor
-   * @param runtime Calling runtie
-   * @param value value to wrap
    * @param parent optional parent wrapper
+   * @param useProxiesForUnwrapping unwraps using proxies
    */
-  JsiObjectWrapper(jsi::Runtime &runtime, const jsi::Value &value,
-                   JsiWrapper *parent)
-      : JsiWrapper(runtime, value, parent) {}
+  JsiObjectWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping)
+      : JsiWrapper(parent, useProxiesForUnwrapping) {}
 
   JSI_HOST_FUNCTION(toStringImpl) {
     return jsi::String::createFromUtf8(runtime, toString(runtime));
@@ -71,6 +69,32 @@ public:
    * @return Value converted to a jsi::Value
    */
   jsi::Value getValue(jsi::Runtime &runtime) override {
+    if (getUseProxiesForUnwrapping()) {
+      if (getType() == JsiWrapperType::Object) {
+        return getObjectAsProxy(runtime, shared_from_this());
+      } else if (getType() == JsiWrapperType::HostObject) {
+        return jsi::Object::createFromHostObject(runtime, _hostObject);
+      }
+    }
+
+    if (_prototype != nullptr && _nativeState != nullptr) {
+      // We have a Prototype and NativeState!
+      // It's likely a Nitro HybridObject that does not have properties by itself.
+      jsi::Object Object = runtime.global().getPropertyAsObject(runtime, "Object");
+      jsi::Function create = Object.getPropertyAsFunction(runtime, "create");
+      jsi::Value result = create.call(runtime, _prototype->getValue(runtime));
+      result.getObject(runtime).setNativeState(runtime, _nativeState);
+      return result;
+    } else {
+      jsi::Object obj = getObject(runtime);
+      if (_nativeState != nullptr) {
+        obj.setNativeState(runtime, _nativeState);
+      }
+      return obj;
+    }
+  }
+
+  jsi::Object getObject(jsi::Runtime &runtime) {
     switch (getType()) {
     case JsiWrapperType::HostObject:
       return jsi::Object::createFromHostObject(runtime, _hostObject);
@@ -84,7 +108,6 @@ public:
       throw jsi::JSError(runtime, "Promise type not supported.");
     default:
       throw jsi::JSError(runtime, "Value type not supported.");
-      return jsi::Value::undefined();
     }
   }
 
@@ -96,12 +119,10 @@ public:
    */
   void set(jsi::Runtime &runtime, const jsi::PropNameID &name,
            const jsi::Value &value) override {
+    std::unique_lock lock(_readWriteMutex);
+
     auto nameStr = name.utf8(runtime);
-    if (_properties.count(nameStr) == 0) {
-      _properties.emplace(nameStr, JsiWrapper::wrap(runtime, value, this));
-    } else {
-      _properties.at(nameStr)->updateValue(runtime, value);
-    }
+    _properties[nameStr] = JsiWrapper::wrap(runtime, value, this, getUseProxiesForUnwrapping());
   }
 
   /**
@@ -111,6 +132,8 @@ public:
    * @return Property value or undefined.
    */
   jsi::Value get(jsi::Runtime &runtime, const jsi::PropNameID &name) override {
+    std::unique_lock lock(_readWriteMutex);
+
     auto nameStr = name.utf8(runtime);
     if (_properties.count(nameStr) != 0) {
       auto prop = _properties.at(nameStr);
@@ -127,6 +150,8 @@ public:
    */
   std::vector<jsi::PropNameID>
   getPropertyNames(jsi::Runtime &runtime) override {
+    std::unique_lock lock(_readWriteMutex);
+
     std::vector<jsi::PropNameID> retVal;
     retVal.reserve(_properties.size());
     for (auto it = _properties.begin(); it != _properties.end(); it++) {
@@ -156,16 +181,6 @@ public:
     }
   }
 
-protected:
-  jsi::Value getAsProxyOrValue(jsi::Runtime &runtime) override {
-    if (getType() == JsiWrapperType::Object) {
-      return getObjectAsProxy(runtime, shared_from_this());
-    } else if (getType() == JsiWrapperType::HostObject) {
-      return jsi::Object::createFromHostObject(runtime, _hostObject);
-    }
-    return JsiWrapper::getAsProxyOrValue(runtime);
-  }
-
 private:
   void setArrayBufferValue(jsi::Runtime &runtime, jsi::Object &obj) {
     throw jsi::JSError(runtime,
@@ -173,6 +188,8 @@ private:
   }
 
   void setObjectValue(jsi::Runtime &runtime, jsi::Object &obj) {
+    std::unique_lock lock(_readWriteMutex);
+    
     setType(JsiWrapperType::Object);
     _properties.clear();
     auto propNames = obj.getPropertyNames(runtime);
@@ -181,7 +198,26 @@ private:
           propNames.getValueAtIndex(runtime, i).asString(runtime).utf8(runtime);
 
       auto value = obj.getProperty(runtime, nameString.c_str());
-      _properties.emplace(nameString, JsiWrapper::wrap(runtime, value, this));
+      _properties.emplace(
+          nameString,
+          JsiWrapper::wrap(runtime, value, this, getUseProxiesForUnwrapping()));
+    }
+    
+    if (obj.hasNativeState(runtime)) {
+      // 1. Get NativeState and keep it in memory.
+      _nativeState = obj.getNativeState(runtime);
+      // 2. If we have a NativeState, we likely also have a prototype chain. Recursively copy those over.
+      jsi::Object Object = runtime.global().getPropertyAsObject(runtime, "Object");
+      jsi::Function getPrototypeOf = Object.getPropertyAsFunction(runtime, "getPrototypeOf");
+      jsi::Value prototype = getPrototypeOf.call(runtime, obj);
+      if (prototype.isObject()) {
+        jsi::Object prototypeObject = prototype.getObject(runtime);
+        _prototype = std::make_shared<JsiObjectWrapper>(nullptr, false);
+        _prototype->setObjectValue(runtime, prototypeObject);
+      }
+    } else {
+      _nativeState = nullptr;
+      _prototype = nullptr;
     }
   }
 
@@ -226,8 +262,11 @@ private:
     }
   }
 
+private:
+  std::shared_ptr<JsiObjectWrapper> _prototype;
   std::map<std::string, std::shared_ptr<JsiWrapper>> _properties;
   std::shared_ptr<jsi::HostFunctionType> _hostFunction;
   std::shared_ptr<jsi::HostObject> _hostObject;
+  std::shared_ptr<jsi::NativeState> _nativeState;
 };
 } // namespace RNWorklet

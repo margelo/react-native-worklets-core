@@ -6,8 +6,6 @@ runs:
   steps:
     - name: Setup Node.js
       uses: actions/setup-node@v3
-      with:
-        node-version-file: .nvmrc
 
     - name: Cache dependencies
       id: yarn-cache

@@ -1,5 +1,6 @@
 import type { TurboModule } from "react-native";
 import { TurboModuleRegistry } from "react-native";
+import type { IWorkletNativeApi } from "./types";
 
 export interface Spec extends TurboModule {
   install(): boolean;
@@ -9,7 +10,8 @@ const WorkletsInstaller = TurboModuleRegistry.getEnforcing<Spec>("Worklets");
 
 console.log("Loading react-native-worklets-core...");
 
-if (global.Worklets === undefined || global.Worklets == null) {
+// @ts-expect-error it's an untyped JSI global.
+if (global.Worklets == null) {
   if (
     WorkletsInstaller == null ||
     typeof WorkletsInstaller.install !== "function"
@@ -32,3 +34,6 @@ if (global.Worklets === undefined || global.Worklets == null) {
 } else {
   console.log("react-native-worklets-core installed.");
 }
+
+// @ts-expect-error It's a global injected by JSI.
+export const Worklets = global.Worklets as IWorkletNativeApi;

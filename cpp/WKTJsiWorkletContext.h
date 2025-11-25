@@ -92,13 +92,22 @@ public:
                   std::function<void(std::function<void()> &&)> jsCallInvoker);
 
   /**
-   Static / singleton default context
+   Get the default context
    */
-  static std::shared_ptr<JsiWorkletContext> getDefaultInstance() {
+  static std::shared_ptr<JsiWorkletContext> getDefaultInstanceAsShared() {
     if (defaultInstance == nullptr) {
       defaultInstance = std::make_shared<JsiWorkletContext>();
     }
     return defaultInstance;
+  }
+
+  /**
+   * @brief Get the Default Instance object
+   *
+   * @return JsiWorkletContext*
+   */
+  static JsiWorkletContext *getDefaultInstance() {
+    return JsiWorkletContext::getDefaultInstanceAsShared().get();
   }
 
   /**
@@ -148,7 +157,29 @@ public:
     return jsi::Value::undefined();
   }
 
-  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletContext, addDecorator))
+  JSI_HOST_FUNCTION(createRunAsync) {
+    if (count != 1) {
+      throw jsi::JSError(runtime, "createRunAsync expects one parameter.");
+    }
+
+    auto caller =
+        JsiWorkletContext::createCallInContext(runtime, arguments[0], this);
+
+    // Now let us create the caller function.
+    return jsi::Function::createFromHostFunction(
+        runtime, jsi::PropNameID::forAscii(runtime, "createRunAsync"), 0,
+        caller);
+  }
+
+  JSI_HOST_FUNCTION(runAsync) {
+    jsi::Value value = createRunAsync(runtime, thisValue, arguments, count);
+    jsi::Function func = value.asObject(runtime).asFunction(runtime);
+    return func.call(runtime, nullptr, 0);
+  }
+
+  JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletContext, addDecorator),
+                       JSI_EXPORT_FUNC(JsiWorkletContext, createRunAsync),
+                       JSI_EXPORT_FUNC(JsiWorkletContext, runAsync))
 
   JSI_PROPERTY_GET(name) {
     return jsi::String::createFromUtf8(runtime, getName());

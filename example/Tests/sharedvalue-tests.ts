@@ -68,7 +68,7 @@ export const sharedvalue_tests = {
     return ExpectValue(sharedValue.value, 100);
   },
 
-  box_string_to_array_FAILS: () => {
+  box_string_to_array: () => {
     const sharedValue = Worklets.createSharedValue("100");
     // @ts-ignore
     sharedValue.value = [100, 200];
@@ -89,7 +89,7 @@ export const sharedvalue_tests = {
     return ExpectValue(sharedValue.value, { a: 100, b: 200 });
   },
 
-  box_object_to_array_FAILS: () => {
+  box_object_to_array: () => {
     const sharedValue = Worklets.createSharedValue({ a: 100, b: 200 });
     // @ts-ignore
     sharedValue.value = [100.34, 200];
@@ -147,7 +147,7 @@ export const sharedvalue_tests = {
 
   set_value_from_worklet: () => {
     const sharedValue = Worklets.createSharedValue("hello world");
-    const worklet = Worklets.createRunInContextFn(function () {
+    const worklet = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       sharedValue.value = "hello worklet";
     });
@@ -159,7 +159,7 @@ export const sharedvalue_tests = {
     );
   },
 
-  set_function_fails_when_calling_function: () => {
+  set_function_when_calling_function: () => {
     return ExpectException(() => {
       Worklets.createSharedValue(() => {}).value();
     });
@@ -177,7 +177,7 @@ export const sharedvalue_tests = {
   add_listener_from_worklet: () => {
     const sharedValue = Worklets.createSharedValue(100);
     const didChange = Worklets.createSharedValue(false);
-    const w = Worklets.createRunInContextFn(function () {
+    const w = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       const unsubscribe = sharedValue.addListener(
         () => (didChange.value = true)
@@ -187,5 +187,12 @@ export const sharedvalue_tests = {
       return didChange.value;
     });
     return ExpectValue(w(), true);
+  },
+
+  set_object_property_to_undefined_after_being_an_object: () => {
+    const sharedValue = Worklets.createSharedValue({ a: { b: 200 } });
+    // @ts-ignore
+    sharedValue.value.a = undefined;
+    return ExpectValue(sharedValue.value, { a: undefined });
   },
 };

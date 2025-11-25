@@ -13,6 +13,7 @@
 #include "WKTJsiHostObject.h"
 #include "WKTJsiWorkletContext.h"
 #include "WKTJsiWrapper.h"
+#include "WKTRuntimeAwareCache.h"
 
 namespace RNWorklet {
 
@@ -23,7 +24,7 @@ static const char *PropNameWorkletInitDataCode = "code";
 static const char *PropNameJsThis = "jsThis";
 
 static const char *PropNameWorkletInitDataLocation = "location";
-static const char *PropNameWorkletInitDataSourceMap = "__sourceMap";
+static const char *PropNameWorkletInitDataSourceMap = "sourceMap";
 
 static const char *PropNameWorkletLocation = "__location";
 static const char *PropNameWorkletAsString = "asString";
@@ -273,6 +274,11 @@ public:
     }
   }
 
+  /**
+   Returns true if the character is a whitespace character
+   */
+  static bool isWhitespace(unsigned char c) { return std::isspace(c); }
+
 private:
   /**
    Installs the worklet function into the worklet runtime
@@ -306,19 +312,20 @@ private:
     if (initDataProp.isObject()) {
       jsi::Object initDataObj = initDataProp.asObject(runtime);
 
-      jsi::Value locationProp =
-          initDataObj.getProperty(runtime, PropNameWorkletInitDataLocation);
-      if (!locationProp.isString()) {
-        return;
+      // Check location must be a string if it is defined
+      if (!locationProp.isUndefined() && !locationProp.isNull() &&
+          locationProp.isString()) {
+        // Set location
+        _location = locationProp.asString(runtime).utf8(runtime);
+      } else {
+        _location = "(unknown)";
       }
-      _location = locationProp.asString(runtime).utf8(runtime);
 
-      jsi::Value codeProp =
-          initDataObj.getProperty(runtime, PropNameWorkletInitDataCode);
-      if (!codeProp.isString()) {
-        return;
-      }
-      _code = codeProp.asString(runtime).utf8(runtime);
+      // Let us try to install the function in the worklet context
+      _code = initDataProp.asObject(runtime)
+                  .getProperty(runtime, PropNameWorkletInitDataCode)
+                  .asString(runtime)
+                  .utf8(runtime);
 
       _isRea30Compat = true;
 
@@ -349,6 +356,9 @@ private:
     if (!isCodeEmpty && _code.size() <= 3) {
       isCodeEmpty = true;
     }
+
+    // Double-check if the code property is valid.
+    bool isCodeEmpty = std::all_of(_code.begin(), _code.end(), isWhitespace);
     if (isCodeEmpty) {
       std::string error =
           "Failed to create Worklet, the provided code is empty. Tips:\n"
@@ -430,48 +440,19 @@ public:
   WorkletInvoker(jsi::Runtime &runtime, const jsi::Value &value)
       : WorkletInvoker(std::make_shared<JsiWorklet>(runtime, value)) {}
 
-  ~WorkletInvoker() {
-    if (_workletFunction) {
-      auto tmp = _workletFunction;
-      _workletFunction = nullptr;
-
-      if (_owningContext == nullptr) {
-        JsiWorkletContext::getDefaultInstance()->invokeOnJsThread(
-            [tmp = std::move(tmp)](jsi::Runtime &) mutable { tmp = nullptr; });
-      } else {
-        _owningContext->invokeOnWorkletThread(
-            [tmp = std::move(tmp)](JsiWorkletContext *,
-                                   jsi::Runtime &) mutable { tmp = nullptr; });
-      }
-    }
-  }
-
   jsi::Value call(jsi::Runtime &runtime, const jsi::Value &thisValue,
                   const jsi::Value *arguments, size_t count) {
-    if (_workletFunction == nullptr) {
-      _workletFunction = _worklet->createWorkletJsFunction(runtime);
-      auto owningContext = JsiWorkletContext::getCurrent(runtime);
-      if (owningContext) {
-        _owningContext = owningContext->shared_from_this();
-      } else {
-        _owningContext = nullptr;
-      }
+    if (_workletFunction.get(runtime) == nullptr) {
+      _workletFunction.get(runtime) =
+          _worklet->createWorkletJsFunction(runtime);
     }
-
-    try {
-      return _worklet->call(_workletFunction, runtime, thisValue, arguments,
-                            count);
-    } catch (const jsi::JSError &error) {
-      return jsi::Value::undefined();
-    } catch (...) {
-      return jsi::Value::undefined();
-    }
+    return _worklet->call(_workletFunction.get(runtime), runtime, thisValue,
+                          arguments, count);
   }
 
 private:
-  std::shared_ptr<JsiWorkletContext> _owningContext;
+  RuntimeAwareCache<std::shared_ptr<jsi::Function>> _workletFunction;
   std::shared_ptr<JsiWorklet> _worklet;
-  std::shared_ptr<jsi::Function> _workletFunction;
 };
 
 } // namespace RNWorklet

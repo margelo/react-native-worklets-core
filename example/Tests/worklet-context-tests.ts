@@ -24,7 +24,7 @@ export const worklet_context_tests = {
       "worklet";
       return a + x;
     };
-    const w = Worklets.createRunInContextFn(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(w(100), 200);
   },
 
@@ -34,7 +34,7 @@ export const worklet_context_tests = {
       "worklet";
       return a;
     };
-    const w = Worklets.createRunInContextFn(f, context);
+    const w = context.createRunAsync(f);
     return ExpectValue(w(100), 100);
   },
 
@@ -43,7 +43,7 @@ export const worklet_context_tests = {
       "worklet";
       throw new Error("Test error");
     };
-    const w = Worklets.createRunInContextFn(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectException(w, "Test error");
   },
 
@@ -53,7 +53,7 @@ export const worklet_context_tests = {
       "worklet";
       throw new Error("Test error");
     };
-    const w = Worklets.createRunInContextFn(f, context);
+    const w = context.createRunAsync(f);
     return ExpectException(w, "Test error");
   },
 
@@ -69,7 +69,7 @@ export const worklet_context_tests = {
       workletB(a);
     };
 
-    const w = Worklets.createRunInContextFn(workletA);
+    const w = Worklets.defaultContext.createRunAsync(workletA);
     return Expect(w(100), () => {
       return sharedValue.value === 100
         ? undefined
@@ -84,14 +84,14 @@ export const worklet_context_tests = {
       sharedValue.value = a;
     };
 
-    const js1 = Worklets.createRunInJsFn(setSharedValue);
+    const js1 = Worklets.createRunOnJS(setSharedValue);
 
     const w1 = function (a: number) {
       "worklet";
       return js1(a);
     };
 
-    const w = Worklets.createRunInContextFn(w1);
+    const w = Worklets.defaultContext.createRunAsync(w1);
     return Expect(w(100), () => {
       return sharedValue.value === 100
         ? undefined
@@ -100,12 +100,12 @@ export const worklet_context_tests = {
   },
 
   call_async_to_js_from_worklet_with_retval: () => {
-    const workletB = Worklets.createRunInJsFn(function (a: number) {
+    const workletB = Worklets.createRunOnJS(function (a: number) {
       "worklet";
       return a;
     });
 
-    const workletA = Worklets.createRunInContextFn(function (a: number) {
+    const workletA = Worklets.defaultContext.createRunAsync((a: number) => {
       "worklet";
       return workletB(a);
     });
@@ -113,12 +113,12 @@ export const worklet_context_tests = {
   },
 
   call_async_to_js_from_worklet_with_error: () => {
-    const callback = Worklets.createRunInJsFn(() => {
+    const callback = Worklets.createRunOnJS(() => {
       "worklet";
       throw new Error("Test error");
     });
 
-    const workletA = Worklets.createRunInContextFn(function () {
+    const workletA = Worklets.defaultContext.createRunAsync(() => {
       "worklet";
       return callback();
     });
@@ -131,7 +131,7 @@ export const worklet_context_tests = {
       return a + a;
     };
 
-    const w_square = Worklets.createRunInContextFn(function (a: number) {
+    const w_square = Worklets.defaultContext.createRunAsync((a: number) => {
       "worklet";
       return Math.sqrt(adder(a));
     });
@@ -146,7 +146,7 @@ export const worklet_context_tests = {
       sharedValue.value = b;
     };
 
-    const workletA = Worklets.createRunInContextFn(function (a: number) {
+    const workletA = Worklets.defaultContext.createRunAsync((a: number) => {
       "worklet";
       return workletB(a);
     });
@@ -163,7 +163,7 @@ export const worklet_context_tests = {
       "worklet";
       return 1000;
     };
-    const workletA = Worklets.createRunInContextFn(function () {
+    const workletA = Worklets.defaultContext.createRunAsync(() => {
       "worklet";
       return workletB();
     });
@@ -175,7 +175,7 @@ export const worklet_context_tests = {
       "worklet";
       return 1000;
     };
-    const workletA = Worklets.createRunInContextFn(function () {
+    const workletA = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       let r = 0;
       for (let i = 0; i < 100; i++) {
@@ -191,7 +191,7 @@ export const worklet_context_tests = {
       "worklet";
       throw Error("Test error");
     };
-    const workletA = Worklets.createRunInContextFn(function () {
+    const workletA = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       return workletB();
     });
@@ -203,7 +203,7 @@ export const worklet_context_tests = {
       "worklet";
       return a.current;
     };
-    const workletA = Worklets.createRunInContextFn(function () {
+    const workletA = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       return workletB({ current: 100 });
     });
@@ -212,7 +212,7 @@ export const worklet_context_tests = {
 
   fail_when_calling_a_regular_function_from_a_worklet: () => {
     const func = (a: number) => a;
-    const worklet = Worklets.createRunInContextFn(function () {
+    const worklet = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       return func(100);
     });
@@ -228,33 +228,35 @@ export const worklet_context_tests = {
       },
     };
     const sharedValue = Worklets.createSharedValue(obj);
-    const worklet = Worklets.createRunInContextFn(function () {
+    const worklet = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       return sharedValue.value.f();
     });
     return ExpectValue(worklet(), 200);
   },
-  call_createRunInJsFn_inside_worklet: () => {
+  call_createRunOnJS_inside_worklet: () => {
     const fn = function (b: number) {
       "worklet";
       return b * 2;
     };
     const f = function (a: number) {
       "worklet";
-      const wjs = Worklets.createRunInJsFn(fn);
+      const wjs = Worklets.createRunOnJS(fn);
       return wjs(a);
     };
-    const w = Worklets.createRunInContextFn(f);
+    const w = Worklets.defaultContext.createRunAsync(f);
     return ExpectValue(w(100), 200);
   },
   call_worklet_in_same_context: () => {
-    const workletInTest = Worklets.createRunInContextFn(function (a: number) {
+    const workletInTest = Worklets.defaultContext.createRunAsync(function (
+      a: number
+    ) {
       "worklet";
       console.log("ctx: workletInTest: returning 100 + ", a);
       return 100 + a;
     });
 
-    const worklet = Worklets.createRunInContextFn(function () {
+    const worklet = Worklets.defaultContext.createRunAsync(function () {
       "worklet";
       console.log("ctx: worklet: calling workletInTest(100)");
       const a = workletInTest(100);
@@ -271,37 +273,39 @@ export const worklet_context_tests = {
       return 100 + a;
     }
     calcInCtx.name = "calcInCtx";
-    const workletInCtx = Worklets.createRunInContextFn(calcInCtx, ctx);
+    const workletInCtx = ctx.createRunAsync(calcInCtx);
 
     function calcInDefaultCtx() {
       "worklet";
       return workletInCtx(100);
     }
     calcInDefaultCtx.name = "calcInDefaultCtx";
-    const worklet = Worklets.createRunInContextFn(calcInDefaultCtx);
+    const worklet = Worklets.defaultContext.createRunAsync(calcInDefaultCtx);
 
     return ExpectValue(worklet(), 200);
   },
-  call_createRunInContextFn_from_context: () => {
-    const worklet = Worklets.createRunInContextFn(function () {
+  call_createRunAsync_from_context: () => {
+    const worklet = Worklets.defaultContext.createRunAsync(() => {
       "worklet";
-      const workletInTest = Worklets.createRunInContextFn(function (a: number) {
-        "worklet";
-        return 100 + a;
-      });
+      const workletInTest = Worklets.defaultContext.createRunAsync(
+        (a: number) => {
+          "worklet";
+          return 100 + a;
+        }
+      );
       return workletInTest(100);
     });
     return ExpectValue(worklet(), 200);
   },
-  call_createRunInContextFn_between_contexts: () => {
+  call_createRunAsync_between_contexts: () => {
     const ctx = Worklets.createContext("test");
 
-    const worklet = Worklets.createRunInContextFn(function () {
+    const worklet = Worklets.defaultContext.createRunAsync(() => {
       "worklet";
-      const workletInTest = Worklets.createRunInContextFn(function (a: number) {
+      const workletInTest = ctx.createRunAsync((a: number) => {
         "worklet";
         return 100 + a;
-      }, ctx);
+      });
       return workletInTest(100);
     });
     return ExpectValue(worklet(), 200);
@@ -311,7 +315,7 @@ export const worklet_context_tests = {
       "worklet";
       return a * 2;
     };
-    let wf: any = Worklets.createRunInContextFn(f);
+    let wf: any = Worklets.defaultContext.createRunAsync(f);
     wf(100);
     wf = undefined;
     return ExpectValue(true, true);
@@ -325,7 +329,87 @@ export const worklet_context_tests = {
       "worklet";
       return f(100);
     };
-    let wf = Worklets.createRunInContextFn(fw);
+    let wf = Worklets.defaultContext.createRunAsync(fw);
     return ExpectValue(wf(), 200);
+  },
+  call_run_async_directly: () => {
+    const result = Worklets.defaultContext.runAsync(() => {
+      "worklet";
+      return 42;
+    });
+    return ExpectValue(result, 42);
+  },
+  call_run_on_js_directly: () => {
+    const f = function (a: number) {
+      "worklet";
+      return Worklets.runOnJS(() => {
+        "worklet";
+        return a * 2;
+      });
+    };
+    const w = Worklets.defaultContext.createRunAsync(f);
+    return ExpectValue(w(100), 200);
+  },
+  call_run_async_and_run_on_js_directly: () => {
+    const a = 150;
+    const result = Worklets.defaultContext.runAsync(() => {
+      "worklet";
+      const b = a * 2;
+      return Worklets.runOnJS(() => {
+        "worklet";
+        return b * 2;
+      });
+    });
+    return ExpectValue(result, 600);
+  },
+  call_run_async_and_run_on_js_directly_other_context: () => {
+    const a = 150;
+    const context = Worklets.createContext("nested-context");
+    const result = Worklets.defaultContext.runAsync(() => {
+      "worklet";
+      const b = a * 2;
+      return context.runAsync(() => {
+        "worklet";
+        const c = b * 2;
+        return Worklets.runOnJS(() => {
+          "worklet";
+          return c * 2;
+        });
+      });
+    });
+    return ExpectValue(result, 1200);
+  },
+  call_run_async_then_js_then_async: () => {
+    const a = 150;
+    const result = Worklets.defaultContext.runAsync(() => {
+      "worklet";
+      const b = a * 2;
+      return Worklets.runOnJS(() => {
+        "worklet";
+        const c = b * 2;
+        return Worklets.defaultContext.runAsync(() => {
+          "worklet";
+          return c * 2;
+        });
+      });
+    });
+    return ExpectValue(result, 1200);
+  },
+  call_run_async_then_js_then_async_custom_context: () => {
+    const a = 150;
+    const context = Worklets.createContext("nested-context-2");
+    const result = context.runAsync(() => {
+      "worklet";
+      const b = a * 2;
+      return Worklets.runOnJS(() => {
+        "worklet";
+        const c = b * 2;
+        return context.runAsync(() => {
+          "worklet";
+          return c * 2;
+        });
+      });
+    });
+    return ExpectValue(result, 1200);
   },
 };

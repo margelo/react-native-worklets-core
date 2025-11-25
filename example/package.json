@@ -6,19 +6,36 @@
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "start": "react-native start",
-    "pods": "pod-install --quiet",
-    "pods-new-arch": "RCT_NEW_ARCH_ENABLED=1 pod-install --quiet"
+    "pods": "bundle install && cd ios && RCT_NEW_ARCH_ENABLED=1 bundle exec pod install && cd .."
   },
   "dependencies": {
-    "react": "18.2.0",
-    "react-native": "0.71.2"
+    "react": "18.3.1",
+    "react-native": "0.76.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0",
-    "@babel/runtime": "^7.20.0",
-    "babel-plugin-module-resolver": "^5.0.0",
-    "metro-react-native-babel-preset": "0.73.7",
-    "react-native-worklets-core": "link:../"
+    "@babel/core": "^7.25.2",
+    "@babel/preset-env": "^7.25.3",
+    "@babel/runtime": "^7.25.0",
+    "@react-native-community/cli": "15.0.0",
+    "@react-native-community/cli-platform-android": "15.0.0",
+    "@react-native-community/cli-platform-ios": "15.0.0",
+    "@react-native/babel-preset": "0.76.1",
+    "@react-native/eslint-config": "0.76.1",
+    "@react-native/metro-config": "0.76.1",
+    "@react-native/typescript-config": "0.76.1",
+    "@types/react": "^18.2.6",
+    "@types/react-test-renderer": "^18.0.0",
+    "babel-jest": "^29.6.3",
+    "babel-plugin-module-resolver": "^5.0.2",
+    "eslint": "^8.19.0",
+    "jest": "^29.6.3",
+    "prettier": "2.8.8",
+    "react-native-worklets-core": "link:../",
+    "react-test-renderer": "18.3.1",
+    "typescript": "5.0.4"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "jest": {
     "preset": "react-native"

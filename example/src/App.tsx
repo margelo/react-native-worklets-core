@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useWorklet } from "react-native-worklets-core";
 
 import { useTestRunner } from "../Tests";
 import { TestWrapper } from "../Tests/TestWrapper";
@@ -13,6 +14,22 @@ import { TestWrapper } from "../Tests/TestWrapper";
 const App = () => {
   const { tests, categories, output, runTests, runSingleTest } =
     useTestRunner();
+
+  const [age, setAge] = useState(15);
+  const dummyWorklet = useWorklet("default", (name: string): number => {
+    "worklet";
+    console.log(`useWorklet(${name}) called!`);
+    return name.length + age;
+  });
+
+  useEffect(() => {
+    dummyWorklet("marc");
+  }, [dummyWorklet]);
+
+  useEffect(() => {
+    setTimeout(() => setAge((a) => a * 2), 2000);
+  }, []);
+
   return (
     <View style={styles.container}>
       <View style={styles.tests}>

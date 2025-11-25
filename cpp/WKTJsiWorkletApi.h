@@ -2,8 +2,10 @@
 
 #include <jsi/jsi.h>
 
+#include <atomic>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "WKTJsiHostObject.h"
@@ -58,26 +60,23 @@ public:
   JSI_HOST_FUNCTION(createSharedValue) {
     return jsi::Object::createFromHostObject(
         *JsiWorkletContext::getDefaultInstance()->getJsRuntime(),
-        std::make_shared<JsiSharedValue>(
-            arguments[0], JsiWorkletContext::getDefaultInstance()));
+        std::make_shared<JsiSharedValue>(arguments[0]));
   };
 
-  JSI_HOST_FUNCTION(createRunInJsFn) {
-    if (count == 0) {
-      throw jsi::JSError(runtime, "createRunInJsFn expects one parameter.");
+  JSI_HOST_FUNCTION(createRunOnJS) {
+    if (count != 1) {
+      throw jsi::JSError(runtime, "createRunOnJS expects one parameter.");
     }
 
     // Get the worklet function
     if (!arguments[0].isObject()) {
       throw jsi::JSError(
-          runtime,
-          "createRunInJsFn expects a function as its first parameter.");
+          runtime, "createRunOnJS expects a function as its first parameter.");
     }
 
     if (!arguments[0].asObject(runtime).isFunction(runtime)) {
       throw jsi::JSError(
-          runtime,
-          "createRunInJsFn expects a function as its first parameter.");
+          runtime, "createRunOnJS expects a function as its first parameter.");
     }
 
     auto caller =
@@ -85,56 +84,91 @@ public:
 
     // Now let us create the caller function.
     return jsi::Function::createFromHostFunction(
-        runtime, jsi::PropNameID::forAscii(runtime, "runInJsFn"), 0,
-        JSI_HOST_FUNCTION_LAMBDA {
-          return caller(runtime, thisValue, arguments, count);
-        });
+        runtime, jsi::PropNameID::forAscii(runtime, "createRunOnJS"), 0,
+        caller);
+  }
+
+  JSI_HOST_FUNCTION(runOnJS) {
+    jsi::Value value = createRunOnJS(runtime, thisValue, arguments, count);
+    jsi::Function func = value.asObject(runtime).asFunction(runtime);
+    return func.call(runtime, nullptr, 0);
+  }
+
+  JSI_HOST_FUNCTION(createRunInJsFn) {
+    // TODO: Remove these deprecated APIs after one or two versions.
+    throw jsi::JSError(runtime,
+                       "Worklets.createRunInJsFn(..) has been deprecated in "
+                       "favor of Worklets.createRunOnJS(..) or "
+                       "Worklets.runOnJS(..) - please migrate to the new API!");
   }
 
   JSI_HOST_FUNCTION(createRunInContextFn) {
+    // TODO: Remove these deprecated APIs after one or two versions.
+    throw jsi::JSError(runtime,
+                       "Worklets.createRunInContextFn(context, ..) has been "
+                       "deprecated in favor of context.createRunAsync(..) or "
+                       "context.runAsync(..) - please migrate to the new API!");
+  }
+
+  JSI_HOST_FUNCTION(getCurrentThreadId) {
+    static std::atomic<int> threadCounter = 0;
+    static thread_local int thisThreadId = -1;
+    if (thisThreadId == -1) {
+      thisThreadId = threadCounter++;
+    }
+    return jsi::Value(thisThreadId);
+  }
+
+  JSI_HOST_FUNCTION(__jsi_is_array) {
     if (count == 0) {
-      throw jsi::JSError(
-          runtime, "createRunInContextFn expects at least one parameter.");
+      throw jsi::JSError(runtime, "__getTypeIsArray expects one parameter.");
     }
 
-    // Get the active context
-    auto activeContext =
-        count == 2 && arguments[1].isObject()
-            ? arguments[1].asObject(runtime).getHostObject<JsiWorkletContext>(
-                  runtime)
-            : JsiWorkletContext::getDefaultInstance();
-
-    if (activeContext == nullptr) {
-      throw jsi::JSError(runtime,
-                         "createRunInContextFn called with invalid context.");
+    if (arguments[0].isObject()) {
+      auto obj = arguments[0].asObject(runtime);
+      arguments[0].asObject(runtime).isArray(runtime);
+      auto isArray = obj.isArray(runtime);
+      return isArray;
     }
 
-    auto caller = JsiWorkletContext::createCallInContext(runtime, arguments[0],
-                                                         activeContext.get());
+    return false;
+  }
 
-    // Now let us create the caller function.
-    return jsi::Function::createFromHostFunction(
-        runtime, jsi::PropNameID::forAscii(runtime, "runInContextFn"), 0,
-        JSI_HOST_FUNCTION_LAMBDA {
-          return caller(runtime, thisValue, arguments, count);
-        });
+  JSI_HOST_FUNCTION(__jsi_is_object) {
+    if (count == 0) {
+      throw jsi::JSError(runtime, "__getTypeIsObject expects one parameter.");
+    }
+
+    if (arguments[0].isObject()) {
+      return true;
+    }
+
+    return false;
   }
 
   JSI_EXPORT_FUNCTIONS(JSI_EXPORT_FUNC(JsiWorkletApi, createSharedValue),
                        JSI_EXPORT_FUNC(JsiWorkletApi, createContext),
-                       JSI_EXPORT_FUNC(JsiWorkletApi, createRunInContextFn),
-                       JSI_EXPORT_FUNC(JsiWorkletApi, createRunInJsFn))
+                       JSI_EXPORT_FUNC(JsiWorkletApi, createRunOnJS),
+                       JSI_EXPORT_FUNC(JsiWorkletApi, runOnJS),
+                       JSI_EXPORT_FUNC(JsiWorkletApi,
+                                       createRunInContextFn), // <-- deprecated
+                       JSI_EXPORT_FUNC(JsiWorkletApi,
+                                       createRunInJsFn), // <-- deprecated
+                       JSI_EXPORT_FUNC(JsiWorkletApi, getCurrentThreadId),
+                       JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_array),
+                       JSI_EXPORT_FUNC(JsiWorkletApi, __jsi_is_object))
 
   JSI_PROPERTY_GET(defaultContext) {
     return jsi::Object::createFromHostObject(
-        runtime, JsiWorkletContext::getDefaultInstance());
+        runtime, JsiWorkletContext::getDefaultInstanceAsShared());
   }
 
   JSI_PROPERTY_GET(currentContext) {
     auto current = JsiWorkletContext::getCurrent(runtime);
-    if (!current) return jsi::Value::undefined();
-    return jsi::Object::createFromHostObject(
-        runtime, current->shared_from_this());
+    if (!current)
+      return jsi::Value::undefined();
+    return jsi::Object::createFromHostObject(runtime,
+                                             current->shared_from_this());
   }
 
   JSI_EXPORT_PROPERTY_GETTERS(JSI_EXPORT_PROP_GET(JsiWorkletApi,

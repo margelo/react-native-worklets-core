@@ -24,16 +24,10 @@ const sayHello = () => {
 ### Run on a background Thread
 
 The function `sayHello` is now prepared to be executed on any Worklet context.
-If you want to call `sayHello` on a default background Thread, build the worklet:
+If you want to call `sayHello` on a default background Thread, just use `runAsync`:
 
 ```js
-const worklet = Worklets.createRunInContextFn(sayHello)
-```
-
-...and then call it:
-
-```js
-worklet()
+await Worklets.defaultContext.runAsync(sayHello)
 ```
 
 ### Parameters and Results
@@ -43,12 +37,21 @@ Worklets can take parameters and return results. Results are returned as promise
 ```js
 const fibonacci = (num: number): number => {
   'worklet'
-  if (num <= 1) return 1
-  return fibonacci(num - 1) + fibonacci(num - 2)
+  if (num <= 1) return num;
+  let prev = 0, curr = 1;
+  for (let i = 2; i <= num; i++) {
+    let next = prev + curr;
+    prev = curr;
+    curr = next;
+  }
+  return curr;
 }
 
-const worklet = Worklets.createRunInContextFn(fibonacci)
-const result = await worklet(50)
+const context = Worklets.defaultContext
+const result = await context.runAsync(() => {
+  'worklet'
+  return fibonacci(50)
+})
 console.log(`Fibonacci of 50 is ${result}`)
 ```
 

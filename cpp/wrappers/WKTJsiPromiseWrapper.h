@@ -61,22 +61,8 @@ public:
   createPromiseWrapper(jsi::Runtime &runtime,
                        PromiseComputationFunction computation);
 
-  JsiPromiseWrapper(jsi::Runtime &runtime, const jsi::Value &value,
-                    JsiWrapper *parent)
-      : JsiWrapper(runtime, value, parent) {
-    _counter = ++Counter;
-    setType(JsiWrapperType::Promise);
-    // printf("promise: CTOR JsiPromiseWrapper %zu\n", _counter);
-  }
-
-  JsiPromiseWrapper(jsi::Runtime &runtime, JsiWrapper *parent)
-      : JsiWrapper(runtime, jsi::Value::undefined(), parent) {
-    setType(JsiWrapperType::Promise);
-    _counter = ++Counter;
-    // printf("promise: CTOR JsiPromiseWrapper %zu\n", _counter);
-  }
-
-  explicit JsiPromiseWrapper(jsi::Runtime &runtime);
+  JsiPromiseWrapper(JsiWrapper *parent, bool useProxiesForUnwrapping)
+      : JsiWrapper(parent, useProxiesForUnwrapping, JsiWrapperType::Promise) {}
 
   ~JsiPromiseWrapper() {}
   /**
@@ -125,9 +111,6 @@ public:
   reject(jsi::Runtime &runtime, std::shared_ptr<JsiWrapper> reason);
   void onFulfilled(jsi::Runtime &runtime, const jsi::Value &val);
   void onRejected(jsi::Runtime &runtime, const jsi::Value &reason);
-
-  static size_t Counter;
-  size_t _counter;
 
   void resolve(jsi::Runtime &runtime, const jsi::Value &value) override {
     onFulfilled(runtime, value);
