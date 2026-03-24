@@ -145,6 +145,8 @@ android {
       "**/libfolly_runtime.so",
       "**/libglog.so",
       "**/libhermes.so",
+      "**/libhermesvm.so",
+      "**/libhermestooling.so",
       "**/libhermes-executor-debug.so",
       "**/libhermes_executor.so",
       "**/libreactnative.so",
