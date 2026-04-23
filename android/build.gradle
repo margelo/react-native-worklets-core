@@ -72,6 +72,10 @@ task deleteCmakeCache() {
 android {
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 
+  if (rootProject.hasProperty("ndkVersion")) {
+    ndkVersion rootProject.ext.ndkVersion
+  }
+
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
