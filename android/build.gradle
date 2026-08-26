@@ -147,6 +147,8 @@ android {
       "**/libhermes.so",
       "**/libhermes-executor-debug.so",
       "**/libhermes_executor.so",
+      "**/libhermestooling.so",
+      "**/libhermesvm.so",
       "**/libreactnative.so",
       "**/libreactnativejni.so",
       "**/libturbomodulejsijni.so",
