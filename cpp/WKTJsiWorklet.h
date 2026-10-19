@@ -146,6 +146,13 @@ public:
       return true;
     }
 
+    // The react-native-worklets Babel plugin emits a numeric hash and omits
+    // __closure for worklets that capture no variables. Treating those as
+    // regular functions breaks calling them from another worklet.
+    if (isClosurelessWorklet(runtime, func)) {
+      return true;
+    }
+
     // Try to get the closure
     jsi::Value closure = func->getProperty(runtime, PropNameWorkletClosure);
 
@@ -165,6 +172,21 @@ public:
     }
 
     return true;
+  }
+
+  /**
+   Returns true if the function is a worklet emitted by the react-native-worklets
+   Babel plugin without a __closure (numeric hash + __initData.code).
+   */
+  static bool isClosurelessWorklet(jsi::Runtime &runtime,
+                                   const std::shared_ptr<jsi::Function> &func) {
+    if (!func->getProperty(runtime, PropNameWorkletHash).isNumber()) {
+      return false;
+    }
+    auto initData = func->getProperty(runtime, PropNameWorkletInitData);
+    return initData.isObject() && initData.asObject(runtime)
+                                      .getProperty(runtime, PropNameWorkletInitDataCode)
+                                      .isString();
   }
 
   /**
@@ -268,7 +290,12 @@ private:
 
     // Return if this is not a worklet
     if (closure.isUndefined() || closure.isNull()) {
-      return;
+      if (!isClosurelessWorklet(runtime, func)) {
+        return;
+      }
+      // Code generated for a worklet without captured variables never reads
+      // this.__closure, so an empty closure is enough.
+      closure = jsi::Value(runtime, jsi::Array(runtime, 0));
     }
 
     // Try to get the asString function
