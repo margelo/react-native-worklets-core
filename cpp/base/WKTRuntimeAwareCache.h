@@ -3,8 +3,10 @@
 #include <jsi/jsi.h>
 
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 #include "WKTRuntimeLifecycleMonitor.h"
 
@@ -28,30 +30,50 @@ class RuntimeAwareCache : public RuntimeLifecycleListener {
 public:
   void onRuntimeDestroyed(jsi::Runtime *rt) override {
     // A runtime has been destroyed, so destroy the related cache.
-    _runtimeCaches.erase(rt);
+    // The entry is destroyed after releasing the lock.
+    std::unique_lock<std::mutex> lock(_mutex);
+    auto node = _runtimeCaches.extract(rt);
+    lock.unlock();
   }
 
   ~RuntimeAwareCache() {
-    for (auto &cache : _runtimeCaches) {
+    // Unregister without holding our lock: the monitor calls
+    // onRuntimeDestroyed with its lock held, so lock order is monitor -> cache.
+    std::vector<jsi::Runtime *> runtimes;
+    {
+      std::lock_guard<std::mutex> lock(_mutex);
+      runtimes.reserve(_runtimeCaches.size());
+      for (auto &cache : _runtimeCaches) {
+        runtimes.push_back(cache.first);
+      }
+    }
+    for (auto rt : runtimes) {
       // remove all `onRuntimeDestroyed` listeners.
-      RuntimeLifecycleMonitor::removeListener(*cache.first, this);
+      RuntimeLifecycleMonitor::removeListener(*rt, this);
     }
   }
 
+  // Called from several runtimes on different threads. The returned reference
+  // stays valid after unlocking since unordered_map never moves its elements.
   T &get(jsi::Runtime &rt) {
-    if (_runtimeCaches.count(&rt) == 0) {
-      // This is the first time this Runtime has been accessed.
-      // We set up a `onRuntimeDestroyed` listener for it and
-      // initialize the cache map.
-      RuntimeLifecycleMonitor::addListener(rt, this);
-
-      T cache;
-      _runtimeCaches.emplace(&rt, std::move(cache));
+    {
+      std::lock_guard<std::mutex> lock(_mutex);
+      auto cache = _runtimeCaches.find(&rt);
+      if (cache != _runtimeCaches.end()) {
+        return cache->second;
+      }
     }
-    return _runtimeCaches.at(&rt);
+    // This is the first time this Runtime has been accessed.
+    // We set up a `onRuntimeDestroyed` listener for it and
+    // initialize the cache map.
+    RuntimeLifecycleMonitor::addListener(rt, this);
+
+    std::lock_guard<std::mutex> lock(_mutex);
+    return _runtimeCaches.try_emplace(&rt).first->second;
   }
 
 private:
+  std::mutex _mutex;
   std::unordered_map<jsi::Runtime *, T> _runtimeCaches;
 };
 
