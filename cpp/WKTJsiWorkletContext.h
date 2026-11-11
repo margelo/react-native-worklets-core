@@ -6,10 +6,12 @@
 #include "WKTJsiHostObject.h"
 #include "WKTJsiJsDecorator.h"
 
+#include <atomic>
 #include <exception>
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -203,9 +205,20 @@ public:
   jsi::Runtime &getWorkletRuntime();
 
   /**
-   Executes a function in the JS thread
+   Generation of the JS runtime; unique across all instances and changes
+   whenever a context is initialized with a new JS runtime.
    */
-  void invokeOnJsThread(std::function<void(jsi::Runtime &runtime)> &&fp);
+  size_t jsGeneration() { return _jsGeneration.load(); }
+
+  /**
+   Executes a function in the JS thread
+   @param jsGeneration Generation of the JS runtime that owns the JS values fp
+   holds, read on the JS thread when they were captured. Defaults to the
+   current one, which is only right when called from the JS thread. The job is
+   not run (fp is leaked) if that runtime is gone.
+   */
+  void invokeOnJsThread(std::function<void(jsi::Runtime &runtime)> &&fp,
+                        std::optional<size_t> jsGeneration = std::nullopt);
 
   /**
    Executes a function in the worklet thread
@@ -284,11 +297,14 @@ private:
   std::function<void(std::function<void()> &&)> _jsCallInvoker;
   std::function<void(std::function<void()> &&)> _workletCallInvoker;
   size_t _contextId;
+  // Set from jsGenerationCounter on every initialize()
+  std::atomic<size_t> _jsGeneration{0};
   std::thread::id _jsThreadId;
 
   static std::shared_ptr<JsiWorkletContext> defaultInstance;
   static std::map<void *, JsiWorkletContext *> runtimeMappings;
   static size_t contextIdNumber;
+  static std::atomic<size_t> jsGenerationCounter;
 };
 
 } // namespace RNWorklet
