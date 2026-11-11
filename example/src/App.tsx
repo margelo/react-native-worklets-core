@@ -10,6 +10,7 @@ import { useWorklet } from "react-native-worklets-core";
 
 import { useTestRunner } from "../Tests";
 import { TestWrapper } from "../Tests/TestWrapper";
+import { ReloadStress } from "./ReloadStress";
 
 const App = () => {
   const { tests, categories, output, runTests, runSingleTest } =
@@ -37,6 +38,7 @@ const App = () => {
           contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.testsScrollView}
         >
+          <ReloadStress />
           {categories.map((category) => (
             <React.Fragment key={category}>
               <TouchableOpacity
