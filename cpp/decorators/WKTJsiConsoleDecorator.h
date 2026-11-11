@@ -23,7 +23,9 @@ public:
         _logFn(_consoleObj.getPropertyAsFunction(runtime, "log")),
         _infoFn(_consoleObj.getPropertyAsFunction(runtime, "info")),
         _warnFn(_consoleObj.getPropertyAsFunction(runtime, "warn")),
-        _errorFn(_consoleObj.getPropertyAsFunction(runtime, "error")) {}
+        _errorFn(_consoleObj.getPropertyAsFunction(runtime, "error")),
+        _jsGeneration(
+            JsiWorkletContext::getDefaultInstance()->jsGeneration()) {}
 
   JSI_HOST_FUNCTION(log) {
     ArgumentsWrapper argsWrapper(runtime, arguments, count);
@@ -42,7 +44,8 @@ public:
               self->_logFn.call(runtime, ArgumentsWrapper::toArgs(args), count);
             }
           }
-        });
+        },
+        _jsGeneration);
     return jsi::Value::undefined();
   }
 
@@ -64,7 +67,8 @@ public:
                                  count);
             }
           }
-        });
+        },
+        _jsGeneration);
     return jsi::Value::undefined();
   }
 
@@ -87,7 +91,8 @@ public:
                                   count);
             }
           }
-        });
+        },
+        _jsGeneration);
     return jsi::Value::undefined();
   }
 
@@ -109,7 +114,8 @@ public:
                                  count);
             }
           }
-        });
+        },
+        _jsGeneration);
     return jsi::Value::undefined();
   }
 
@@ -124,6 +130,8 @@ private:
   jsi::Function _warnFn;
   jsi::Function _infoFn;
   jsi::Function _errorFn;
+  // Generation of the JS runtime that owns the functions above
+  size_t _jsGeneration;
 };
 
 /**
